@@ -1,3 +1,20 @@
+### [1.0.4](https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web_sdk/tcg-sdk/1.0.4/index.js) @2021.6.18
+
+**新增**
+
+- reshapeWindow 方法，用于窗口大小变化时调用
+- 支持鼠标的侧键 mousebackward mouseforward
+- 新增支持Mac FireFox 浏览器
+- 新增init 参数 autoRotateContainer，用于自动旋转屏幕
+
+**变更**
+
+- 重连逻辑优化, onDisconnect 新增code 2/3
+
+**修复**
+
+- idleThreshold 回调失败
+
 ### [1.0.3](https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web_sdk/tcg-sdk/1.0.3/index.js) @2021.5.26
 
 **新增**

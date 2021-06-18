@@ -79,14 +79,21 @@ export interface OnWebrtcStatusChangeResponse {
 }
 
 /**
- * code=0	被踢
- * code=1	系统繁忙
+ * code=-1 需要重连
+ * code=0	手动关闭
+ * code=1	被其他连接踢掉
+ * code=2 重连失败(针对自动和手动重连情况)
+ * code=2 重连失败, token 过期(调用重连接口也连不上了)
  */
 export interface OnDisconnectResponse {
   readonly code: number;
   readonly msg: string;
 }
 
+/**
+ * code=1 频繁连接，12s内限频
+ * code=2 自动重连中
+ */
 export interface OnConnectFailResponse {
   readonly code: number;
   readonly msg: string;
@@ -270,7 +277,7 @@ export enum CURSOR_MODE {
 
 interface InitConfigBase {
   webDraftLevel?: number;
-  preloadTime?: number;
+  preloadTime?: number;    // deprecated from 1.0.4
   forceShowCursor?: boolean;
   cursorMode?: CURSOR_MODE;
   bgImgUrl?: string;
@@ -316,7 +323,7 @@ export interface InitConfig extends InitConfigBase {
    */
   keepLastFrame?: boolean;
   /**
-   * 默认值：false true 为帧率掉0或者异常断开自动重连一次，false 为不重连
+   * 是否自动重连，默认值：false
    */
   reconnect?: boolean;
   /**
@@ -327,6 +334,10 @@ export interface InitConfig extends InitConfigBase {
    * 加载中的文字提示内容，默认值：'正在启动云游戏'
    */
   loadingText?: string;
+  /**
+   * 当横竖屏切换时，是否自动旋转适配，默认值：false
+   */
+  autoRotateContainer?: boolean;
   /**
   * debugSetting 会在控制台打印出对应的日志 有如下配置
   */
@@ -402,7 +413,7 @@ export interface InitConfig extends InitConfigBase {
   /**
    * 屏幕方向变化事件回调
    */
-  onOrientationChange?: (response: Event) => void;
+  onOrientationChange?: (response: {type: 'portrait' | 'landscape'}) => void;
   /**
    * 日志回调函数，用于外部获取日志，作用与 setLogHandler 接口一致
    */
@@ -426,6 +437,7 @@ interface RawEventData {
 export declare interface CloudGamingWebSDKStatic {
   // -------------- 云游戏生命周期相关接口 ------------
   init(config?: InitConfig): void;
+  getInitOptions(): InitConfig;
   getClientSession(): string;
   start(serverSession: string): void;
   destroy(params: { message?: string, code?: number }): void;
@@ -472,6 +484,10 @@ export declare interface CloudGamingWebSDKStatic {
   setRemoteDesktopResolution({ width, height }: {width: number; height: number}): Promise<{
     code: number;       // 0 | 1
   }>
+  /**
+   * 重新调整video 位置
+   */
+  reshapeWindow(): void;
   // -------------- 鼠标键盘控制相关接口 ------------
   sendKeyboardEvent(params: {key: number; down: boolean}): void;
   sendRawEvent(params: RawEventData): void;
@@ -526,8 +542,24 @@ export declare interface CloudGamingWebSDKStatic {
    */
   setStreamProfile(profile: {fps: number; max_bitrate: number; min_bitrate: number}, callback?: Function, retry?: number): void;
   getDisplayRect(): {left: number; top: number; width: number; height: number; pixelRatio: number}
+  /**
+   * 设置audio 音量
+   * @param value number [0-1]
+   */
   setVolume(value: number): void;
+  /**
+   * 获取audio 音量
+   */
   getVolume(): number;
+  /**
+   * 设置video 音量
+   * @param value number [0-1]
+   */
+  setVideoVolume(value: number): void;
+  /**
+   * 获取video 音量
+   */
+  getVideoVolume(): number;
   setPageBackground(url: string): void;
   /**
    * 聚焦输入框时，快速发送内容
@@ -543,8 +575,10 @@ export declare interface CloudGamingWebSDKStatic {
   playAudio(status: 'play' | 'pause'): void;
   /**
    * 设置video 的旋转角度
+   * @param deg 旋转角度当前只支持0/90
+   * @param rotateContainer 是否旋转这个试图 UI
    */
-  setVideoOrientation(deg: number): void;
+  setVideoOrientation(deg: number, rotateContainer?: boolean): void;
   /**
    * 是否拉起键盘-alpha 目前大小写切换有问题，仅支持全键盘（不建议使用），可采用loginHelper 替代
    * @param show  boolean, 是否拉起键盘

@@ -31,6 +31,7 @@
   <script>
 
     const tryLock = async () => {
+      // 需要server 端实现调度接口 tryLock，文档参考 https://cloud.tencent.com/document/product/1162/47523
       // 接口调用参考 https://cloud.tencent.com/document/api/1162/40738
       
       const url = 'https://xxxx/tryLock';
@@ -51,6 +52,7 @@
     };
 
     const createSession = async () => {
+      // 需要server 端实现调度接口 createSession，文档参考 https://cloud.tencent.com/document/product/1162/47523
       // 接口调用参考 https://cloud.tencent.com/document/api/1162/40740
 
       const url = 'https://xxxx/createSession';
