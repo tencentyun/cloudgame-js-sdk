@@ -1,4 +1,20 @@
-### [1.0.4](https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web_sdk/tcg-sdk/1.0.4/index.js) @2021.6.18
+### [1.0.5](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.0.5)@2021.7.22
+
+**新增**
+
+- onConfigurationChange 回调，用于云端配置变化时候回调
+- getRemoteStreamResolution 方法，用于获取云端推流分辨率
+- init 参数 fullVideoToScreen，当 mount挂载节点宽高大于云端推流分辨率时候，true 拉伸video 尺寸并采用短边适配，false 不拉伸video，保持原有云端分辨率
+
+**变更**
+
+- connect threshold 为5s
+
+**修复**
+
+- 移动端chrome 浏览器无法获取fps 问题
+
+### 1.0.4@2021.6.18
 
 **新增**
 
@@ -15,7 +31,7 @@
 
 - idleThreshold 回调失败
 
-### [1.0.3](https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web_sdk/tcg-sdk/1.0.3/index.js) @2021.5.26
+### 1.0.3@2021.5.26
 
 **新增**
 
@@ -30,7 +46,7 @@
 - keyboard event 切换窗口卡建问题修复
 
 
-### [1.0.2](https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web_sdk/tcg-sdk/1.0.2/index.js) @2021.5.18
+### 1.0.2@2021.5.18
 
 **新增**
 
@@ -47,7 +63,7 @@
 - onConnectSuccess 确保在ACK 数据通道创建成功后
 
 
-### [1.0.0](https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web_sdk/tcg-sdk/1.0.0/index.js) @2021.4.06
+### 1.0.0@2021.4.06
 
 **变更**
 

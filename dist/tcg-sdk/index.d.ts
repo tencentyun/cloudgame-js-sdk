@@ -1,19 +1,31 @@
 /* eslint-disable camelcase */
 interface onNetworkChangeStatus {
-  bit_rate?: number;                   // 	客户端接收的码率，单位：Mbps
-  cpu?: number | string;                        // 	云端 CPU 占用率，单位：百分比
-  delay?: number;                      // 	客户端收到图像帧到解码显示的延时，单位：ms
-  fps?: number;                        // 	客户端显示帧率
-  load_cost_time?: number;             //	云端加载时长，单位：ms
-  nack?: number;                       // 	客户端重传次数
-  packet_lost?: number;                // 	客户端丢包次数
-  packet_received?: number;            // 	客户端收到的包总数
-  rtt?: number;                        //	客户端到云端，网络端数据包往返耗时
-  timestamp?: number;                  //	此数据回调的时间戳，单位：ms
+  bit_rate?: number; // 	客户端接收的码率，单位：Mbps
+  cpu?: number | string; // 	云端 CPU 占用率，单位：百分比
+  delay?: number; // 	客户端收到图像帧到解码显示的延时，单位：ms
+  fps?: number; // 	客户端显示帧率
+  load_cost_time?: number; //	云端加载时长，单位：ms
+  nack?: number; // 	客户端重传次数
+  packet_lost?: number; // 	客户端丢包次数
+  packet_received?: number; // 	客户端收到的包总数
+  rtt?: number; //	客户端到云端，网络端数据包往返耗时
+  timestamp?: number; //	此数据回调的时间戳，单位：ms
 }
 
 export interface OnNetworkChangeResponse {
-  status: 'online' | 'offline' | 'lag' | 'idle' | 'ipchanged' | 'noflow' | 'noflowcenter' | 'stats' | 'jitter' | 'gamelaunched' | 'userstate' | 'openurl';
+  status:
+    | 'online'
+    | 'offline'
+    | 'lag'
+    | 'idle'
+    | 'ipchanged'
+    | 'noflow'
+    | 'noflowcenter'
+    | 'stats'
+    | 'jitter'
+    | 'gamelaunched'
+    | 'userstate'
+    | 'openurl';
   times?: number;
   stats?: onNetworkChangeStatus;
   value?: any;
@@ -25,7 +37,7 @@ export interface OnNetworkChangeResponse {
 export interface OnInitSuccessResponse {
   code: number;
   msg: string;
-  description?: RTCSessionDescription
+  description?: RTCSessionDescription;
 }
 
 export interface RemoteGameConfig {
@@ -38,7 +50,7 @@ export interface RemoteGameConfig {
     connect_timeout?: number;
     noflow_timeout?: number;
     cursor_scale?: number;
-    cursor_style?: 'standard' | 'default_huge'
+    cursor_style?: 'standard' | 'default_huge';
     bgimg_url?: string;
     default_cursor_url?: string;
     lock_by_mouseright?: boolean;
@@ -62,6 +74,7 @@ export interface RemoteGameConfig {
  * code=7	游戏拉起失败
  */
 export interface OnWebrtcStatusChangeResponse {
+  readonly app_id?: number;
   readonly code: number;
   readonly msg?: string;
   readonly type?: string;
@@ -69,13 +82,20 @@ export interface OnWebrtcStatusChangeResponse {
   readonly server_ip?: string;
   readonly server_version?: string;
   readonly region?: string;
-  readonly instance_type?: string;          // L1 S1 M1
+  readonly instance_type?: string; // L1 S1 M1
   readonly message?: string;
   readonly request_id?: string;
   readonly user_id?: string;
   readonly input_seat?: number;
   readonly game_config?: RemoteGameConfig;
   readonly role?: string;
+  readonly metric_key?: string;
+  readonly sig_key?: string;
+  readonly screen_config?: {
+    width: number;
+    height: number;
+    orientation: 'landscape' | 'portrait';
+  };
 }
 
 /**
@@ -83,7 +103,7 @@ export interface OnWebrtcStatusChangeResponse {
  * code=0	手动关闭
  * code=1	被其他连接踢掉
  * code=2 重连失败(针对自动和手动重连情况)
- * code=2 重连失败, token 过期(调用重连接口也连不上了)
+ * code=3 重连失败, token 过期(调用重连接口也连不上了)
  */
 export interface OnDisconnectResponse {
   readonly code: number;
@@ -179,6 +199,14 @@ export interface OnCursorShowStatChangeResponse {
   readonly newStatus: boolean;
 }
 
+export interface OnConfigurationChangeResponse {
+  readonly screen_config: {
+    width: number;
+    height: number;
+    orientation: 'landscape' | 'portrait';
+  };
+}
+
 export type TouchType = 'touchstart' | 'touchmove' | 'touchend' | 'touchcancel' | string;
 
 export interface OnTouchEventResponse {
@@ -218,7 +246,6 @@ export interface OnTouchEventResponse {
    * 触控点相对上次坐标的 y 偏移值
    */
   readonly movementY: number;
-
 }
 export interface DebugSettingParams {
   /**
@@ -268,19 +295,33 @@ export interface DebugSettingParams {
 }
 
 export enum CURSOR_MODE {
-  LOCAL = 0,           // 前端绘制固定鼠标
-  REMOTE_SRC = 1,      // 云端鼠标数据下发鼠标图片，前端动态绘制
-  REMOTE_DRAW = 2,     // 云端画面内绘制，前端鼠标隐藏
-  REMOTE_CUSTOM = 3,   // 废弃 云端自定义鼠标（非系统），前端全局发送deltaMove
-  REMOTE_SRC_POS = 4,  // 云端鼠标图片数据和坐标下发，前端全局发送deltaMove，网页锁定鼠标并使用DIV绘制鼠标，对云端而言，等价于mode=1，额外加上鼠标坐标下发
+  LOCAL = 0, // 前端绘制固定鼠标
+  REMOTE_SRC = 1, // 云端鼠标数据下发鼠标图片，前端动态绘制
+  REMOTE_DRAW = 2, // 云端画面内绘制，前端鼠标隐藏
+  REMOTE_CUSTOM = 3, // 废弃 云端自定义鼠标（非系统），前端全局发送deltaMove
+  REMOTE_SRC_POS = 4, // 云端鼠标图片数据和坐标下发，前端全局发送deltaMove，网页锁定鼠标并使用DIV绘制鼠标，对云端而言，等价于mode=1，额外加上鼠标坐标下发
 }
 
 interface InitConfigBase {
+  /**
+   * 0：关闭鼠标高频采样， 1:打开，但是打包发送， 2:拆开发送， 3: 限制包长度，多的丢掉
+   */
   webDraftLevel?: number;
-  preloadTime?: number;    // deprecated from 1.0.4
+  /**
+   * @deprecated from 1.0.4
+   */
+  preloadTime?: number;
+  /**
+   * 强制不lock cursor
+   */
   forceShowCursor?: boolean;
-  cursorMode?: CURSOR_MODE;
+  /**
+   * 设置初始化背景图
+   */
   bgImgUrl?: string;
+  /**
+   * 默认鼠标图片，默认值为 ''
+   */
   defaultCursorImgUrl?: string;
 }
 
@@ -298,7 +339,7 @@ export interface InitConfig extends InitConfigBase {
    */
   showLogo?: boolean;
   /**
-   * 认值为 false	开启本地麦克风，true 为开启，false 为关闭。默
+   * 是否开启本地麦克风，默认值为 false
    */
   mic?: boolean;
   /**
@@ -309,6 +350,10 @@ export interface InitConfig extends InitConfigBase {
    * mobileMode false	true 为使用接入手游，false 为适用端游
    */
   mobileGame?: boolean;
+  /**
+   * 鼠标模式： 0 本地鼠标图片，1 云端下发鼠标图片，2 云端渲染
+   */
+  cursorMode?: CURSOR_MODE;
   /**
    * 默认值为 false	是否启动点击全屏操作，true 为启用，false为禁用。
    */
@@ -339,8 +384,14 @@ export interface InitConfig extends InitConfigBase {
    */
   autoRotateContainer?: boolean;
   /**
-  * debugSetting 会在控制台打印出对应的日志 有如下配置
-  */
+   * 当 mount挂载节点宽高大于云端推流分辨率时候
+   * true 拉伸video 尺寸并采用短边适配
+   * false 不拉伸video，保持原有云端分辨率
+   */
+  fullVideoToScreen?: boolean;
+  /**
+   * debugSetting 会在控制台打印出对应的日志 有如下配置
+   */
   debugSetting?: DebugSettingParams;
   /**
    * 初始化完毕的回调，触发此回调之后才能调用后面的 API
@@ -352,7 +403,7 @@ export interface InitConfig extends InitConfigBase {
   onConnectSucc?: (response: OnConnectSuccessResponse) => void;
   /**
    * 连接成功回调，调用 start 接口成功后才会触发
-  */
+   */
   onConnectSuccess?: (response: OnConnectSuccessResponse) => void;
   /**
    * 连接失败回调，调用 start 接口成功后才会触发
@@ -413,15 +464,40 @@ export interface InitConfig extends InitConfigBase {
   /**
    * 屏幕方向变化事件回调
    */
-  onOrientationChange?: (response: {type: 'portrait' | 'landscape'}) => void;
+  onOrientationChange?: (response: { type: 'portrait' | 'landscape' }) => void;
+  /**
+   * 云端config 发生变化时候回调
+   */
+  onConfigurationChange?: (response: OnConfigurationChangeResponse) => void;
   /**
    * 日志回调函数，用于外部获取日志，作用与 setLogHandler 接口一致
    */
   onLog?: (response: string) => void;
+  /**
+   * VMAF 测试的回调
+   */
+  onVmafChange?: (response: {
+    status?: 'start_evaluation' | 'evaluation_completed';
+    normal?: number;
+    phone?: number;
+    time?: number;
+  }) => void;
 }
 
-type RawEventType = 'mousedeltamove' | 'mousemove' | 'mouseleft' | 'mouseright' | 'mousescroll' | 'keyboard'
-| 'gamepadconnect' | 'gamepaddisconnect' | 'gamepadkey' | 'axisleft' | 'axisright' | 'lt' | 'rt';
+type RawEventType =
+  | 'mousedeltamove'
+  | 'mousemove'
+  | 'mouseleft'
+  | 'mouseright'
+  | 'mousescroll'
+  | 'keyboard'
+  | 'gamepadconnect'
+  | 'gamepaddisconnect'
+  | 'gamepadkey'
+  | 'axisleft'
+  | 'axisright'
+  | 'lt'
+  | 'rt';
 interface RawEventData {
   type: RawEventType;
   x?: number;
@@ -440,56 +516,65 @@ export declare interface CloudGamingWebSDKStatic {
   getInitOptions(): InitConfig;
   getClientSession(): string;
   start(serverSession: string): void;
-  destroy(params: { message?: string, code?: number }): void;
+  destroy(params: { message?: string; code?: number }): void;
   reconnect(): void;
   // -------------- 游戏进程相关接口 ------------
   gameRestart(callback?: Function, retry?: number): void;
   gamePause(callback?: Function, retry?: number): void;
   gameResume(callback?: Function, retry?: number): void;
-  loginHelper(params: {gameid?: string; acc: string; pwd: string}, callback?: ({ code: number, finish: boolean, msg: string }) => void): void;
-  getLoginWindowStat(gameid: string, callback: ({ code, data, msg }: {
-    code: number,
-    data: {
-      bottom: number;
-      capslock: number;
-      found: number;
-      left: number;
-      name: string;
-      right: number;
-      top: number
-    },
-    msg: string
-  }) => void): void;
+  loginHelper(
+    params: { gameid?: string; acc: string; pwd: string },
+    callback?: ({ code: number, finish: boolean, msg: string }) => void,
+  ): void;
+  getLoginWindowStat(
+    gameid: string,
+    callback: ({
+      code,
+      data,
+      msg,
+    }: {
+      code: number;
+      data: {
+        bottom: number;
+        capslock: number;
+        found: number;
+        left: number;
+        name: string;
+        right: number;
+        top: number;
+      };
+      msg: string;
+    }) => void,
+  ): void;
   sendText(content: string): void;
-  /**
-   * 设置是否全屏
-   * @param fullscreen 是全屏还是退出全屏
-   * @param element 需要操作的节点
-   */
   /**
    * 创建自定义dataChannel
    * @param destPort 目标端口
    * @param onMessage dataChannel 收到消息的回调函数
    */
-  createCustomDataChannel({ destPort, onMessage }: { destPort: number; onMessage: (res: any) => void}): Promise<{
-    code: number;       // 0 success, 1 ack dataChannel 未创建成功，请重试, 2 该数据通道已经存在
+  createCustomDataChannel({ destPort, onMessage }: { destPort: number; onMessage: (res: any) => void }): Promise<{
+    code: number; // 0 success, 1 ack dataChannel 未创建成功，请重试, 2 该数据通道已经存在
     msg: string;
     sendMessage: (message: any) => void;
-  }>
+  }>;
   /**
    * 设置云端桌面分辨率 object param
    * @param width
    * @param height
    */
-  setRemoteDesktopResolution({ width, height }: {width: number; height: number}): Promise<{
-    code: number;       // 0 | 1
-  }>
+  setRemoteDesktopResolution({ width, height }: { width: number; height: number }): Promise<{
+    code: number; // 0 | 1
+  }>;
+  /**
+   * 获取视频流的分辨率
+   */
+  getRemoteStreamResolution(): { width: number; height: number };
   /**
    * 重新调整video 位置
    */
   reshapeWindow(): void;
   // -------------- 鼠标键盘控制相关接口 ------------
-  sendKeyboardEvent(params: {key: number; down: boolean}): void;
+  sendKeyboardEvent(params: { key: number; down: boolean }): void;
   sendRawEvent(params: RawEventData): void;
   /**
    * @param value 取值范围：[0.01, 100.0]之间的浮点数
@@ -532,7 +617,7 @@ export declare interface CloudGamingWebSDKStatic {
   resetRemoteCapsLock(): void;
   setDefaultCursorImage(url: string): void;
   /**
-   *
+   * 设置码流参数，该接口为设置建议码流参数，云端可能会根据游戏动态调整
    * @param profile 目前可用参数如下：
                     fps：帧率，范围[10,60]，单位：帧
                     max_bitrate：最大码率，范围[1,15]，单位：Mbps
@@ -540,8 +625,12 @@ export declare interface CloudGamingWebSDKStatic {
    * @param callback 设置结果回调函数，可为 null
    * @param retry 重试次数，可不填
    */
-  setStreamProfile(profile: {fps: number; max_bitrate: number; min_bitrate: number}, callback?: Function, retry?: number): void;
-  getDisplayRect(): {left: number; top: number; width: number; height: number; pixelRatio: number}
+  setStreamProfile(
+    profile: { fps: number; max_bitrate: number; min_bitrate: number },
+    callback?: Function,
+    retry?: number,
+  ): void;
+  getDisplayRect(): { left: number; top: number; width: number; height: number; pixelRatio: number };
   /**
    * 设置audio 音量
    * @param value number [0-1]
@@ -562,9 +651,15 @@ export declare interface CloudGamingWebSDKStatic {
   getVideoVolume(): number;
   setPageBackground(url: string): void;
   /**
-   * 聚焦输入框时，快速发送内容
+   * 设置是否全屏
+   * @param fullscreen 是全屏还是退出全屏
+   * @param element 需要操作的节点
    */
   setFullscreen(fullscreen: boolean, element?: HTMLElement): void;
+  /**
+   * 获取是否全屏
+   */
+  getFullscreen(): boolean;
   /**
    * 播放视频
    */
@@ -591,7 +686,19 @@ export declare interface CloudGamingWebSDKStatic {
    * @param enable 打开日志和状态，true 为打开，false 为隐藏
    * @param userid 用户的 ID，主要是用于过滤日志
    */
-  setDebugMode({ showStats, showSendKmData, showSendAckData, showSendHbData, showOnHbMessage, showOnKmMessage, showOnAckMessage, showOnCdMessage, showOnSvMessage, showLog, userid }: DebugSettingParams): void;
+  setDebugMode({
+    showStats,
+    showSendKmData,
+    showSendAckData,
+    showSendHbData,
+    showOnHbMessage,
+    showOnKmMessage,
+    showOnAckMessage,
+    showOnCdMessage,
+    showOnSvMessage,
+    showLog,
+    userid,
+  }: DebugSettingParams): void;
   reportLog(): void;
   setLogHandler(handler: Function): void;
   /**
@@ -600,8 +707,5 @@ export declare interface CloudGamingWebSDKStatic {
   toggleMetricReportBulk(start: boolean): void;
 }
 
-
 declare const TCGSDK: CloudGamingWebSDKStatic;
 export default TCGSDK;
-
-
