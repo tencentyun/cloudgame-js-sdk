@@ -1,3 +1,23 @@
+### [1.1.0](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.0)@2021.9.24
+
+**新增**
+
+- onDoubleTap 回调
+- 新增连接失败返回值（onDisconnect/onConnectFailed）
+- 新增键鼠禁用/启用功能
+- 新增init 参数 autoRotateMountPoint，自动旋转挂载节点
+
+**变更**
+
+- onTouchEVent 返回多点触控列表为当前所有触控点
+- setVideoOrientation 传参调整为 {deg: number; rotateContainer?: boolean; rotateMountPoint?: boolean;}
+
+**修复**
+
+- 移动端自动旋转，导致鼠标蒙层显示异常问题
+- 未收到推流数据，不显示鼠标状态
+- 修复android 下，端游多点触控异常
+
 ### [1.0.5](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.0.5)@2021.7.22
 
 **新增**
