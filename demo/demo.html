@@ -17,7 +17,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      font-family: "黑体", "Microsoft YaHei", "Arial", "sans-serif";
+      font-family: '黑体', 'Microsoft YaHei', 'Arial', 'sans-serif';
     }
   </style>
 </head>
@@ -90,6 +90,21 @@
       // 网络中断/被踢触发此回调
       onDisconnect: (res) => {
         console.log('onDisconnect', res);
+      },
+      // onTouch 回调，res 为 object[]
+      // 移动端上操作端游应用，通过touch 模拟端游的鼠标操作
+      onTouchEvent: (res) => {
+        // 如果是手游方案，不需要这段逻辑，SDK 内部已经处理
+        const { id, type, pageX, pageY } = res.pop();
+        // 调用鼠标移动
+        TCGSDK.mouseMove(id, type, pageX, pageY);
+        // 模拟鼠标点击与抬起
+        if (type === 'touchstart') {
+          TCGSDK.sendMouseEvent({ type: 'mouseleft', down: true });
+        }
+        if (type === 'touchend' || type === 'touchcancel') {
+          TCGSDK.sendMouseEvent({ type: 'mouseleft', down: false });
+        }
       },
       onWebrtcStatusChange: (res) => {
         console.log('onWebrtcStatusChange', res);

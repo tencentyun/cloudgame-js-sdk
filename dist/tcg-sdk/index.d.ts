@@ -41,10 +41,13 @@ export interface OnNetworkChangeResponse {
     finish?: number;
   };
 }
-
+/**
+ * code=-1 localOffer 无法获取H264 编码
+ * code=0 Success
+ */
 export interface OnInitSuccessResponse {
   readonly code: number;
-  readonly msg: string;
+  readonly msg?: string;
   readonly description?: any;
 }
 
@@ -82,6 +85,7 @@ export interface ServerSideDescriptionFeatureSwitch {
 }
 
 /**
+ * code=-2 获取H264 编码失败
  * code=-1 setRemoteDescription 失败
  * code=0	请求正常
  * code=1	系统繁忙（可以重试）
@@ -109,6 +113,7 @@ export interface ServerSideDescription {
   readonly feature_switch?: ServerSideDescriptionFeatureSwitch;
   readonly role?: string;
   readonly metric_key?: string;
+  readonly plat?: 'android' | 'pc';
   readonly sig_key?: string;
   readonly host_name?: string; // 只有手游有
   readonly screen_config?: {
@@ -324,6 +329,11 @@ export interface OnTouchEventResponse {
    */
   readonly movementY: number;
 }
+
+export interface OnEventResponse {
+  readonly type: 'autoplay';
+  readonly data: any;
+}
 export interface DebugSettingParams {
   /**
    * 打印键盘/鼠标键入的消息
@@ -420,6 +430,10 @@ export interface InitConfig extends InitConfigBase {
    * mobileMode false	true 为使用接入手游，false 为适用端游
    */
   mobileGame?: boolean;
+  /**
+   * 手游启用VPX 编码
+   */
+  mobileVpx?: boolean;
   /**
    * 鼠标模式： 0 本地鼠标图片，1 云端下发鼠标图片，2 云端渲染
    */
@@ -594,6 +608,10 @@ export interface InitConfig extends InitConfigBase {
     code: number;
     msg: 'NotFoundError' | 'NotAllowedError' | string;
   }) => void;
+  /**
+   * 事件回调
+   */
+  onEvent?: (response: OnEventResponse) => void;
 }
 
 export type MouseEvent = 'mousedeltamove' | 'mousemove' | 'mouseleft' | 'mouseright' | 'mousescroll';
@@ -940,6 +958,43 @@ export declare interface CloudGamingWebSDKStatic {
    * 性能数据上报开关
    */
   toggleMetricReportBulk(start: boolean): void;
+  // -------------- 多人云游相关接口 ------------
+  /**
+   * 获取所有坐席
+   */
+  getSeats(): Promise<SeatsInfo>;
+  /**
+   * 申请切换角色或席位（非主机玩家）
+   * 返回code 如下
+   * 0: Success
+   * -1: InvalidSeatIndex
+   * -2: NoAuthorized
+   * -3: NoSuchRole
+   * -4: NoSuchUser
+   * -5: AssignSeatFailed
+   * -6: JsonParseFailed
+   * -7: IgnoredHostSubmit
+   */
+  submitSeatChange({ user_id, to_role, seat_index }: SeatChangeInfo): Promise<{ code: number }>;
+  /**
+   * 只有主机玩家才能调用该接口
+   * 返回code 如下
+   * 0: Success
+   * -1: InvalidSeatIndex
+   * -2: NoAuthorized
+   * -3: NoSuchRole
+   * -4: NoSuchUser
+   * -5: AssignSeatFailed
+   * -6: JsonParseFailed
+   * -7: IgnoredHostSubmit
+   */
+  seatChange({ user_id, to_role, seat_index }: SeatChangeInfo): Promise<{ code: number }>;
+  /**
+   *
+   * @param status number, 0 管理员禁麦，此时只能管理员修改；1 自己主动禁麦，自己可以再次开启；2 开麦
+   * @param user_id string 用户id
+   */
+  changeMicStatus({ status, user_id }: { status: number; user_id: string }): Promise<ChangeMicStatusResponse>;
 }
 
 declare const TCGSDK: CloudGamingWebSDKStatic;

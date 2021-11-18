@@ -1,3 +1,17 @@
+### [1.1.1](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.1)@2021.11.18
+
+**变更**
+
+- debug 面板增加audio 相关信息
+- init 参数 fullVideoToScreen 默认值改为 true，自动短边适配
+- 减弱对init 参数mobileGame 的依赖，由SDK 内部判断 
+
+**修复**
+
+- 端游鼠标边界溢出后视图拉扯bug
+- 修复移动端touch 事件重复监听bug
+- iOS低版本，心跳问题
+
 ### [1.1.0](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.0)@2021.9.24
 
 **新增**
