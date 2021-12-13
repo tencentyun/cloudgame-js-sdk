@@ -30,43 +30,22 @@
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
   <script>
 
-    const tryLock = async () => {
-      // 需要server 端实现调度接口 tryLock，文档参考 https://cloud.tencent.com/document/product/1162/47523
-      // 接口调用参考 https://cloud.tencent.com/document/api/1162/40738
-      
-      const url = 'https://xxxx/tryLock';
+    const startCloudGame = async () => {
+
+      const url = 'https://xxxx/StartCloudGame'; // 后台服务可以参考函数方式创建（serverless） 方案
+      // 接口 StartCloudGame 其实就是后台串行调用了云API的 TrylockWorker + CreateSession
+      // 尝试锁定机器（TrylockWorker） https://cloud.tencent.com/document/api/1162/40738
+      // 创建会话（CreateSession） https://cloud.tencent.com/document/api/1162/40740
+
       const { data } = await axios.post(url, {
         GameId: 'game-id',
         UserId: 'user-id',
-        Appid: 1234567,
+        ClientSession: TCGSDK.getClientSession(),
       });
       const { code, data: { Error } } = data;
 
-      console.log('%c tryLock res', 'color: blue; font-size: 14px', data);
+      console.log('%c startCloudGame res', 'color: blue; font-size: 14px', data);
 
-      if (code === 0) {
-        await createSession();
-      } else {
-        // your logics
-      }
-    };
-
-    const createSession = async () => {
-      // 需要server 端实现调度接口 createSession，文档参考 https://cloud.tencent.com/document/product/1162/47523
-      // 接口调用参考 https://cloud.tencent.com/document/api/1162/40740
-
-      const url = 'https://xxxx/createSession';
-      const { data } = await axios.post(url, {
-        GameId: 'game-id',
-        UserId: 'user-id',
-        Appid: 1234567,
-        ClientSession: TCGSDK.getClientSession()
-      });
-
-      console.log('%c createSession res', 'color: blue; font-size: 14px', data);
-      const {code, data: {Error, ServerSession}} = data
-
-      // 伪代码，成功后调用start 启动游戏
       if (code === 0) {
         TCGSDK.start(ServerSession);
       } else {
@@ -78,8 +57,6 @@
     TCGSDK.init({
       appid: 1234567,
       mount: 'mount-point',
-      showLogo: true,
-      preloadTime: 0,
       debugSetting: {
         showLog: true,
       },
@@ -112,7 +89,7 @@
       onInitSuccess: async (res) => {
         console.log('%c onInitSuccess', 'color: red', res);
 
-        await tryLock();
+        await startCloudGame();
       }
     });
 
