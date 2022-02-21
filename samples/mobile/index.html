@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+  <title>腾讯云-云游戏-移动端demo</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: '黑体', 'Microsoft YaHei', 'Arial', 'sans-serif';
+    }
+
+    #demo-container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="demo-container">
+    <div id="mount-point"></div>
+  </div>
+  <script type="text/javascript" src="../../dist/tcg-sdk/index.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+  <script>
+
+    const startGame = async () => {
+
+      const url = 'https://xxxx/StartGame'; // 后台服务可以参考函数方式创建（serverless） 方案
+      // 接口 StartGame 其实就是后台串行调用了云API的 TrylockWorker + CreateSession
+      // 尝试锁定机器（TrylockWorker） https://cloud.tencent.com/document/api/1162/40738
+      // 创建会话（CreateSession） https://cloud.tencent.com/document/api/1162/40740
+
+      const { data } = await axios.post(url, {
+        GameId: 'game-id',
+        UserId: 'user-id',
+        ClientSession: TCGSDK.getClientSession(),
+      });
+      const { code, data: { Error } } = data;
+
+      console.log('%c startGame res', 'color: blue; font-size: 14px', data);
+
+      if (code === 0) {
+        TCGSDK.start(ServerSession);
+      } else {
+        // your logics
+      }
+    }
+
+    // SDK 生命周期参考 https://cloud.tencent.com/document/product/1162/47435
+    TCGSDK.init({
+      appid: 1234567,
+      mount: 'mount-point',
+      debugSetting: {
+        showLog: true,
+      },
+      // 连接成功回调
+      onConnectSuccess: async (res) => {
+        console.log('onConnectSuccess', res);
+      },
+      // 网络中断/被踢触发此回调
+      onDisconnect: (res) => {
+        console.log('onDisconnect', res);
+      },
+      // onTouch 回调，res 为 object[]
+      // 移动端上操作端游应用，通过touch 模拟端游的鼠标操作
+      onTouchEvent: (res) => {
+        // 如果是手游方案，不需要这段逻辑，SDK 内部已经处理
+        const { id, type, pageX, pageY } = res.pop();
+        // 调用鼠标移动
+        TCGSDK.mouseMove(id, type, pageX, pageY);
+        // 模拟鼠标点击与抬起
+        if (type === 'touchstart') {
+          TCGSDK.sendMouseEvent({ type: 'mouseleft', down: true });
+        }
+        if (type === 'touchend' || type === 'touchcancel') {
+          TCGSDK.sendMouseEvent({ type: 'mouseleft', down: false });
+        }
+      },
+      onWebrtcStatusChange: (res) => {
+        console.log('onWebrtcStatusChange', res);
+      },
+      onInitSuccess: async (res) => {
+        console.log('%c onInitSuccess', 'color: red', res);
+
+        await startGame();
+      }
+    });
+
+  </script>
+</body>
+
+</html>

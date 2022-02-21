@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
-  <title>腾讯云-云游戏-示例demo</title>
+  <title>腾讯云-云游戏-PC端demo</title>
   <style>
     * {
       padding: 0;
@@ -19,6 +19,11 @@
       overflow: hidden;
       font-family: '黑体', 'Microsoft YaHei', 'Arial', 'sans-serif';
     }
+
+    #demo-container {
+      width: 100%;
+      height: 100%;
+    }
   </style>
 </head>
 
@@ -26,14 +31,14 @@
   <div id="demo-container">
     <div id="mount-point"></div>
   </div>
-  <script type="text/javascript" src="./tcg-sdk/index.js"></script>
+  <script type="text/javascript" src="../../dist/tcg-sdk/index.js"></script>
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
   <script>
 
-    const startCloudGame = async () => {
+    const StartGame = async () => {
 
-      const url = 'https://xxxx/StartCloudGame'; // 后台服务可以参考函数方式创建（serverless） 方案
-      // 接口 StartCloudGame 其实就是后台串行调用了云API的 TrylockWorker + CreateSession
+      const url = 'https://xxxx/StartGame'; // 后台服务可以参考函数方式创建（serverless） 方案
+      // 接口 StartGame 其实就是后台串行调用了云API的 TrylockWorker + CreateSession
       // 尝试锁定机器（TrylockWorker） https://cloud.tencent.com/document/api/1162/40738
       // 创建会话（CreateSession） https://cloud.tencent.com/document/api/1162/40740
 
@@ -44,7 +49,7 @@
       });
       const { code, data: { Error } } = data;
 
-      console.log('%c startCloudGame res', 'color: blue; font-size: 14px', data);
+      console.log('%c StartGame res', 'color: blue; font-size: 14px', data);
 
       if (code === 0) {
         TCGSDK.start(ServerSession);
@@ -68,28 +73,13 @@
       onDisconnect: (res) => {
         console.log('onDisconnect', res);
       },
-      // onTouch 回调，res 为 object[]
-      // 移动端上操作端游应用，通过touch 模拟端游的鼠标操作
-      onTouchEvent: (res) => {
-        // 如果是手游方案，不需要这段逻辑，SDK 内部已经处理
-        const { id, type, pageX, pageY } = res.pop();
-        // 调用鼠标移动
-        TCGSDK.mouseMove(id, type, pageX, pageY);
-        // 模拟鼠标点击与抬起
-        if (type === 'touchstart') {
-          TCGSDK.sendMouseEvent({ type: 'mouseleft', down: true });
-        }
-        if (type === 'touchend' || type === 'touchcancel') {
-          TCGSDK.sendMouseEvent({ type: 'mouseleft', down: false });
-        }
-      },
       onWebrtcStatusChange: (res) => {
         console.log('onWebrtcStatusChange', res);
       },
       onInitSuccess: async (res) => {
         console.log('%c onInitSuccess', 'color: red', res);
 
-        await startCloudGame();
+        await StartGame();
       }
     });
 

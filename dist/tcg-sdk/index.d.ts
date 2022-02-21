@@ -207,8 +207,8 @@ export interface OnSaveGameArchiveResponse {
   readonly saved_size: number;
 }
 export interface OnInputStatusChangeResponse {
-  readonly oldStatus: boolean;
-  readonly newStatus: boolean;
+  readonly field_type: 'normal_input' | 'autologin_input' | 'unfocused';
+  readonly status: 'disabled' | 'enabled';
 }
 
 export interface OnGamepadConnectChangeResponse {

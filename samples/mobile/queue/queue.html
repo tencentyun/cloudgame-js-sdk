@@ -1,0 +1,241 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+  <title>腾讯云-云游戏-排队demo</title>
+  <link rel="stylesheet" href="./queue.css">
+</head>
+
+<body>
+  <div id="demo-container">
+    <div id="mount-point"></div>
+    <div class="loading-page">
+      <img class="loading-bg" src="./bg.png" alt="">
+      <div class="loading-info">
+        <img class="loading-logo" src="./bg.png" alt="">
+        <p>目前游戏人数较多，请耐心等待</p>
+        <p class="loading-queue-index"></p>
+        <div class="loading-tips">
+          <p class="loading-tips-title">温馨提示</p> 
+          <p class="loading-tips-text">无需下载即可体验游戏</p>
+          <p class="loading-tips-text">若长时间处于加载阶段，请刷新页面</p>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="button-back">
+      <img src="./back.png" alt="" onclick="goBack()">
+    </div> -->
+  </div>
+  <script type="text/javascript" src="../../../dist/tcg-sdk/index.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script> -->
+  <script>
+    // SDK 生命周期参考 https://cloud.tencent.com/document/product/1162/47435
+    TCGSDK.init({
+      mount: 'mount-point',
+      debugSetting: {
+        showLog: true,
+      },
+      // 连接成功回调
+      onConnectSuccess: (res) => {
+        console.log('onConnectSuccess', res);
+      },
+      // 网络中断/被踢触发此回调
+      onDisconnect: (res) => {
+        console.log('onDisconnect', res);
+        clearTimeout(heartbeatTimer);
+      },
+      // onTouch 回调，res 为 object[]
+      // 移动端上操作端游应用，通过touch 模拟端游的鼠标操作
+      onTouchEvent: (res) => {
+        // 如果是手游方案，不需要这段逻辑，SDK 内部已经处理
+        const { id, type, pageX, pageY } = res.pop();
+        // 调用鼠标移动
+        TCGSDK.mouseMove(id, type, pageX, pageY);
+        // 模拟鼠标点击与抬起
+        if (type === 'touchstart') {
+          TCGSDK.sendMouseEvent({ type: 'mouseleft', down: true });
+        }
+        if (type === 'touchend' || type === 'touchcancel') {
+          TCGSDK.sendMouseEvent({ type: 'mouseleft', down: false });
+        }
+      },
+      onWebrtcStatusChange: (res) => {
+        console.log('onWebrtcStatusChange', res);
+      },
+      onInitSuccess: async (res) => {
+        console.log('%c onInitSuccess', 'color: red', res);
+        const { code } = res;
+        if (code === 0) {
+          await checkEnqueue();
+        }
+      }
+    });
+
+    const baseUrl = ''; // 'https://xxxx' 请求的后台地址
+    const gameId = 'game-id';
+    const userId = 'user-id'; // 用户的唯一标识
+
+    const checkEnqueue = async () => {
+      document.querySelector('#mount-point').style.display = 'none';
+
+      const data = await sendRequest({
+        url: `${baseUrl}/Enqueue`,
+        data: { GameId: gameId},
+      });
+
+      console.log('%c checkEnqueue res', 'color: blue; font-size: 14px', data);
+      const { Code, Data } = data;
+
+      // 排队中
+      if (Code === 10200) {
+        const { Index } = Data;
+        document.querySelector('.loading-queue-index').innerHTML = `当前第 ${Index} 位...`;
+
+        // 2s 轮训一次队列
+        setTimeout(async () => {
+          await checkEnqueue();
+        }, 2000);
+      }
+
+      // 排队成功
+      if (Code === 10203 || Code === 10204) {
+        await startGame();
+      }
+    };
+
+    const startGame = async () => {
+      // 后台服务可以参考后台一键部署方案
+      const data = await sendRequest({
+        url: `${baseUrl}/StartGame`,
+        data: {
+          GameId: gameId,
+          ClientSession: TCGSDK.getClientSession(),
+        }
+      });
+
+      console.log('%c startGame res', 'color: blue; font-size: 14px', data);
+      const { Code, SessionDescribe } = data
+
+      if (Code === 0) {
+        TCGSDK.start(SessionDescribe?.ServerSession);
+
+        document.querySelector('#mount-point').style.display = 'block';
+        document.querySelector('.loading-page').style.display = 'none';
+        startHeartbeat();
+      } else {
+        // 异常处理逻辑
+      }
+    }
+
+    // 心跳上报
+    let heartbeatTimer = null;
+    const startHeartbeat = () => {
+      heartbeatTimer = setTimeout(async () => {
+        await sendRequest({
+          url: `${baseUrl}/Heartbeat`,
+        });
+        startHeartbeat();
+      }, 3000);
+    };
+
+    // | Code  | 描述                                               | 备注 |
+    // | ----- | -------------------------------------------------- | ---- |
+    // | 0     | 请求成功                                           |      |
+    // | 10000 | 验证码请求太频繁                                   |      |
+    // | 10001 | 短信系统故障（欠费或者未知原因）                   |      |
+    // | 10002 | 发送验证码请求签名错误                             |      |
+    // | 10003 | HTTP会话不存在                                     |      |
+    // | 10004 | 缺少必要参数                                       |      |
+    // | 10005 | 内部错误                                           |      |
+    // | 10006 | 已在其他设备登录，这种应销毁本地缓存Token          |      |
+    // | 10100 | 登录请求短信验证码错误                             |      |
+    // | 10101 | 登录请求未发送验证码或用户不存在                   |      |
+    // | 10102 | token登录请求，token不存在或者已过期               |      |
+    // | 10200 | 排队进行中，可以继续请求获取队列位置更新           |      |
+    // | 10201 | UserId不存在                                       |      |
+    // | 10202 | GameId不存在                                       |      |
+    // | 10203 | 排队完成                                           |      |
+    // | 10204 | 游戏中                                             |      |
+    // | 10203 | 取消排队请求失败，用户没有在此GameId下排队         |      |
+    // | 10204 | 修改排队GameId失败，用户正在以前一个GameId锁定机器 |      |
+    // | 10205 | 房间id已存在                                       |      |
+    // | 10300 | 创建云游戏会话失败                                 |      |
+    // | 10301 | 释放云游戏会话失败，无权限                         |      |
+    // | 10400 | 推流失败                                           |      |
+    // | 10401 | 停止推流失败                                       |      |
+    // | 10402 | 暂停推流失败                                       |      |
+    // | 10403 | 恢复推流失败                                       |      |
+    const sendRequest = async ({ url, data = {} }) => {
+      let reqData = {
+        ...data,
+        UserId: userId,
+        TimeStamp: +new Date(),
+        RequestId: `request-${Math.floor(Math.random() * 1000)}` // 随机一个request id
+      };
+      // 计算数据签名
+      const sign = getSign(reqData);
+      reqData = {
+        ...reqData,
+        Sign: sign,
+      };
+
+      try {
+        const { data: resData, status } = await axios.post(url, reqData);
+        if (status === 200) {
+          return resData;
+        }
+        console.log('resData', resData);
+      } catch (error) {
+        console.log('sendRequest error', error);
+        return { Code: -1 };
+      }
+    };
+
+    // 用于对send 的request data 进行签名
+    const getSign = (params) => {
+      const key = ''; // 用于签名的字符串，可以后台设置  
+
+      if (typeof params === 'object') {
+        const keys = Object.keys(params).sort();
+        let valueString = '';
+        keys.forEach((k) => {
+          valueString += params[k].toString();
+        });
+
+        return CryptoJS.SHA256(valueString + key).toString();
+      }
+      return '';
+    };
+
+  </script>
+  <!-- <script>
+    // element draggable
+    const position = { x: 0, y: 0 }
+    interact('.button-back').draggable({
+      listeners: {
+        move (event) {
+          position.x += event.dx
+          position.y += event.dy
+
+          event.target.style.transform =
+            `translate(${position.x}px, ${position.y}px)`
+        },
+      }
+    })
+
+    // 点击发送返回消息
+    const goBack = () => {
+      TCGSDK.sendKeyboardEvent({ key: 158, down: true });
+      setTimeout(() => {
+        TCGSDK.sendKeyboardEvent({ key: 158, down: false });  
+      }, 0);
+    }
+  </script> -->
+</body>
+
+</html>

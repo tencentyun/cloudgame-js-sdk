@@ -1,3 +1,19 @@
+### [1.1.2](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.2)@2022.02.21
+
+**新增**
+
+- 日志自动上报
+
+**变更**
+
+- 云端input 聚焦/脱焦逻辑修改
+- 取消dataChannel send 数据长度限制
+
+**修复**
+
+- 修复日志上报时间戳不对问题
+- iOS 点击屏幕声音卡顿问题
+
 ### [1.1.1](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.1)@2021.11.18
 
 **变更**
