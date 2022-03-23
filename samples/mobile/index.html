@@ -24,15 +24,26 @@
       width: 100%;
       height: 100%;
     }
+
+    #plugin-point {
+      position: absolute;
+      left: 100px;
+      bottom: 50px;
+      width: 100px;
+      height: 100px;
+    }
+
   </style>
 </head>
 
 <body>
   <div id="demo-container">
     <div id="mount-point"></div>
+    <div id="plugin-point"></div>
   </div>
   <script type="text/javascript" src="../../dist/tcg-sdk/index.js"></script>
-  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+  <script type="text/javascript" src="../../plugin/joystick/joystick.js"></script>
+  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/axios/0.26.1/axios.min.js"></script>
   <script>
 
     const startGame = async () => {
@@ -68,6 +79,11 @@
       // 连接成功回调
       onConnectSuccess: async (res) => {
         console.log('onConnectSuccess', res);
+
+        // // 添加遥感
+        // const j = joystick.create({
+        //   zone: document.querySelector('#plugin-point'),
+        // });
       },
       // 网络中断/被踢触发此回调
       onDisconnect: (res) => {

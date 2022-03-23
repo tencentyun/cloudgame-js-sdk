@@ -6,8 +6,19 @@
 
 直接 import dist/tcg-sdk，导出的为umd 格式
 
+## Samples
+
+可参考samples 文件夹下，Mobile/PC demo
+
+## Plugin
+
+新增遥感插件
+
 ## 说明文档
 
-[使用例子](demo/demo.html)
+[使用例子](samples/)
 
 [快速入门](https://cloud.tencent.com/document/product/1162/46135)
+
+[接口申明文件](dist/tcg-sdk//index.d.ts)
+

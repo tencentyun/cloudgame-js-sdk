@@ -103,6 +103,7 @@ export interface ServerSideDescription {
   readonly sdp?: string;
   readonly server_ip?: string;
   readonly server_version?: string;
+  readonly server_port?: string;
   readonly region?: string;
   readonly instance_type?: string; // L1 S1 M1
   readonly message?: string;

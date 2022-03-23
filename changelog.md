@@ -1,3 +1,18 @@
+### [1.1.3](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.3)@2022.03.23
+
+**新增**
+
+- PC 端操作手游
+- 移动端虚拟摇杆插件
+
+**变更**
+
+- 取消打印数据通道消息发送日志
+
+**修复**
+
+- Safari 下多次重连会导致连接不成功问题
+
 ### [1.1.2](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.2)@2022.02.21
 
 **新增**
