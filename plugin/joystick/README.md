@@ -1,6 +1,6 @@
 # 云游戏插件项目 - 摇杆
 
-接口描述见申明文件（joystick.d.ts）
+接口描述见[申明文件（joystick.d.ts）](./joystick.d.ts)
 
 ## 使用方法
 
@@ -9,13 +9,23 @@
 1. import joystick plugin 
 
     ```javascript
-    import { joystick } from 'tcg-plugin/joystick/joystick';
+    import { joystick } from 'plugin/joystick/joystick';
+    ```
+    或 script 标签引入
+    ```javascript
+    <script type="text/javascript" src="plugin/joystick/joystick.js"></script>
     ```
 
 2. create joystick, 具体参数可以参见申明文件 create 方法
 
     ```javascript
     const j = joystick.create({
+        zone: document.querySelector('#your-element')
+    });
+    ```
+    或使用全局变量
+    ```javascript
+    const j = CloudGamingPlugin.joystick.create({
         zone: document.querySelector('#your-element')
     });
     ```

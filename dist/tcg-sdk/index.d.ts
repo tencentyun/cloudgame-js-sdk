@@ -1,6 +1,7 @@
 interface OnNetworkChangeStatus {
   readonly bit_rate?: number; // 	客户端接收的码率，单位：Mbps
   readonly cpu?: number | string; // 	云端 CPU 占用率，单位：百分比
+  readonly gpu?: string; // 	云端 GPU 占用率，单位：百分比
   readonly delay?: number; // 	客户端收到图像帧到解码显示的延时，单位：ms，iOS 可能收不到
   readonly fps?: number; // 	客户端显示帧率
   readonly load_cost_time?: number; //	云端加载时长，单位：ms
@@ -40,6 +41,24 @@ export interface OnNetworkChangeResponse {
     begin?: number;
     finish?: number;
   };
+}
+
+/**
+ * code=-2 获取H264 编码失败
+ * code=-1 setRemoteDescription 失败
+ * code=1 系统繁忙
+ * code=2 票据不合法
+ * code=3 用户带宽不足
+ * code=4 资源不足，没有可用机器
+ * code=5 session 失效，需要重新登录
+ * code=6 媒体描述信息错误
+ * code=7 游戏拉起失败
+ * code=100 proxy 错误
+ * code=255	设备不支持webrtc
+ */
+export interface OnWebrtcStatusChangeResponse {
+  readonly code: number;
+  readonly msg?: string;
 }
 /**
  * code=-1 localOffer 无法获取H264 编码
@@ -96,27 +115,35 @@ export interface ServerSideDescriptionFeatureSwitch {
  * code=100 Proxy 错误
  */
 export interface ServerSideDescription {
-  readonly app_id?: number;
+  readonly app_id: number;
+  readonly game_id: string;
+  readonly group_id: string;
   readonly code: number;
   readonly msg?: string;
-  readonly type?: string;
-  readonly sdp?: string;
-  readonly server_ip?: string;
-  readonly server_version?: string;
+  readonly message: string;
+  readonly type: string;
+  readonly sdp: string;
+  readonly server_ip: string;
+  readonly server_version: string;
   readonly server_port?: string;
-  readonly region?: string;
+  readonly region: string;
   readonly instance_type?: string; // L1 S1 M1
-  readonly message?: string;
-  readonly request_id?: string;
-  readonly user_id?: string;
-  readonly input_seat?: number;
+  readonly request_id: string;
+  readonly user_id: string;
+  readonly user_ip: string;
+  readonly input_seat: number;
   readonly game_config?: ServerSideDescriptionGameConfig;
   readonly feature_switch?: ServerSideDescriptionFeatureSwitch;
-  readonly role?: string;
-  readonly metric_key?: string;
-  readonly plat?: 'android' | 'pc';
+  readonly role: string;
+  readonly metric_key: string;
+  readonly plat: 'android' | 'pc';
   readonly sig_key?: string;
-  readonly host_name?: string; // 只有手游有
+  readonly host_name: string; // 只有手游有
+  readonly video: {
+    height: number;
+    width: number;
+  };
+  readonly video_codec: string;
   readonly screen_config?: {
     width: number;
     height: number;
@@ -416,13 +443,13 @@ export interface InitConfig extends InitConfigBase {
    */
   appid: number;
   /**
-   * 默认值为 true	隐藏腾讯云 Logo，true 为隐藏，false 为不隐藏。
-   */
-  showLogo?: boolean;
-  /**
    * 是否开启本地麦克风，默认值为 false
    */
   mic?: boolean;
+  /**
+   * 是否开启本地摄像头，默认值为 false
+   */
+  camera?: boolean | MediaTrackConstraints;
   /**
    * 默认值：false	true 为使用平板滑动鼠标模式，false 为绝对映射模式。该参数只针对移动端，PC 端忽略该参数。该mode 下鼠标产生相对位移。
    */
@@ -511,11 +538,11 @@ export interface InitConfig extends InitConfigBase {
   /**
    * webrtc 状态回调，调用 start 接口成功后才会触发，设置这个回调后，如果 webrtc 请求返回错误
    */
-  onWebrtcStat?: (response: ServerSideDescription) => void;
+  onWebrtcStat?: (response: OnWebrtcStatusChangeResponse) => void;
   /**
    * webrtc 状态回调，调用 start 接口成功后才会触发，设置这个回调后，如果 webrtc 请求返回错误
    */
-  onWebrtcStatusChange?: (response: ServerSideDescription) => void;
+  onWebrtcStatusChange?: (response: OnWebrtcStatusChangeResponse) => void;
   /**
    * webrtc 状态回调，调用 start 接口成功后才会触发，设置这个回调后，如果 webrtc 请求返回错误
    */
@@ -737,6 +764,10 @@ export declare interface CloudGamingWebSDKStatic {
    */
   getRemoteStreamResolution(): { width: number; height: number };
   /**
+   * 获取用户开启的摄像头或麦克风 stream
+   */
+  getUserMedia(): MediaStream;
+  /**
    * 重新调整video 位置
    */
   reshapeWindow(): void;
@@ -847,7 +878,6 @@ export declare interface CloudGamingWebSDKStatic {
                     max_bitrate：最大码率，范围[1,15]，单位：Mbps
                     min_bitrate：最小码率，范围[1,15]，单位：Mbps
    * @param callback 设置结果回调函数，可为 null
-   * @param retry 重试次数，可不填
    */
   setStreamProfile(profile: { fps: number; max_bitrate: number; min_bitrate: number }, callback?: Function): void;
   /**
@@ -968,26 +998,26 @@ export declare interface CloudGamingWebSDKStatic {
    * 申请切换角色或席位（非主机玩家）
    * 返回code 如下
    * 0: Success
-   * -1: InvalidSeatIndex
-   * -2: NoAuthorized
-   * -3: NoSuchRole
-   * -4: NoSuchUser
-   * -5: AssignSeatFailed
-   * -6: JsonParseFailed
-   * -7: IgnoredHostSubmit
+   * 1001: MultiPlayerInvalidSeatIndex
+   * 1002: MultiPlayerNoAuthorized
+   * 1003: MultiPlayerNoSuchRole
+   * 1004: MultiPlayerNoSuchUser
+   * 1005: MultiPlayerAssignSeatFailed
+   * 1006: MultiPlayerJsonParseFailed
+   * 1007: MultiPlayerIgnoredHostSubmit
    */
   submitSeatChange({ user_id, to_role, seat_index }: SeatChangeInfo): Promise<{ code: number }>;
   /**
    * 只有主机玩家才能调用该接口
    * 返回code 如下
    * 0: Success
-   * -1: InvalidSeatIndex
-   * -2: NoAuthorized
-   * -3: NoSuchRole
-   * -4: NoSuchUser
-   * -5: AssignSeatFailed
-   * -6: JsonParseFailed
-   * -7: IgnoredHostSubmit
+   * 1001: MultiPlayerInvalidSeatIndex
+   * 1002: MultiPlayerNoAuthorized
+   * 1003: MultiPlayerNoSuchRole
+   * 1004: MultiPlayerNoSuchUser
+   * 1005: MultiPlayerAssignSeatFailed
+   * 1006: MultiPlayerJsonParseFailed
+   * 1007: MultiPlayerIgnoredHostSubmit
    */
   seatChange({ user_id, to_role, seat_index }: SeatChangeInfo): Promise<{ code: number }>;
   /**

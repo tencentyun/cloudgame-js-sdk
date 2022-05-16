@@ -1,3 +1,22 @@
+### [1.1.4](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.4)@2022.05.16
+
+**新增**
+
+- 新增init 参数 camera，用于摄像头上行推流
+- 新增 getUserMedia 方法，返回 getUserMedia 的 MediaStream
+- 新增虚拟键盘差价
+
+**变更**
+
+- 去掉init 参数 showLogo
+- 移动端 setVideoVolume(0)，时自动静音
+- 移动端横竖屏检测回调，提前到init 阶段
+
+**修复**
+
+- hook 模式下x/y 坐标计算问题
+- plugin-joystick position 传0时，坐标计算问题
+
 ### [1.1.3](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.3)@2022.03.23
 
 **新增**
