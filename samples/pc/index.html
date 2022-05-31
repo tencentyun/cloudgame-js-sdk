@@ -36,13 +36,13 @@
   <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script> -->
   <script>
 
+    // 对于云游戏，后台服务接口 StartGame 其实就是后台串行调用了云API的 TrylockWorker + CreateSession
+    // 尝试锁定机器（TrylockWorker） https://cloud.tencent.com/document/api/1162/40738
+    // 创建会话（CreateSession） https://cloud.tencent.com/document/api/1162/40740
     const StartGame = async () => {
+      const url = 'https://xxxx/StartGame'; // 后台服务可以参考后台demo 方案
 
-      const url = 'https://xxxx/StartGame'; // 后台服务可以参考函数方式创建（serverless） 方案
-      // 接口 StartGame 其实就是后台串行调用了云API的 TrylockWorker + CreateSession
-      // 尝试锁定机器（TrylockWorker） https://cloud.tencent.com/document/api/1162/40738
-      // 创建会话（CreateSession） https://cloud.tencent.com/document/api/1162/40740
-
+      // 其他选填参数可以参考 TrylockWorker 接口文档
       const { data } = await axios.post(url, {
         GameId: 'game-id',
         UserId: 'user-id',
@@ -51,6 +51,29 @@
       const { code, data: { Error } } = data;
 
       console.log('%c StartGame res', 'color: blue; font-size: 14px', data);
+
+      if (code === 0) {
+        TCGSDK.start(ServerSession);
+      } else {
+        // your logics
+      }
+    }
+
+    // 对于应用云渲染，后台服务接口 StartProject 其实就是后台串行调用了云API的 ApplyConcurrent + CreateSession
+    // 申请并发（ApplyConcurrent） https://cloud.tencent.com/document/api/1547/72827
+    // 创建会话（CreateSession） https://cloud.tencent.com/document/api/1547/72826
+    const StartProject = async () => {
+      const url = 'https://xxxx/StartProject'; // 后台服务可以参考后台demo 方案
+
+      // 其他选填参数可以参考 ApplyConcurrent 接口文档
+      const { data } = await axios.post(url, {
+        ProjectId: 'project-id',
+        UserId: 'user-id',
+        ClientSession: TCGSDK.getClientSession(),
+      });
+      const { code, data: { Error } } = data;
+
+      console.log('%c StartProject res', 'color: blue; font-size: 14px', data);
 
       if (code === 0) {
         TCGSDK.start(ServerSession);
@@ -81,6 +104,8 @@
         console.log('%c onInitSuccess', 'color: red', res);
 
         await StartGame();
+
+        // await StartProject();
       }
     });
 
