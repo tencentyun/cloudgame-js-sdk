@@ -58,11 +58,12 @@
         UserId: 'user-id',
         ClientSession: TCGSDK.getClientSession(),
       });
-      const { code, data: { Error } } = data;
-
+    
       console.log('%c StartGame res', 'color: blue; font-size: 14px', data);
 
-      if (code === 0) {
+      const { Code, SessionDescribe: { ServerSession } } = data;
+
+      if (Code === 0) {
         TCGSDK.start(ServerSession);
       } else {
         // your logics
@@ -81,11 +82,12 @@
         UserId: 'user-id',
         ClientSession: TCGSDK.getClientSession(),
       });
-      const { code, data: { Error } } = data;
-
+      
       console.log('%c StartProject res', 'color: blue; font-size: 14px', data);
 
-      if (code === 0) {
+      const { Code, SessionDescribe: { ServerSession } } = data;
+
+      if (Code === 0) {
         TCGSDK.start(ServerSession);
       } else {
         // your logics
