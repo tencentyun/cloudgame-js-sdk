@@ -1,10 +1,29 @@
+### [1.1.5](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.5)@2022.06.23
+
+**新增**
+
+- 新增接口返回是否当前运行手游方案 getIsMobileGame
+- 新增 cmd+v/ctrl+v 获取剪切板内容发送至云端输入框
+
+**变更**
+
+- 新增旋转事件通知 TCGSDK:VideoOrientation
+- 重连默认开启
+- 取消对部分老接口的兼容 onConnectSucc/onConnectFailed/onWebrtcStatChange/onInputStatusChanged/onCursorShowStatChanged，替换成新回调
+- 同端口重复创建 customDatachannel，返回已创建信息
+
+**修复**
+
+- 修复由于重连导致多次事件绑定的 bug
+- 由于旋转导致的摇杆位置偏移 bug
+
 ### [1.1.4](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.4)@2022.05.16
 
 **新增**
 
 - 新增init 参数 camera，用于摄像头上行推流
 - 新增 getUserMedia 方法，返回 getUserMedia 的 MediaStream
-- 新增虚拟键盘差价
+- 新增虚拟键盘插件
 
 **变更**
 

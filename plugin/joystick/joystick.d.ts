@@ -26,7 +26,7 @@ export interface CreateConfig {
    */
   lockY?: boolean;
   /**
-   * 两种摇杆样式 wasd/上下左右, 默认值 `dpad_updown`
+   * 两种摇杆样式 wasd/上下左右, 默认值 `dpad_wasd`
    */
   type?: 'dpad_wasd' | 'dpad_updown';
   /**

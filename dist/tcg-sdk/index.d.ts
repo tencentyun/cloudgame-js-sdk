@@ -439,9 +439,9 @@ export interface InitConfig extends InitConfigBase {
    */
   mount: string;
   /**
-   * 用户的腾讯云 APPID
+   * @deprecated 用户的腾讯云 APPID
    */
-  appid: number;
+  appid?: number;
   /**
    * 是否开启本地麦克风，默认值为 false
    */
@@ -484,7 +484,7 @@ export interface InitConfig extends InitConfigBase {
    */
   keepLastFrame?: boolean;
   /**
-   * 是否自动重连，默认值：false
+   * 是否自动重连，默认值：true，会在弱网，或帧率持续掉 0所导致的断连时，主动重连
    */
   reconnect?: boolean;
   /**
@@ -492,7 +492,7 @@ export interface InitConfig extends InitConfigBase {
    */
   showLoading?: boolean;
   /**
-   * 加载中的文字提示内容，默认值：'正在启动云游戏'
+   * 加载中的文字提示内容，默认值：'正在启动云渲染'
    */
   loadingText?: string;
   /**
@@ -520,10 +520,6 @@ export interface InitConfig extends InitConfigBase {
    */
   onInitSuccess?: (response: OnInitSuccessResponse) => void;
   /**
-   * 连接成功回调，调用 start 接口成功后才会触发(老版本)
-   */
-  onConnectSucc?: (response: OnConnectSuccessResponse) => void;
-  /**
    * 连接成功回调，调用 start 接口成功后才会触发
    */
   onConnectSuccess?: (response: OnConnectSuccessResponse) => void;
@@ -532,10 +528,6 @@ export interface InitConfig extends InitConfigBase {
    */
   onConnectFail?: (response: OnConnectFailedResponse) => void;
   /**
-   * 连接失败回调，调用 start 接口成功后才会触发
-   */
-  onConnectFailed?: (response: OnConnectFailedResponse) => void;
-  /**
    * webrtc 状态回调，调用 start 接口成功后才会触发，设置这个回调后，如果 webrtc 请求返回错误
    */
   onWebrtcStat?: (response: OnWebrtcStatusChangeResponse) => void;
@@ -543,10 +535,6 @@ export interface InitConfig extends InitConfigBase {
    * webrtc 状态回调，调用 start 接口成功后才会触发，设置这个回调后，如果 webrtc 请求返回错误
    */
   onWebrtcStatusChange?: (response: OnWebrtcStatusChangeResponse) => void;
-  /**
-   * webrtc 状态回调，调用 start 接口成功后才会触发，设置这个回调后，如果 webrtc 请求返回错误
-   */
-  onWebrtcStatChange?: (response: ServerSideDescription) => void;
   /**
    * 断开/被踢触发此回调，调用 start 接口成功后才会触发
    */
@@ -572,10 +560,6 @@ export interface InitConfig extends InitConfigBase {
    */
   onSaveGameArchive?: (response: OnSaveGameArchiveResponse) => void;
   /**
-   * 云端输入状态改变，有点击事件的时候都会触发，需要判断新旧状态(老版本)
-   */
-  onInputStatusChanged?: (oldStatus: boolean, newStatus: boolean) => void;
-  /**
    * 云端输入状态改变，有点击事件的时候都会触发，需要判断新旧状态
    */
   onInputStatusChange?: (response: OnInputStatusChangeResponse) => void;
@@ -583,10 +567,6 @@ export interface InitConfig extends InitConfigBase {
    * 手柄连接/断开事件回调
    */
   onGamepadConnectChange?: (response: OnGamepadConnectChangeResponse) => void;
-  /**
-   * 云端鼠标显示/隐藏，只在变化的时候回调(老版本)
-   */
-  onCursorShowStatChanged?: (oldStatus: boolean, newStatus: boolean) => void;
   /**
    * 云端鼠标显示/隐藏，只在变化的时候回调
    */
@@ -670,7 +650,7 @@ interface RawEventData {
 }
 
 export declare interface CloudGamingWebSDKStatic {
-  // -------------- 云游戏生命周期相关接口 ------------
+  // -------------- 云渲染生命周期相关接口 ------------
   init(config?: InitConfig): void;
   /**
    * 获取初始化参数
@@ -681,12 +661,12 @@ export declare interface CloudGamingWebSDKStatic {
    */
   getClientSession(): string;
   /**
-   * 启动云游戏
+   * 启动云渲染
    * @param serverSession 调用云API接口createSession 后返回的 serverSession
    */
   start(serverSession: string): void;
   /**
-   * 立即停止云游戏
+   * 立即停止云渲染
    */
   destroy(params: { message?: string; code?: number }): void;
   /**
@@ -768,6 +748,10 @@ export declare interface CloudGamingWebSDKStatic {
    */
   getUserMedia(): MediaStream;
   /**
+   * 获取是否为手游方案
+   */
+  getIsMobileGame(): boolean;
+  /**
    * 重新调整video 位置
    */
   reshapeWindow(): void;
@@ -780,13 +764,13 @@ export declare interface CloudGamingWebSDKStatic {
       KEY_MENU = 139
       KEY_HOME = 172
    * @param key 
-   * @param down 是否是按下状态(就想正常打字，通常是down/up组合)
+   * @param down 是否是按下状态(就像正常打字，通常是down/up组合)
    */
   sendKeyboardEvent({ key, down }: { key: number; down: boolean }): void;
   /**
    * 发送鼠标事件
    * @param param type: MouseEvent
-   * @param down 是否是按下状态(就想正常打字，通常是down/up组合)
+   * @param down 是否是按下状态(就像正常鼠标点击，通常是down/up组合)
    */
   sendMouseEvent({ type, down }: { type: MouseEvent; down: boolean }): void;
   /**
@@ -860,7 +844,7 @@ export declare interface CloudGamingWebSDKStatic {
    */
   resetRemoteCapsLock(): void;
   /**
-   * 设置云游戏页面中鼠标默认图片。
+   * 设置云渲染页面中鼠标默认图片。
    * @param url 鼠标图片
    */
   setDefaultCursorImage(url: string): void;
@@ -916,7 +900,7 @@ export declare interface CloudGamingWebSDKStatic {
    */
   getVideoVolume(): number;
   /**
-   * 设置云游戏页面的背景图。
+   * 设置云渲染页面的背景图。
    * 注意，这里设置的是前端container 的背景图，不是云端的背景图，云端背景图通过createSession 设置
    * @param url 背景图片
    */
