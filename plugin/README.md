@@ -10,7 +10,7 @@
 1. import plugin 
 
     ```javascript
-    import { joystick, keyboard } from 'plugin/index';
+    import { joystick, Keyboard } from 'plugin/index';
     ```
     或 script 标签引入
     ```javascript

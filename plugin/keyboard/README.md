@@ -1,6 +1,8 @@
 # 云渲染插件项目 - 虚拟键盘
 
+虚拟键盘插件为一个单独类，可以直接实例化。
 接口描述见[申明文件（keyboard.d.ts）](./keyboard.d.ts)
+
 
 ## 使用方法
 
@@ -9,7 +11,7 @@
 1. import keyboard plugin 
 
     ```javascript
-    import { keyboard } from 'plugin/keyboard/keyboard';
+    import Keyboard from 'plugin/keyboard/keyboard';
     ```
     或 script 标签引入
     ```javascript
@@ -19,11 +21,11 @@
 2. create keyboard, 具体参数可以参见申明文件 create 方法
 
     ```javascript
-    const k = keyboard.create({});
+    const k = new Keyboard();
     ```
     或使用全局变量
     ```javascript
-    const j = CloudGamingPlugin.keyboard.create({});
+    const k = new CloudGamingPlugin.keyboard();
     ```
 
 3. 调用keyboard 方法

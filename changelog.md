@@ -1,3 +1,23 @@
+### [1.1.6](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.6)@2022.08.10
+
+**新增**
+
+- 动态开关 mic/camera
+- 新增 mic/camera 上行推流设置分辨率/码率
+- 适配云端交互模式 touch 选项
+
+**变更**
+
+- 重构 cursor，删除 cursor-wrap 元素
+- 针对设置了 forceShowCursor 参数后，右键/键盘操作，不锁定鼠标
+- 修改移动端默认鼠标，用小蓝点表示 touch 位置
+- 将移动端 touch 回调取值调整成 targetTouches
+
+**修复**
+
+- 修复由于 input focus 导致 cursor-wrap 计算错误问题
+- 修复 forceShowCursor 设置不成功问题
+
 ### [1.1.5](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.5)@2022.06.23
 
 **新增**
