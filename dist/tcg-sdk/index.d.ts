@@ -438,6 +438,10 @@ type RawEventData = {
   key?: number;
 };
 
+/**
+ * 麦克风参数，可根据需求设置具体值
+ * @ignore
+ */
 export interface MicProfileConstraints extends MediaTrackConstraints {
   sampleRate?: number; // 默认值 44100
   echoCancellation?: ConstrainBoolean; // 回声消除 默认值 true
@@ -445,6 +449,7 @@ export interface MicProfileConstraints extends MediaTrackConstraints {
   autoGainControl?: ConstrainBoolean; // 增益 默认值 true
   deviceId?: string; // input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备
 }
+
 /**
  * 摄像头参数，可根据需求设置具体值
  * @ignore
@@ -477,55 +482,55 @@ export interface InitConfig {
   /**
    * 是否开启本地麦克风
    *
-   * 默认值为 false
+   * @default false
    */
   mic?: boolean | MicProfileConstraints;
   /**
    * 是否开启本地摄像头
    *
-   * 默认值为 false
+   * @default false
    */
   camera?: boolean | CameraProfileConstraints | CameraProfileType;
   /**
    * true 为使用平板滑动鼠标模式，false 为绝对映射模式。该参数只针对移动端，PC 端忽略该参数。该 mode 下鼠标产生相对位移。
    *
-   * 默认值：false
+   * @default false
    */
   tabletMode?: boolean;
   /**
    * true 为使用接入手游，false 为适用端游
    *
-   * 默认 false
+   * @default false
    */
   mobileGame?: boolean;
   /**
    * 手游启用VPX 编码
    *
-   * 默认 false
+   * @default false
    */
   mobileVpx?: boolean;
   /**
    * 鼠标模式： 0 本地鼠标图片，1 云端下发鼠标图片，2 云端渲染
    *
-   * 默认 0
+   * @default 0
    */
   cursorMode?: number;
   /**
    * 是否启动点击全屏操作，true 为启用，false为禁用。
    *
-   * 默认值为 false
+   * @default false
    */
   clickToFullscreen?: boolean;
   /**
    * 点击body 任意地方尝试播放video，true 为启用，false为禁用。
    *
-   * 默认值为 true
+   * @default true
    */
   clickBodyToPlay?: boolean;
   /**
    * 用户操作空闲时间阈值，单位为秒，默认值：300s 空闲超过这个时间将触发 onNetworkChange 事件，消息为 {status: 'idle', times: 1}
    *
-   * 默认值：300s
+   * @default 300
    */
   idleThreshold?: number;
   /**
@@ -533,37 +538,37 @@ export interface InitConfig {
    *
    * mac safari/ios webview 无法生效
    *
-   * 默认值：false
+   * @default false
    */
   keepLastFrame?: boolean;
   /**
    * 是否自动重连，会在弱网，或帧率持续掉 0所导致的断连时，主动重连
    *
-   * 默认值：true
+   * @default true
    */
   reconnect?: boolean;
   /**
    * 是否显示加载中画面
    *
-   * 默认值: true
+   * @default true
    */
   showLoading?: boolean;
   /**
    * 加载中的文字提示内容
    *
-   * 默认值：'正在启动云渲染'
+   * @default '正在启动云渲染'
    */
   loadingText?: string;
   /**
    * 当横竖屏切换时，是否自动旋转html节点适配，**该参数会旋转整个html**
    *
-   * 默认值：false
+   * @default false
    */
   autoRotateContainer?: boolean;
   /**
    * 当横竖屏切换时，是否自动旋转挂载节点（mount）适配，**该参数会旋转挂载节点（mount）**
    *
-   * 默认值：false
+   * @default false
    */
   autoRotateMountPoint?: boolean;
   /**
@@ -573,7 +578,7 @@ export interface InitConfig {
    *
    * false 不拉伸video，保持原有云端分辨率
    *
-   * 默认值 true
+   * @default true
    */
   fullVideoToScreen?: boolean;
   /**
@@ -583,13 +588,13 @@ export interface InitConfig {
   /**
    * 0：关闭鼠标高频采样， 1:打开，但是打包发送， 2:拆开发送， 3: 限制包长度，多的丢掉
    *
-   * 默认值 0
+   * @default 0
    */
   webDraftLevel?: number;
   /**
    * 强制显示鼠标
    *
-   * 默认值 false
+   * @default false
    */
   forceShowCursor?: boolean;
   /**
@@ -602,8 +607,18 @@ export interface InitConfig {
   defaultCursorImgUrl?: string;
   /**
    * 云上应用交互模式，支持鼠标 或者 触摸
+   *
+   * @default 'cursor'
    */
   clientInteractMode?: 'cursor' | 'touch';
+  /**
+   * 劫持键盘 Ctrl+v/Cmd+v，当用户使用粘贴功能时候，直接将本地剪切板内容发送给云端
+   *
+   * **通常在云端 input 框 focus 时候使用**
+   *
+   * @default false
+   */
+  enablePaste?: boolean;
   /**
    * 初始化完毕的回调，触发此回调之后才能调用后面的 API
    *
@@ -934,9 +949,10 @@ export interface InitConfig {
 }
 
 /**
- * 云渲染JSSDK（TCGSDK），用于云渲染 PaaS 应用的开发。TCGSDK export 为单例子，并采用配置，注册回调方式，并提供了包括鼠标键盘控制，音视频控制，游戏进程控制相关接口，接口详情请参考下列说明。
+ * 云渲染JSSDK（TCGSDK），用于云渲染 PaaS 应用的开发。TCGSDK export 为单例，并采用配置，注册回调方式，并提供了包括鼠标键盘控制，音视频控制，游戏进程控制相关接口，接口详情请参考下列说明。
+ * @hideconstructor
  */
-class TCGSDK {
+export class TCGSDK {
   // -------------- 云渲染生命周期相关接口 ------------
   /**
    * @param {InitConfig} config
@@ -1301,6 +1317,12 @@ class TCGSDK {
    *
    */
   setKMStatus({ keyboard, mouse }: { keyboard: boolean; mouse: boolean }): { code: number };
+  /**
+   * 设置是否劫持 Ctrl+v/Cmd+v，当用户使用粘贴功能时候，直接将本地剪切板内容发送给云端
+   *
+   * **通常在云端 input 框 focus 时候使用**
+   */
+  setPaste(enable: boolean): void;
   // -------------- 音视频控制相关接口 ------------
   /**
    * 设置码流参数，该接口为设置建议码流参数，云端可能会根据游戏动态调整
