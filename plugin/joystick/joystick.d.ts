@@ -1,4 +1,4 @@
-export interface CreateConfig {
+export interface JoystickConfig {
   /**
    * 摇杆挂载节点，默认 document.body
    */
@@ -102,16 +102,37 @@ export interface JoystickOutputData {
 }
 
 /**
- * 摇杆实例
+ *
+ * 虚拟摇杆
+ *
+ * 依赖 TCGSDK 使用，建议在 TCGSDK.init 内的回调函数 onConnectSuccess 中使用
+ *
+ * @param {Object} params
+ * @param {HTMLElement} [params.zone=document.body] - 摇杆挂载节点，默认 document.body
+ * @param {number} [params.size=100] - 摇杆尺寸，默认 `100px`
+ * @param {Object} [params.position] - 相对于挂载节点的位置，默认值 `{top: 50, left: 50}`，及根据size 剧中
+ * @param {number} [params.position.top=50] - top
+ * @param {number} [params.position.left=50] - left
+ * @param {number} [params.position.bottom] - bottom
+ * @param {number} [params.position.right] - right
+ * @param {boolean} [params.lockX=false] - 锁定X 轴移动, 默认值 `false`
+ * @param {boolean} [params.lockY=false] - 锁定Y 轴移动, 默认值 `false`
+ * @param {('dpad_wasd'|'dpad_updown')} [params.type='dpad_wasd'] - 两种摇杆样式 wasd/上下左右, 默认值 `dpad_wasd`
+ * @param {Object} [params.joystickImage] - 摇杆背景图， http/https 地址，不填采用默认图片
+ * @param {string} [params.joystickImage.back] - 底图， http/https 地址，不填采用默认图片
+ * @param {string} [params.joystickImage.front] - 按钮图， http/https 地址，不填采用默认图片
+ * @param {string} [params.joystickImage.frontPressed] - 按钮被按下后的图片， http/https 地址，不填采用默认图片
+ * @param {boolean} [params.restJoystick=true] - touchend 后复位摇杆，默认值 `true`
+ *
+ * @example new Joystick({})
  */
-interface JoystickInstance {
+class Joystick {
+  constructor(params: JoystickConfig);
   /**
-   * 监听摇杆事件，传如对应 handler 获取回调数据
+   * 监听摇杆事件
    *
-   * @function
-   *
-   * @param {JoystickEventTypes} type - 对应的监听事件
-   * @param {JoystickInstance~JoystickOutputData} handler - 回调函数 response data JoystickOutputData
+   * @param {Joystick~JoystickEventTypes} type - 监听事件
+   * @param {Joystick~JoystickOutputData} handler - 回调函数 response data 为 JoystickOutputData
    *
    */
   on<T extends JoystickEventTypes>(
@@ -119,49 +140,31 @@ interface JoystickInstance {
     handler: (data: T extends 'move' ? JoystickOutputData : null) => void,
   ): void;
   /**
-   * destroy 销毁触发
-   *
-   * @function
+   * 销毁
    */
   destroy(): void;
 }
 
-/**
- * 摇杆类
- */
-export class Joystick {
-  /**
-   * @param {Object} params
-   * @param {HTMLElement} [params.zone=document.body] - 摇杆挂载节点，默认 document.body
-   * @param {number} [params.size=100] - 摇杆尺寸，默认 `100px`
-   * @param {Object} [params.position] - 相对于挂载节点的位置，默认值 `{top: 50, left: 50}`，及根据size 剧中
-   * @param {number} [params.position.top=50] - top
-   * @param {number} [params.position.left=50] - left
-   * @param {number} [params.position.bottom] - bottom
-   * @param {number} [params.position.right] - right
-   * @param {boolean} [params.lockX=false] - 锁定X 轴移动, 默认值 `false`
-   * @param {boolean} [params.lockY=false] - 锁定Y 轴移动, 默认值 `false`
-   * @param {('dpad_wasd'|'dpad_updown')} [params.type='dpad_wasd'] - 两种摇杆样式 wasd/上下左右, 默认值 `dpad_wasd`
-   * @param {Object} [params.joystickImage] - 摇杆背景图， http/https 地址，不填采用默认图片
-   * @param {string} [params.joystickImage.back] - 底图
-   * @param {string} [params.joystickImage.front] - 按钮图
-   * @param {string} [params.joystickImage.frontPressed] - 按钮被按下后的图片
-   * @param {boolean} [params.restJoystick=true] - end 后复位摇杆，默认值 `true`
-   */
-  create(params: CreateConfig): JoystickInstance;
-}
+export default Joystick;
 
-export declare const joystick: Joystick;
+// 下列申明仅用于文档生成
+
+/**
+ * 摇杆事件类型
+ *
+ * @typedef {('start'|'move'|'end'|'added')} Joystick~JoystickEventTypes
+ *
+ */
 
 /**
  * 摇杆回调数据结构
  *
- * @callback JoystickInstance~JoystickOutputData
+ * @callback Joystick~JoystickOutputData
  * @param {Object} data
  * @param {Object} data.angle - 角度信息
  * @param {number} data.angle.degree - 角度
  * @param {number} data.angle.radian - 半径
- * @param {number} data.distance = 距离
+ * @param {number} data.distance - 距离
  * @param {number} data.force - 力度
  * @param {number} data.identifier - id 唯一标识
  * @param {boolean} data.lockX - 锁定 X 轴

@@ -1,17 +1,3 @@
-interface OnNetworkChangeStatus {
-  readonly bit_rate?: number; // 	客户端接收的码率，单位：Mbps
-  readonly cpu?: number | string; // 	云端 CPU 占用率，单位：百分比
-  readonly gpu?: string; // 	云端 GPU 占用率，单位：百分比
-  readonly delay?: number; // 	客户端收到图像帧到解码显示的延时，单位：ms，iOS 可能收不到
-  readonly fps?: number; // 	客户端显示帧率
-  readonly load_cost_time?: number; //	云端加载时长，单位：ms
-  readonly nack?: number; // 	客户端重传次数
-  readonly packet_lost?: number; // 	客户端丢包次数
-  readonly packet_received?: number; // 	客户端收到的包总数
-  readonly rtt?: number; //	客户端到云端，网络端数据包往返耗时
-  readonly timestamp?: number; //	此数据回调的时间戳，单位：ms
-}
-
 interface BaseResponse {
   readonly code: number;
   readonly msg?: string;
@@ -57,13 +43,27 @@ export interface OnWebrtcStatusChangeResponse extends BaseResponse {}
 
 /**
  * code=-2 创建local offer 失败，需要重新init + trylock
- * code=-1 需要重连，通常出现在码率掉0，收不到推流，连接超时，ice 断开，可以尝试重连
+ * code=-1 需要重连，通常出现在码率掉0，收不到推流，连接超时，ice 断开，可以尝试重连（如设置了 init reconnect 参数，SDK 会主动重连）
  * code=0	主动关闭
  * code=1	用户重复连接
  * code=2 用户心跳超时，webrtc服务端主动断开，这个消息有可能丢失 init + trylock
  * @ignore
  */
 export interface OnDisconnectResponse extends BaseResponse {}
+
+interface WebrtcStats {
+  readonly bit_rate?: number; // 	客户端接收的码率，单位：Mbps
+  readonly cpu?: number | string; // 	云端 CPU 占用率，单位：百分比
+  readonly gpu?: string; // 	云端 GPU 占用率，单位：百分比
+  readonly delay?: number; // 	客户端收到图像帧到解码显示的延时，单位：ms，iOS 可能收不到
+  readonly fps?: number; // 	客户端显示帧率
+  readonly load_cost_time?: number; //	云端加载时长，单位：ms
+  readonly nack?: number; // 	客户端重传次数
+  readonly packet_lost?: number; // 	客户端丢包次数
+  readonly packet_received?: number; // 	客户端收到的包总数
+  readonly rtt?: number; //	客户端到云端，网络端数据包往返耗时
+  readonly timestamp?: number; //	此数据回调的时间戳，单位：ms
+}
 
 /**
  * latency 对应value
@@ -75,19 +75,9 @@ export interface OnDisconnectResponse extends BaseResponse {}
  * @ignore
  */
 export interface OnNetworkChangeResponse {
-  readonly status:
-    | 'online'
-    | 'offline'
-    | 'idle'
-    | 'noflow'
-    | 'noflowcenter'
-    | 'stats'
-    | 'jitter'
-    | 'gamelaunched'
-    | 'openurl'
-    | 'latency';
+  readonly status: 'idle' | 'noflow' | 'noflowcenter' | 'stats' | 'jitter' | 'openurl' | 'latency';
   readonly times?: number;
-  readonly stats?: OnNetworkChangeStatus;
+  readonly stats?: WebrtcStats;
   readonly data?: {
     code?: number;
     value?: number | string;
@@ -147,6 +137,13 @@ export interface OnGameStartCompleteResponse {
   readonly user_id: string;
   readonly game_id: string;
   readonly status: number; // 0 启动游戏成功 1 启动游戏失败
+}
+
+export interface OnGameStopResponse {
+  readonly user_id: string;
+  readonly game_name: string;
+  readonly timestamp: number;
+  readonly message: string;
 }
 
 export interface OnLoadGameArchiveResponse {
@@ -238,7 +235,7 @@ export interface ServerSideDescription {
   readonly feature_switch?: ServerSideDescriptionFeatureSwitch;
   readonly role: string;
   readonly metric_key: string;
-  readonly plat: 'android' | 'pc';
+  readonly plat: 'android' | 'pc' | 'Android';
   readonly sig_key?: string;
   readonly host_name: string; // 只有手游有
   readonly video: {
@@ -350,10 +347,83 @@ export interface OnMultiPlayerChangeResponse {
    */
   readonly submit_seat_change?: SeatChangeInfo;
 }
-export interface OnEventResponse {
+
+export type EventAutoPlayResponse = {
   readonly type: 'autoplay';
-  readonly data: any;
-}
+  readonly data: {
+    code: number; // 0 success -1 failed
+    message: string;
+  };
+};
+
+export type EventIdleResponse = {
+  readonly type: 'idle';
+  readonly data: {
+    times: number;
+  };
+};
+
+export type OnEventResponseType = 'autoplay' | 'idle';
+
+export type OnEventAutoplayResponse = {
+  type: 'autoplay';
+  data: {
+    code: number; // 0 success -1 failed
+    message: string;
+  };
+};
+
+export type OnEventIdleResponse = {
+  type: 'idle';
+  data: {
+    times: number;
+  };
+};
+
+export type OnEventOpenUrlResponse = {
+  type: 'openurl';
+  data: {
+    value: string;
+  };
+};
+
+export type OnEventWebrtcStatsResponse = {
+  type: 'webrtc_stats';
+  data: WebrtcStats;
+};
+
+export type OnEventNoflowResponse = {
+  type: 'noflow';
+};
+
+export type OnEventNoflowcenterResponse = {
+  type: 'noflowcenter';
+};
+
+export type OnEventLatencyResponse = {
+  type: 'latency';
+  data: {
+    value: number;
+    /**
+     * latency 对应value
+     * value=0 NETWORK_NORMAL
+     * value=1 NETWORK_CONGESTION
+     * value=2 NACK_RISING
+     * value=3 HIGH_DELAY
+     * value=4 NETWORK_JITTER
+     */
+    message: string;
+  };
+};
+
+export type OnEventResponse =
+  | OnEventAutoplayResponse
+  | OnEventIdleResponse
+  | OnEventOpenUrlResponse
+  | OnEventWebrtcStatsResponse
+  | OnEventNoflowResponse
+  | OnEventNoflowcenterResponse
+  | OnEventLatencyResponse;
 
 /**
  * 调试相关设置
@@ -399,10 +469,6 @@ export type DebugSettingParams = {
    * 展示数据面板 webrtc 状态信息，否则需要按 CTRL+~ 快捷键显示。
    */
   showStats?: boolean;
-  /**
-   * 用户id
-   */
-  userid?: string;
 };
 
 /**
@@ -715,9 +781,9 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onNetworkChange 回调函数的 response
-   * @param {('online'|'offline'|'idle'|'noflow'|'noflowcenter'|'stats'|'jitter'|'gamelaunched'|'openurl'|'latency')} response.status
+   * @param {('idle'|'noflow'|'noflowcenter'|'stats'|'jitter'|'openurl'|'latency')} response.status
    * @param {number} response.times
-   * @param {OnNetworkChangeStatus} response.stats
+   * @param {WebrtcStats} response.stats
    * @param {Object} response.data
    * @param {number} response.data.code
    * @param {(number | string)} response.data.value
@@ -801,6 +867,17 @@ export interface InitConfig {
    */
   onGameStartComplete?: (response: OnGameStartCompleteResponse) => void;
   /**
+   * 云端进程终止的通知
+   *
+   * @function
+   * @param {Object} response - onGameStop 回调函数的 response
+   * @param {string} response.user_id - user_id
+   * @param {string} response.game_name - game_name
+   * @param {number} response.timestamp - timestamp
+   * @param {string} response.message - message
+   */
+  onGameStop?: (response: OnGameStopResponse) => void;
+  /**
    * 游戏存档加载回调，会不断回调size
    *
    * @function
@@ -871,6 +948,14 @@ export interface InitConfig {
    */
   onOrientationChange?: (response: { type: 'portrait' | 'landscape' }) => void;
   /**
+   * 页面显示/隐藏发生变化，status 包含 visible 以及 hidden
+   *
+   * @function
+   * @param {Object} response - onVisibilityChange 回调函数的 response
+   * @param {('visible' | 'hidden')} response.status - 当前显示/隐藏状态
+   */
+  onVisibilityChange?: (response: { status: 'visible' | 'hidden' }) => void;
+  /**
    * 云端config 发生变化时候回调，包含屏幕相关 screen_config，具体如下：
    *
    * @function
@@ -910,7 +995,7 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onConfigurationChange 回调函数的 response
-   * @param {string} response.type - 'autoplay'
+   * @param {string} response.type - 对应类型 'idle' | 'noflow' | 'noflowcenter' | 'stats' | 'openurl' | 'latency'
    * @param {any} response.data - 根据对应 code 判断
    */
   onEvent?: (response: OnEventResponse) => void;
@@ -949,14 +1034,14 @@ export interface InitConfig {
 }
 
 /**
- * 云渲染JSSDK（TCGSDK），用于云渲染 PaaS 应用的开发。TCGSDK export 为单例，并采用配置，注册回调方式，并提供了包括鼠标键盘控制，音视频控制，游戏进程控制相关接口，接口详情请参考下列说明。
+ * 云渲染JSSDK（TCGSDK），用于云渲染 PaaS 应用的开发。TCGSDK export 为单例，采用注册回调方式，并提供了包括鼠标键盘控制，音视频控制，游戏进程控制相关接口，接口详情请参考下列说明。
  * @hideconstructor
  */
 export class TCGSDK {
   // -------------- 云渲染生命周期相关接口 ------------
   /**
    * @param {InitConfig} config
-   * TCGSDK 入口文件，TCGSDK 其他方法建议在 init 回调函数 onInitSuccess/onConnectSuccess 中调用
+   * TCGSDK 入口文件，TCGSDK 其他方法建议在 init 的回调函数 onInitSuccess/onConnectSuccess 中调用
    */
   init(config?: InitConfig): void;
   /**
@@ -1040,22 +1125,26 @@ export class TCGSDK {
    * @example
    * TCGSDK.setFullscreen(true, html);
    */
-  setFullscreen(fullscreen: boolean, element?: HTMLElement): void;
+  setFullscreen(fullscreen: boolean, element?: HTMLElement): Promise<void>;
   /**
    * 获取是否全屏
    */
   getFullscreen(): boolean;
+  /**
+   * 获取页面方向
+   */
+  getPageOrientation(): 'portrait' | 'landscape';
   // -------------- 游戏进程相关接口 ------------
   /**
-   * 重启当前运行的游戏进程，传入 callback - 回调函数
+   * 重启当前运行的游戏进程
    */
   gameRestart(callback?: Function): void;
   /**
-   * 暂停当前运行的游戏进程，传入 callback 回调函数
+   * 暂停当前运行的游戏进程
    */
   gamePause(callback?: Function): void;
   /**
-   * 恢复运行当前运行的游戏进程，传入 callback 回调函数
+   * 恢复运行当前运行的游戏进程
    */
   gameResume(callback?: Function): void;
   /**
@@ -1178,7 +1267,7 @@ export class TCGSDK {
    * }
    *
    * if (code === 1) {
-   *   // 考虑settimeout and retry
+   *   // 考虑 retry
    * }
    *
    */
@@ -1192,7 +1281,7 @@ export class TCGSDK {
   /**
    * 发送键盘事件，**该方法调用通常是成对出现(就像正常打字，通常是down/up组合)**
    *
-   * 键盘的键位码 可通过 [keycode](https://https://www.toptal.com/developers/keycode) 查询
+   * 键盘的键位码 可通过 [keycode](https://www.toptal.com/developers/keycode) 查询
    *
    * 对于云手游常用按键keycode是:
    * KEY_BACK = 158
@@ -1226,7 +1315,7 @@ export class TCGSDK {
   sendMouseEvent({ type, down }: { type: MouseEvent; down: boolean }): void;
   /**
    * 发送鼠标及键盘事件（底层实现）
-   * @param {RawEventData} params - 底层原属数据类型，针对鼠标/键盘/手柄
+   * @param {RawEventData} params - 底层原始数据类型，可用于鼠标/键盘/手柄消息的发送
    */
   sendRawEvent(params: RawEventData): void;
   /**
@@ -1245,7 +1334,7 @@ export class TCGSDK {
   getMoveSensitivity(): number;
   /**
    * 设置是否允许锁定鼠标
-   * @param {boolean} param 其中 true 为允许，false 为禁止。默认为 true。
+   * @param {boolean} param=true - 其中 true 为允许，false 为禁止。默认为 true。
    */
   setMouseCanLock(param: boolean): void;
   /**
@@ -1307,7 +1396,7 @@ export class TCGSDK {
    */
   setDefaultCursorImage(url: string): void;
   /**
-   * 设置鼠标/键盘的可用状态，针对PC 上，鼠标键盘的对应事件默认会被SDK 捕获然后发想云端
+   * 设置鼠标/键盘的可用状态，针对PC 上，鼠标键盘的对应事件默认会被SDK 捕获然后发向云端
    * @param {Object} param
    * @param {boolean} param.keyboard 键盘可用状态
    * @param {boolean} param.mouse 鼠标可用状态
@@ -1327,7 +1416,7 @@ export class TCGSDK {
   /**
    * 设置码流参数，该接口为设置建议码流参数，云端可能会根据游戏动态调整
    * @param {Object} profile 目前可用参数如下：
-   * @param {number} profile.fps - 帧率，范围[10,60]，单位：帧
+   * @param {number} profile.fps - 帧率，范围[10,60]
    * @param {number} profile.max_bitrate - 最大码率，范围[1,15]，单位：Mbps
    * @param {number} profile.min_bitrate - 最小码率，范围[1,15]，单位：Mbps
    * @param {Function} [callback] 设置结果回调函数，可为 null
@@ -1342,8 +1431,8 @@ export class TCGSDK {
    * @returns 返回 video 通过 getBoundingClientRect 获取的数据
    * | Name          | Type                | Description                 |
    * | ------------- | ------------------- | --------------------------- |
-   * | left          | number              | 相对试图窗口 left 值          |
-   * | top           | number              | 相对试图窗口 top 值           |
+   * | left          | number              | 相对视图窗口 left 值          |
+   * | top           | number              | 相对视图窗口 top 值           |
    * | width         | number              | 播放元素（video）width        |
    * | height        | number              | 播放元素（video）height       |
    * | pixelRatio    | number              | window.devicePixelRatio 当前显示设备的物理像素分辨率与CSS 像素分辨率之比  |
@@ -1511,7 +1600,6 @@ export class TCGSDK {
     showOnCdMessage,
     showOnSvMessage,
     showLog,
-    userid,
   }: DebugSettingParams): void;
   /**
    * 上报日志

@@ -15,7 +15,7 @@ export interface OnTouchEventResponse {
   readonly code: number;
 }
 
-export interface KeyboardCreateConfig {
+export interface KeyboardConfig {
   /**
    * 自动发送键盘数据 默认值 true
    */
@@ -36,31 +36,31 @@ export interface KeyboardCreateConfig {
 }
 
 /**
+ *
  * 虚拟键盘
  *
- * 构造函数包括下列参数
+ * 依赖 TCGSDK 使用，建议在 TCGSDK.init 内的回调函数 onConnectSuccess 中使用
  *
- * | Name                  | Type                                     | Description                       |
- * | --------------------- | ---------------------------------------- | --------------------------------- |
- * | sendData              | boolean                                  | 自动发送键盘数据 默认值 true          |
- * | keyBorderColor        | any                                      | 按键边框颜色 默认 #4a525a            |
- * | keyPressedBorderColor | any                                      | 按下时边框颜色 默认 #2684FF           |
- * | onTouchEvent          | (response: OnTouchEventResponse) => void | Keyboard  OnTouchEventResponse     |
+ * @param {Object} params
+ * @param {boolean} [params.sendData=true] - 自动发送键盘数据 默认值 true
+ * @param {string} [params.keyBorderColor='#4a525a'] - 按键边框颜色 默认 '#4a525a'
+ * @param {Object} [params.keyPressedBorderColor='#2684FF'] - 按下时边框颜色 默认 '#2684FF'
+ * @param {Function} [params.onTouchEvent] - Keyboard  OnTouchEventResponse
  *
- *
+ * @description
  * 关于OnTouchEventResponse，具体如下：
- *
  *
  * | Name    | Type       | Description                                                     |
  * | ------- | ---------- | --------------------------------------------------------------- |
  * | type    | string     | (readonly) 事件类型，可选择 touchstart 、touchend 、touchcancel    |
  * | key     | string     | (readonly) 按键对应的 key                                        |
- * | code    | string     | (readonly) 按键对应的 code                                       |
+ * | code    | string     | (readonly) 按键对应的 code
  *
+ * @example
+ * new Keyboard({});
  */
-
-export class Keyboard {
-  constructor(params: KeyboardCreateConfig);
+class Keyboard {
+  constructor(params: KeyboardConfig);
   /**
    * 显示虚拟键盘
    */
@@ -70,7 +70,7 @@ export class Keyboard {
    */
   hide(): void;
   /**
-   * 销毁虚拟键盘，删除对应节点（如要再次使用需要重新create）
+   * 销毁虚拟键盘，删除对应节点（如要再次使用需要重新创建）
    */
   destroy(): void;
 }

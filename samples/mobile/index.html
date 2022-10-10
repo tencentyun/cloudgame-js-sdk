@@ -28,9 +28,9 @@
     #plugin-point {
       position: absolute;
       left: 100px;
-      bottom: 50px;
-      width: 100px;
-      height: 100px;
+      bottom: 150px;
+      width: 0px;
+      height: 0px;
     }
 
   </style>
@@ -106,7 +106,7 @@
         console.log('onConnectSuccess', res);
 
         // // 添加遥感
-        // const j = joystick.create({
+        // const j = new CloudGamingPlugin.joystick({
         //   zone: document.querySelector('#plugin-point'),
         // });
       },
@@ -135,7 +135,7 @@
       onInitSuccess: async (res) => {
         console.log('%c onInitSuccess', 'color: red', res);
 
-        await startGame();
+        await StartGame();
 
         // await StartProject();
       }

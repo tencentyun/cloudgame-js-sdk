@@ -1,34 +1,34 @@
-# 云渲染插件项目 - 虚拟键盘
+# Virtual keyboard
 
-虚拟键盘插件为一个单独类，可以直接实例化。
-接口描述见[申明文件（keyboard.d.ts）](./keyboard.d.ts)
+The virtual keyboard plugin can be instantiated directly.
 
+Detailed description of [interface(keyboard.d.ts)](./keyboard.d.ts).
 
-## 使用方法
+## Usage
 
-> 需结合TCGSDK 一起使用，使用前请确保TCGSDK 已被正常加载
+> It relies on TCGSDK. We recommend you use it in the callback function onConnectSuccess in TCGSDK.init.
 
 1. import keyboard plugin 
 
     ```javascript
     import Keyboard from 'plugin/keyboard/keyboard';
     ```
-    或 script 标签引入
+    or use script tag
     ```javascript
     <script type="text/javascript" src="plugin/keyboard/keyboard.js"></script>
     ```
 
-2. create keyboard, 具体参数可以参见申明文件 create 方法
+2. Instantiating the keyboard
 
     ```javascript
     const k = new Keyboard();
     ```
-    或使用全局变量
+    or use global variables
     ```javascript
     const k = new CloudGamingPlugin.keyboard();
     ```
 
-3. 调用keyboard 方法
+3. Calling the keyboard method
 
     ```javascript
     k.show();
@@ -39,4 +39,4 @@
     ```
 
 
-如有疑问和需求，可随时联系 ranpeng
+If you have any questions or needs, please feel free to contact ranpeng.

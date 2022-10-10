@@ -1,3 +1,22 @@
+### [1.1.7](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.7)@2022.08.10
+
+**新增**
+
+- 新增 game stop 消息通知
+- 针对手游横竖屏设置不同旋转逻辑
+
+**变更**
+
+- 增加粘贴功能劫持配置项
+- 手游根据 screen_config 配置云端画面尺寸
+- 摇杆插件变更，通过实例化创建
+
+**修复**
+
+- PC 端玩手游，鼠标显示异常问题
+- 重连导致数据通道创建异常
+- 移动端切换后台后，前端 touch 卡键问题
+
 ### [1.1.6](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.6)@2022.08.10
 
 **新增**

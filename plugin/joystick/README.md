@@ -1,36 +1,38 @@
-# 云渲染插件项目 - 摇杆
+# Virtual joystick
 
-接口描述见[申明文件（joystick.d.ts）](./joystick.d.ts)
+The virtual joystick plugin can be instantiated directly.
 
-## 使用方法
+Detailed description of [interface(joystick.d.ts)](./joystick.d.ts).
 
-> 需结合TCGSDK 一起使用，使用前请确保TCGSDK 已被正常加载
+## Usage
+
+> It relies on TCGSDK. We recommend you use it in the callback function onConnectSuccess in TCGSDK.init.
 
 1. import joystick plugin 
 
     ```javascript
-    import { joystick } from 'plugin/joystick/joystick';
+    import Joystick from 'plugin/joystick/joystick';
     ```
-    或 script 标签引入
+    or use script tag
     ```javascript
     <script type="text/javascript" src="plugin/joystick/joystick.js"></script>
     ```
 
-2. create joystick, 具体参数可以参见申明文件 create 方法
+2. Instantiating the joystick
 
     ```javascript
-    const j = joystick.create({
+    const j = new Joystick({
         zone: document.querySelector('#your-element')
     });
     ```
-    或使用全局变量
+    or use global variables
     ```javascript
-    const j = CloudGamingPlugin.joystick.create({
+    const j = new CloudGamingPlugin.joystick({
         zone: document.querySelector('#your-element')
     });
     ```
 
-3. 监听对应事件（如果sendData 为true（默认值 true），插件会自动发送对应指令）
+3. Listening for events(if sendData is true (default value true), the plugin will automatically send the corresponding command)
 
     ```javascript
     j.on('move', (data) => {
@@ -40,4 +42,4 @@
     ```
 
 
-如有疑问和需求，可随时联系 ranpeng
+If you have any questions or needs, please feel free to contact ranpeng.
