@@ -17,6 +17,10 @@ export interface OnTouchEventResponse {
 
 export interface KeyboardConfig {
   /**
+   * 摇杆挂载节点，默认 TCGSDK init 参数传入的 mount 节点
+   */
+  zone?: HTMLElement;
+  /**
    * 自动发送键盘数据 默认值 true
    */
   sendData?: boolean;
@@ -36,6 +40,7 @@ export interface KeyboardConfig {
 }
 
 /**
+ * @class
  *
  * 虚拟键盘
  *
@@ -59,7 +64,7 @@ export interface KeyboardConfig {
  * @example
  * new Keyboard({});
  */
-class Keyboard {
+declare class Keyboard {
   constructor(params: KeyboardConfig);
   /**
    * 显示虚拟键盘

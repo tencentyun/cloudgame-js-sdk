@@ -124,7 +124,7 @@ export interface JoystickOutputData {
  *
  * @example new Joystick({})
  */
-class Joystick {
+declare class Joystick {
   constructor(params: JoystickConfig);
   /**
    * This API is used to listen on joystick events.

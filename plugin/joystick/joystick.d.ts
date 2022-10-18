@@ -126,7 +126,7 @@ export interface JoystickOutputData {
  *
  * @example new Joystick({})
  */
-class Joystick {
+declare class Joystick {
   constructor(params: JoystickConfig);
   /**
    * 监听摇杆事件

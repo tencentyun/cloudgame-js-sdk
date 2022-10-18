@@ -2,6 +2,10 @@ export type TouchType = 'touchstart' | 'touchend' | 'touchcancel';
 
 export interface OnTouchEventResponse {
   /**
+   * The keyboard mount node. Default value: TCGSDK init param `mount`.
+   */
+  zone?: HTMLElement;
+  /**
    * The event type, which is read-only. Valid values: `touchstart`, `touchend`, `touchcancel`.
    */
   readonly type: TouchType;
@@ -47,7 +51,7 @@ export interface KeyboardConfig {
  * @param {Function} [params.onTouchEvent] - Keyboard OnTouchEventResponse
  *
  * @description
- * 关于OnTouchEventResponse，具体如下：
+ * OnTouchEventResponse：
  *
  * | Name    | Type       | Description                                                     |
  * | ------- | ---------- | --------------------------------------------------------------- |
@@ -58,7 +62,7 @@ export interface KeyboardConfig {
  * @example
  * new Keyboard({});
  */
-class Keyboard {
+declare class Keyboard {
   constructor(params: KeyboardConfig);
   /**
    * This API is used to display the virtual keyboard.
