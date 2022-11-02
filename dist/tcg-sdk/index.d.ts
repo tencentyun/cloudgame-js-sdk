@@ -290,6 +290,17 @@ export interface OnConfigurationChangeResponse {
   };
 }
 
+/**
+ * 云端屏幕分辨率发生变化
+ * @ignore
+ */
+export interface OnRemoteScreenResolutionChangeResponse {
+  width: number;
+  height: number;
+  top: number;
+  left: number;
+}
+
 export interface SeatsInfo {
   players: {
     name: string;
@@ -424,6 +435,15 @@ export type OnEventResponse =
   | OnEventNoflowResponse
   | OnEventNoflowcenterResponse
   | OnEventLatencyResponse;
+
+/**
+ * 直播推流相关
+ */
+export type StreamPushState = 'NoStreamPushing' | 'PushConnecting' | 'Pushing' | 'PushPaused' | 'PushReConnecting';
+
+export type OnStreamPushStateChangeResponse = {
+  stream_push_state: StreamPushState;
+};
 
 /**
  * 调试相关设置
@@ -774,6 +794,10 @@ export interface InitConfig {
    * | 1       | 用户重复连接                                                      |
    * | 2       | 用户心跳超时，webrtc服务端主动断开，这个消息有可能丢失 init + trylock   |
    * @param {string} response.msg - message
+   *
+   * @description
+   * 当出现 -1 时候，如果设置了 init 参数 `reconnect: true`（默认值 true） 不用任何操作，SDK 会主动重连，未设置需要调用 TCGSDK.reconnect()
+   * 如果持续链接不上，可以看回调 onConnectFail 相关错误嘛，在里面完善相关逻辑
    */
   onDisconnect?: (response: OnDisconnectResponse) => void;
   /**
@@ -966,6 +990,17 @@ export interface InitConfig {
    */
   onConfigurationChange?: (response: OnConfigurationChangeResponse) => void;
   /**
+   * 云端屏幕分辨率发生变化，具体如下：
+   *
+   * @function
+   * @param {Object} response - onRemoteScreenResolutionChange 回调函数的 response
+   * @param {number} response.width
+   * @param {number} response.height
+   * @param {number} response.top
+   * @param {number} response.left
+   */
+  onRemoteScreenResolutionChange?: (response: OnRemoteScreenResolutionChangeResponse) => void;
+  /**
    * 连接设备发生变化，需要通过 navigator.mediaDevices.enumerateDevices() 拿到可用设备
    * @function
    */
@@ -999,6 +1034,12 @@ export interface InitConfig {
    * @param {any} response.data - 根据对应 code 判断
    */
   onEvent?: (response: OnEventResponse) => void;
+  /**
+   * @function
+   * @param {Object} response - onStreamPushStateChange 回调函数的 response
+   * @param {string} response.stream_push_state - 推流状态 'NoStreamPushing' | 'PushConnecting' | 'Pushing' | 'PushPaused' | 'PushReConnecting';
+   */
+  onStreamPushStateChange?: (response: OnStreamPushStateChangeResponse) => void;
   /**
    * **多人云游（测试阶段）**
    *

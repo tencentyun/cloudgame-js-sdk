@@ -1,4 +1,15 @@
-### [1.1.7](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.7)@2022.08.10
+### [1.1.8](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.8)@2022.11.02
+
+**新增**
+
+- 新增云端推流状态变化通知
+
+**修复**
+
+- 端游旋转屏幕情况下，deltaMove 发送不准确问题
+- 获取摄像头/麦克风失败，导致创建 offer 失败问题
+
+### [1.1.7](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.7)@2022.10.10
 
 **新增**
 

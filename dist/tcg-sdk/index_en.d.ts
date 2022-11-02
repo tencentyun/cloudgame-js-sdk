@@ -290,6 +290,17 @@ export interface OnConfigurationChangeResponse {
   };
 }
 
+/**
+ * Cloud screen resolution changed.
+ * @ignore
+ */
+export interface OnRemoteScreenResolutionChangeResponse {
+  width: number;
+  height: number;
+  top: number;
+  left: number;
+}
+
 export interface SeatsInfo {
   players: {
     name: string;
@@ -424,6 +435,15 @@ export type OnEventResponse =
   | OnEventNoflowResponse
   | OnEventNoflowcenterResponse
   | OnEventLatencyResponse;
+
+/**
+ * Push stream
+ */
+export type StreamPushState = 'NoStreamPushing' | 'PushConnecting' | 'Pushing' | 'PushPaused' | 'PushReConnecting';
+
+export type OnStreamPushStateChangeResponse = {
+  stream_push_state: StreamPushState;
+};
 
 /**
  * Debug settings
@@ -969,6 +989,17 @@ export interface InitConfig {
    */
   onConfigurationChange?: (response: OnConfigurationChangeResponse) => void;
   /**
+   * Cloud screen resolution changed.
+   *
+   * @function
+   * @param {Object} response - onRemoteScreenResolutionChange response
+   * @param {number} response.width
+   * @param {number} response.height
+   * @param {number} response.top
+   * @param {number} response.left
+   */
+  onRemoteScreenResolutionChange?: (response: OnRemoteScreenResolutionChangeResponse) => void;
+  /**
    * Connected devices have changed and can be get by `navigator.mediaDevices.enumerateDevices()`.
    * @function
    */
@@ -1002,6 +1033,12 @@ export interface InitConfig {
    * @param {any} response.data
    */
   onEvent?: (response: OnEventResponse) => void;
+  /**
+   * @function
+   * @param {Object} response - onStreamPushStateChange response
+   * @param {string} response.stream_push_state - Push state 'NoStreamPushing' | 'PushConnecting' | 'Pushing' | 'PushPaused' | 'PushReConnecting';
+   */
+  onStreamPushStateChange?: (response: OnStreamPushStateChangeResponse) => void;
   /**
    * **Multi-player cloud game (in beta test)**
    *
