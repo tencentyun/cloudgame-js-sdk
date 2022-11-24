@@ -19,6 +19,7 @@ export interface OnInitSuccessResponse {
  * @ignore
  */
 export interface OnConnectFailedResponse extends BaseResponse {}
+
 export interface OnConnectSuccessResponse {
   readonly code: number;
   readonly seat_index: number; // 座位号，多人云游场景可能会用到
@@ -427,6 +428,10 @@ export type OnEventLatencyResponse = {
   };
 };
 
+export type OnEventPointerLockErrorResponse = {
+  type: 'pointerlockerror';
+};
+
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventIdleResponse
@@ -434,7 +439,8 @@ export type OnEventResponse =
   | OnEventWebrtcStatsResponse
   | OnEventNoflowResponse
   | OnEventNoflowcenterResponse
-  | OnEventLatencyResponse;
+  | OnEventLatencyResponse
+  | OnEventPointerLockErrorResponse;
 
 /**
  * 直播推流相关
@@ -959,8 +965,8 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onCursorShowStatChange 回调函数的 response
-   * @param {boolean} response.oldStatus - 是否显示
-   * @param {boolean} response.newStatus - 手柄索引
+   * @param {boolean} response.oldStatus - 老状态
+   * @param {boolean} response.newStatus - 新状态
    */
   onCursorShowStatChange?: (response: OnCursorShowStatChangeResponse) => void;
   /**
@@ -1029,8 +1035,8 @@ export interface InitConfig {
    * 目前主要用于自动播放是否成功回调
    *
    * @function
-   * @param {Object} response - onConfigurationChange 回调函数的 response
-   * @param {string} response.type - 对应类型 'idle' | 'noflow' | 'noflowcenter' | 'stats' | 'openurl' | 'latency'
+   * @param {Object} response - onEvent 回调函数的 response
+   * @param {string} response.type - 对应类型 'autoplay' | 'idle' | 'noflow' | 'noflowcenter' | 'stats' | 'openurl' | 'latency' | 'pointerlockerror'
    * @param {any} response.data - 根据对应 code 判断
    */
   onEvent?: (response: OnEventResponse) => void;
@@ -1238,10 +1244,11 @@ export class TCGSDK {
   /**
    * **聚焦输入框时**快速发送内容
    * @param {string} content 需要发送的内容
+   * @param {Function} [callback] 回调 code: 0 success, 1 failed
    * @example
    * TCGSDK.sendText('abc');
    */
-  sendText(content: string): void;
+  sendText(content: string, callback?: Function): void;
   /**
    * 设置云端应用交互模式，也可通过 *InitConfig clientInteractMode* 设置
    * @param { string } mode='cursor' -'cursor' 表示鼠标，‘touch’ 表示触控，**需要云上应用支持**
@@ -1291,7 +1298,7 @@ export class TCGSDK {
    * @returns 返回 Promise 对象。
    * | Name          | Type                | Description                 |
    * | ------------- | ------------------- | --------------------------- |
-   * | code          | number              | 0 success, 1 ack dataChannel 未创建成功，请重试, 2 该数据通道已经存在                     |
+   * | code          | number              | 0 success, 1 ack dataChannel 未创建成功，请重试, 2 该数据通道已经存在, -1 创建失败(ack 返回)                     |
    * | msg           | string              | dataChannel收到消息的回调函数  |
    * | sendMessage   | (message: string \| Blob \| ArrayBuffer \| ArrayBufferView) => void;  | 用于发送消息的方法，会透传数据给 peerConnection 的 dataChannel，参数message 支持 RTCDataChannel send 所有数据类型  |
    *
@@ -1494,12 +1501,15 @@ export class TCGSDK {
   getVideoVolume(): number;
   /**
    * 播放视频
+   *
+   * * 'play' 其实是调用了 video 的 play， 返回 Promise*
+   *
    * @param {('play'|'pause')} status
    *
    * @example
    * TCGSDK.playVideo('play');
    */
-  playVideo(status: 'play' | 'pause'): void;
+  playVideo(status: 'play' | 'pause'): void | Promise<void>;
   /**
    * 播放音频
    * @param {('play'|'pause')} status
@@ -1508,6 +1518,13 @@ export class TCGSDK {
    * TCGSDK.playAudio('play');
    */
   playAudio(status: 'play' | 'pause'): void;
+  /**
+   * 获取 video 对象
+   *
+   * @example
+   * TCGSDK.getVideoElement();
+   */
+  getVideoElement(): HTMLVideoElement;
   /**
    * 获取用户开启的摄像头或麦克风 stream
    */
@@ -1545,7 +1562,7 @@ export class TCGSDK {
    * @example
    * TCGSDK.setMicProfile({sampleRate: 44100, echoCancellation: true, noiseSuppression: true, autoGainControl: true});
    */
-  setMicProfile(profile: MicProfileConstraints): void;
+  setMicProfile(profile: MicProfileConstraints): Promise<void>;
   /**
    * @async
    *
@@ -1572,13 +1589,15 @@ export class TCGSDK {
   /**
    * 获取所有设备
    *
+   * @async
+   *
    * @returns {MediaDeviceInfo[]}
    */
   getDevices(): Promise<MediaDeviceInfo[]>;
   /**
    * 设置video 的旋转角度。
    *
-   * -发现有时候客户会自己旋转屏幕，其实不建议。因为涉及到的坐标转换很复杂，SDK 内部已经处理。连同插件的旋转和数据处理都在SDK 内部做了。建议用该方法，或者直接在 Init 参数重配置自动旋转-
+   * *发现有时候客户会自己旋转屏幕，其实不建议。因为涉及到的坐标转换很复杂，SDK 内部已经处理。连同插件的旋转和数据处理都在SDK 内部做了。建议用该方法，或者直接在 Init 参数重配置自动旋转*
    *
    * @param {Object} param
    * @param {(0|90|270)} param.deg=0 - 旋转角度当前只支持 0/90，手游 0/270
@@ -1624,7 +1643,6 @@ export class TCGSDK {
    * @param {boolean} [param.showOnAckMessage] - 打印ACK回包消息
    * @param {boolean} [param.showOnCdMessage] - 打印CD回包消息
    * @param {boolean} [param.showOnSvMessage] - 打印Sv回包消息
-   * @param {boolean} [param.userid] - 用户id
    *
    * @example
    * TCGSDK.setDebugMode({showLog: true, showStats: true});

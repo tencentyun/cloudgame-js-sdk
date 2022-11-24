@@ -1,3 +1,21 @@
+### [1.1.9](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.9)@2022.11.24
+
+**新增**
+
+- 鼠标锁定失败回调
+- 新增发送文本回调
+
+**变更**
+
+- reshapeWindow 逻辑修改
+- 针对手游横屏自动流旋转逻辑调整
+
+**修复**
+
+- 屏幕旋转重复添加 class 问题修复
+- reshapeWindow 逻辑修改
+- 屏幕旋转回调增加容错
+
 ### [1.1.8](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.8)@2022.11.02
 
 **新增**
