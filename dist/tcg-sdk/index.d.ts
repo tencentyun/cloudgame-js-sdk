@@ -29,6 +29,7 @@ export interface OnConnectSuccessResponse {
 /**
  * code=-2 获取H264 编码失败
  * code=-1 setRemoteDescription 失败
+ * code=0 成功
  * code=1 系统繁忙
  * code=2 票据不合法
  * code=3 用户带宽不足
@@ -652,6 +653,12 @@ export interface InitConfig {
    */
   loadingText?: string;
   /**
+   * 重新连接的文字提示内容
+   *
+   * @default '重新连接'
+   */
+  restartText?: string;
+  /**
    * 当横竖屏切换时，是否自动旋转html节点适配，**该参数会旋转整个html**
    *
    * @default false
@@ -712,6 +719,14 @@ export interface InitConfig {
    */
   enablePaste?: boolean;
   /**
+   * 启动移动端系统输入法
+   *
+   * 云端input 框聚焦时候，拉起系统输入法
+   *
+   * @default false
+   */
+  enableClientKeyboard?: boolean;
+  /**
    * 初始化完毕的回调，触发此回调之后才能调用后面的 API
    *
    * CreateSession 需要在该回调成功后进行;
@@ -771,6 +786,7 @@ export interface InitConfig {
    * | ------- | ---------------------------- |
    * | -2      | 获取H264 编码失败              |
    * | -1      | setRemoteDescription 失败     |
+   * | 0       | 成功                          |
    * | 1       | 系统繁忙                       |
    * | 2       | 票据不合法                     |
    * | 3       | 用户带宽不足                   |
@@ -1262,6 +1278,17 @@ export class TCGSDK {
    * @description 设置云端桌面分辨率 width、height
    *
    * **建议在 onConnectSuccess 内调用**
+   *
+   * 云上应用大概可以分为以下四种模式
+   * 1. 有边框窗口 - 应用有边框，类似文件夹浏览器的窗口，打开应用的同时可以看到桌面
+   * 2. 无边框窗口 - 应用无边框，应用分辨率小于桌面分辨率，看不到标题栏之类的状态条，打开应用的同时可以看到桌面
+   * 3. 无边框全屏 - 应用无边框且应用分辨率等同于桌面分辨率，桌面被应用完全遮挡，达到全屏的效果
+   * 4. 独占全屏 - 应用独占全屏，显示器分辨率由应用控制，此时强行修改桌面分辨率可能导致应用崩溃
+   *
+   * *区分无边框全屏和独占全屏*
+   * -无边框全屏的应用按alt tab切换窗口不会导致显示器闪烁，独占全屏应用会有个闪烁的现象-
+   *
+   * 以上四种模式除4（独占全屏）模式外，都能使用该接口
    *
    * @param {Object} param
    * @param {number} param.width - 云端桌面宽度

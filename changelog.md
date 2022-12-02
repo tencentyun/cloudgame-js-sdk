@@ -1,3 +1,17 @@
+### [1.1.10](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.10)@2022.12.02
+
+**新增**
+
+- 重新连接文案属性
+
+**变更**
+
+- 调整日志上报逻辑
+
+**修复**
+
+- 由于自动播放受限，导致坐标计算错误问题
+
 ### [1.1.9](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.9)@2022.11.24
 
 **新增**
