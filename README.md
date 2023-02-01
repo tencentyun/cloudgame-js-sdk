@@ -39,6 +39,8 @@
 
 ## 说明文档
 
+[接口文档](https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web/docs/index.html)
+
 [使用例子](samples/)
 
 [快速入门](https://cloud.tencent.com/document/product/1162/46135)

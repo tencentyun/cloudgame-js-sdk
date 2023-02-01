@@ -2,10 +2,6 @@ export type TouchType = 'touchstart' | 'touchend' | 'touchcancel';
 
 export interface OnTouchEventResponse {
   /**
-   * The keyboard mount node. Default value: TCGSDK init param `mount`.
-   */
-  zone?: HTMLElement;
-  /**
    * The event type, which is read-only. Valid values: `touchstart`, `touchend`, `touchcancel`.
    */
   readonly type: TouchType;
@@ -20,6 +16,10 @@ export interface OnTouchEventResponse {
 }
 
 export interface KeyboardConfig {
+  /**
+   * The keyboard mount node. Default value: TCGSDK init param `mount`.
+   */
+  zone?: HTMLElement;
   /**
    * Whether to send the keyboard data automatically. Default value: `true`.
    */
@@ -45,6 +45,7 @@ export interface KeyboardConfig {
  * It relies on TCGSDK. We recommend you use it in the callback function onConnectSuccess in TCGSDK.init.
  *
  * @param {Object} params
+ * @param {HTMLElement} [params.zone=TCGSDK init param `mount`] - The keyboard mount node. Default value: TCGSDK init param `mount`.
  * @param {boolean} [params.sendData=true] - Whether to send the keyboard data automatically. Default value: `true`.
  * @param {string} [params.keyBorderColor='#4a525a'] - The frame color of a key. Default value: `#4a525a`.
  * @param {Object} [params.keyPressedBorderColor='#2684FF'] - The frame color of a pressed key. Default value: `#2684FF`

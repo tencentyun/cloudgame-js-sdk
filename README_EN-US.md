@@ -39,6 +39,8 @@ For more information, see the mobile and PC demos in the `samples` folder.
 
 ## Documentation
 
+[Interface Documents](https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web/docs_en/index.html)
+
 [Use Samples](samples/)
 
 [Getting Started](https://www.tencentcloud.com/document/product/1158/49612)

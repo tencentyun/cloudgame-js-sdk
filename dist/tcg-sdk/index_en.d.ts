@@ -646,6 +646,12 @@ export interface InitConfig {
    */
   loadingText?: string;
   /**
+   * Restart button text
+   *
+   * @default '重新连接'
+   */
+  restartText?: string;
+  /**
    * Whether to rotate the entire HTML view. Default value: `false.
    *
    * @default false
@@ -979,6 +985,14 @@ export interface InitConfig {
    */
   onOrientationChange?: (response: { type: 'portrait' | 'landscape' }) => void;
   /**
+   * Page visibility changes.
+   *
+   * @function
+   * @param {Object} response - onVisibilityChange response
+   * @param {('visible' | 'hidden')} response.status
+   */
+  onVisibilityChange?: (response: { status: 'visible' | 'hidden' }) => void;
+  /**
    * Cloud config changed, only trigger when status changed.
    *
    * @function
@@ -1029,7 +1043,7 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onConfigurationChange response
-   * @param {string} response.type - event type: 'idle' | 'noflow' | 'noflowcenter' | 'stats' | 'openurl' | 'latency'
+   * @param {string} response.type - event type: 'idle' | 'noflow' | 'noflowcenter' | 'stats' | 'openurl' | 'latency' | 'pointerlockerror'
    * @param {any} response.data
    */
   onEvent?: (response: OnEventResponse) => void;
@@ -1305,7 +1319,7 @@ export class TCGSDK {
    * @example
    * const { sendMessage, code } = await TCGSDK.createCustomDataChannel({
    *   destPort: 6060,
-   *   onMessage: (res: any) => {
+   *   onMessage: (res) => {
    *     console.log('CustomDataChannel onMessage', res);
    *   },
    * });

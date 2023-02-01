@@ -1332,7 +1332,7 @@ export class TCGSDK {
    * @example
    * const { sendMessage, code } = await TCGSDK.createCustomDataChannel({
    *   destPort: 6060,
-   *   onMessage: (res: any) => {
+   *   onMessage: (res) => {
    *     console.log('CustomDataChannel onMessage', res);
    *   },
    * });
@@ -1366,6 +1366,7 @@ export class TCGSDK {
    * @param {Object} param
    * @param {number} param.key - 对应的 code 码
    * @param {boolean} param.down - 是否是按下状态
+   * @param {number} param.location - 1 左键，2 右键
    *
    * @example
    * // 按下时
@@ -1374,7 +1375,7 @@ export class TCGSDK {
    * TCGSDK.sendKeyboardEvent({key: 32, down:  false});
    *
    */
-  sendKeyboardEvent({ key, down }: { key: number; down: boolean }): void;
+  sendKeyboardEvent({ key, down, location }: { key: number; down: boolean; location?: number }): void;
   /**
    * 发送鼠标事件
    * @param {Object} param
@@ -1490,6 +1491,9 @@ export class TCGSDK {
   // -------------- 音视频控制相关接口 ------------
   /**
    * 设置码流参数，该接口为设置建议码流参数，云端可能会根据游戏动态调整
+   *
+   * **如果CreateSession 参数中设置了 MinBitrate/MaxBitrate，参数 min_bitrate/max_bitrate 必须在前者设置范围内**
+   *
    * @param {Object} profile 目前可用参数如下：
    * @param {number} profile.fps - 帧率，范围[10,60]
    * @param {number} profile.max_bitrate - 最大码率，范围[1,15]，单位：Mbps
@@ -1648,6 +1652,8 @@ export class TCGSDK {
   }): void;
   /**
    * 获取页面尺寸
+   *
+   * **可获取根据设备 window.devicePixelRatio 乘以固定比例保证显示画面分辨率足够清晰**
    *
    * @returns {Object} { width: number; height: number };
    *

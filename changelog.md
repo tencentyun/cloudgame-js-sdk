@@ -1,3 +1,17 @@
+### [1.1.11](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.11)@2022.02.01
+
+**新增**
+
+- keyboard data 新增 location 表示左右按键
+
+**变更**
+
+- 重连优化
+
+**修复**
+
+- 重复多次开关麦，导致麦克风切换失败问题修复
+
 ### [1.1.10](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.10)@2022.12.02
 
 **新增**

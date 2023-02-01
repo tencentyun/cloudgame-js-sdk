@@ -124,7 +124,16 @@ export interface JoystickOutputData {
  * @param {string} [params.joystickImage.frontPressed] - 按钮被按下后的图片， http/https 地址，不填采用默认图片
  * @param {boolean} [params.restJoystick=true] - touchend 后复位摇杆，默认值 `true`
  *
- * @example new Joystick({})
+ * @example
+ * // 如果是通过 Script 标签引入
+ * const j = new CloudGamingPlugin.joystick({
+ *  zone: document.querySelector('#plugin-point'),
+ * });
+ *
+ *
+ * // 如果是通过 ES module import
+ * const j = new Joystick({zone: document.querySelector('#plugin-point')})
+ *
  */
 declare class Joystick {
   constructor(params: JoystickConfig);

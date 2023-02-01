@@ -122,7 +122,16 @@ export interface JoystickOutputData {
  * @param {string} [params.joystickImage.frontPressed] - The image of a pressed button, which is an HTTP/HTTPS address. If this parameter is not specified, the default image will be used.
  * @param {boolean} [params.restJoystick=true] - Whether to reset the stick after `touchend`. Default value: `true`.
  *
- * @example new Joystick({})
+ * @example
+ * // If import plugin from `Script tag`.
+ * const j = new CloudGamingPlugin.joystick({
+ *  zone: document.querySelector('#plugin-point'),
+ * });
+ *
+ *
+ * // If import plugin from `ES module import`
+ * const j = new Joystick({zone: document.querySelector('#plugin-point')})
+ *
  */
 declare class Joystick {
   constructor(params: JoystickConfig);

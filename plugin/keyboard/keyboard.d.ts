@@ -47,6 +47,7 @@ export interface KeyboardConfig {
  * 依赖 TCGSDK 使用，建议在 TCGSDK.init 内的回调函数 onConnectSuccess 中使用
  *
  * @param {Object} params
+ * @param {HTMLElement} [params.zone=TCGSDK init param `mount`] - 摇杆挂载节点，默认 TCGSDK init 参数传入的 mount 节点
  * @param {boolean} [params.sendData=true] - 自动发送键盘数据 默认值 true
  * @param {string} [params.keyBorderColor='#4a525a'] - 按键边框颜色 默认 '#4a525a'
  * @param {Object} [params.keyPressedBorderColor='#2684FF'] - 按下时边框颜色 默认 '#2684FF'
