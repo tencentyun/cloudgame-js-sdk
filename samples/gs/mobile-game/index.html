@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+  <title>Tencent Cloud - Real-Time Cloud Rendering - cloud mobile game - demo</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'SimHei', 'Microsoft YaHei', 'Arial', 'sans-serif';
+    }
+
+    #demo-container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="demo-container">
+    <div id="mount-point"></div>
+  </div>
+  <script type="text/javascript" src="../../../dist/tcg-sdk/index.js"></script>
+  <script type="text/javascript" src="../../../plugin/joystick/joystick.js"></script>
+  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/axios/0.26.1/axios.min.js"></script>
+  <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script> -->
+  <script>
+
+    // For GS, the backend service API `StartGame` is actually a serial call of `TrylockWorker` and `CreateSession` APIs on the backend.
+    // Try locking the machine (TrylockWorker). https://cloud.tencent.com/document/api/1162/40738
+    // Create a session (`CreateSession`). https://cloud.tencent.com/document/api/1162/40740
+    const StartGame = async () => {
+      const url = 'http://xxxx/StartGame'; // For the backend service, see the backend demo solution.
+
+      // For more information on other optional parameters, see the document of the `TrylockWorker` API.
+      const { data } = await axios.post(url, {
+        GameId: 'game-id',
+        UserId: 'user-id',
+        ClientSession: TCGSDK.getClientSession(),
+      });
+
+      console.log('%c StartGame res', 'color: blue; font-size: 14px', data);
+
+      const { Code, SessionDescribe: { ServerSession } } = data;
+
+      if (Code === 0) {
+        TCGSDK.start(ServerSession);
+      } else {
+        // Process the request exception
+      }
+    }
+
+    // For more information on the SDK lifecycle, visit https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web/docs/index.html.
+    TCGSDK.init({
+      appid: 1234567,
+      mount: 'mount-point',
+      debugSetting: {
+        showLog: true,
+      },
+      // Connected successfully.
+      onConnectSuccess: async (res) => {
+        console.log('onConnectSuccess', res);
+      },
+      // The network was disconnected or the user was kicked out.
+      onDisconnect: (res) => {
+        console.log('onDisconnect', res);
+      },
+      onWebrtcStatusChange: (res) => {
+        console.log('onWebrtcStatusChange', res);
+      },
+      onInitSuccess: async (res) => {
+        console.log('%c onInitSuccess', 'color: red', res);
+
+        await StartGame();
+      }
+    });
+
+  </script>
+</body>
+
+</html>

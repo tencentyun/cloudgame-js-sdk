@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+  <title>Tencent Cloud - Real-Time Cloud Rendering - CAR - demo</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'SimHei', 'Microsoft YaHei', 'Arial', 'sans-serif';
+    }
+
+    #demo-container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="demo-container">
+    <div id="mount-point"></div>
+  </div>
+  <script type="text/javascript" src="path/to/tcg-sdk"></script>
+  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/axios/0.26.1/axios.min.js"></script>
+  <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script> -->
+  <script>
+    // For CAR, the backend service API `StartProject` is actually a serial call of `ApplyConcurrent` and `CreateSession` APIs on the backend.
+    // Apply for a concurrency (`ApplyConcurrent`). https://www.tencentcloud.com/zh/document/product/1158/49969, 中文 https://cloud.tencent.com/document/api/1547/72827
+    // Create a session (`CreateSession`). https://www.tencentcloud.com/zh/document/product/1158/49968, 中文 https://cloud.tencent.com/document/api/1547/72826
+    const StartProject = async () => {
+      const url = 'http://xxxx/StartProject'; // For backend implementation, see the backend demo solution.
+
+      // For more information on other optional parameters, see the document of the `ApplyConcurrent` API.
+      const { data } = await axios.post(url, {
+        ProjectId: 'project-id',
+        UserId: 'user-id', // Random UserId
+        ClientSession: TCGSDK.getClientSession(),
+      });
+
+      console.log('%c StartProject res', 'color: blue; font-size: 14px', data);
+
+      const { Code, SessionDescribe: { ServerSession } } = data;
+
+      if (Code === 0) {
+        TCGSDK.start(ServerSession);
+      } else {
+        // Process the request exception
+      }
+    }
+
+    // For two-finger touch, record the position of the last touch point to facilitate coordinate calculation.
+    let lastX = null;
+    let lastY = null;
+
+    // For more information on the SDK lifecycle, visit https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web/docs/index.html.
+    TCGSDK.init({
+      appid: 1234567,
+      mount: 'mount-point',
+      debugSetting: {
+        showLog: true,
+      },
+      // Connected successfully.
+      onConnectSuccess: async (res) => {
+        console.log('onConnectSuccess', res);
+      },
+      // The network was disconnected or the user was kicked out.
+      onDisconnect: (res) => {
+        console.log('onDisconnect', res);
+      },
+      onWebrtcStatusChange: (res) => {
+        console.log('onWebrtcStatusChange', res);
+      },
+      // The user touched the mobile client to simulate an instruction sent on a PC.
+      onTouchEvent: async (res) => {
+        // console.log('onTouchEvent', res);
+        // The code for a single-finger touch operation
+        if (res.length === 1) {
+          const { id, type, pageX, pageY } = res.pop();
+          // console.log('onTouchEvent', id, type, pageX, pageY);
+          TCGSDK.mouseMove(id, type, pageX, pageY);
+          if (type === 'touchstart') {
+            TCGSDK.sendRawEvent({ type: 'mouseleft', down: true });
+          }
+          if (type === 'touchend' || type === 'touchcancel') {
+            TCGSDK.sendRawEvent({ type: 'mouseleft', down: false });
+          }
+        }
+        // The code for a two-finger pinch zoom operation. Here, the two fingers simulate a mouse scroll wheel event on a PC.
+        if (res.length === 2) {
+          const [{ pageX: oneX, pageY: oneY }, { pageX: twoX, pageY: twoY }] = res;
+
+          const currentX = Math.ceil(Math.abs(oneX - twoX));
+          const currentY = Math.ceil(Math.abs(oneY - twoY));
+          // `lastX` and `lastY` indicates the previous position and can be defined globally like this: `let lastX = null, lastY = null`.
+          lastX ||= currentX;
+          lastY ||= currentY;
+
+          if (lastX && currentX - lastX < 0 && lastY && currentY - lastY < 0) {
+            TCGSDK.sendRawEvent({ type: 'mousescroll', delta: 1 });
+            lastX = currentX;
+            lastY = currentY;
+          }
+
+          if (lastX && currentX - lastX > 0 && lastY && currentY - lastY > 0) {
+            TCGSDK.sendRawEvent({ type: 'mousescroll', delta: -1 });
+            lastX = currentX;
+            lastY = currentY;
+          }
+        }
+      },
+      onInitSuccess: async (res) => {
+        console.log('%c onInitSuccess', 'color: red', res);
+
+        await StartProject();
+      }
+    });
+
+  </script>
+</body>
+
+</html>
