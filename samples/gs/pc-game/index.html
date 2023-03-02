@@ -70,6 +70,10 @@
       }
     }
 
+    // For two-finger touch, record the position of the last touch point to facilitate coordinate calculation.
+    let lastX = null;
+    let lastY = null;
+
     // For more information on the SDK lifecycle, visit https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web/docs/index.html.
     TCGSDK.init({
       appid: 1234567,
