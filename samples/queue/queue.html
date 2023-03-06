@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
-  <title>腾讯云-云游戏-排队demo</title>
+  <title>腾讯云-云渲染-排队demo</title>
   <link rel="stylesheet" href="./queue.css">
 </head>
 
@@ -25,17 +25,15 @@
         </div>
       </div>
     </div>
-    <!-- <div class="button-back">
-      <img src="./back.png" alt="" onclick="goBack()">
-    </div> -->
   </div>
   <script type="text/javascript" src="../../../dist/tcg-sdk/index.js"></script>
   <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/axios/0.26.1/axios.min.js"></script>
   <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script> -->
   <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script> -->
-  <!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script> -->
+
   <script>
-    // SDK 生命周期参考 https://cloud.tencent.com/document/product/1162/47435
+    // SDK 生命周期参考 https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web/docs/index.html
     TCGSDK.init({
       mount: 'mount-point',
       debugSetting: {
@@ -48,7 +46,6 @@
       // 网络中断/被踢触发此回调
       onDisconnect: (res) => {
         console.log('onDisconnect', res);
-        clearTimeout(heartbeatTimer);
       },
       // onTouch 回调，res 为 object[]
       // 移动端上操作端游应用，通过touch 模拟端游的鼠标操作
@@ -77,16 +74,16 @@
       }
     });
 
-    const baseUrl = ''; // 'http://xxxx' 请求的后台地址
-    const gameId = 'game-id';
-    const userId = 'user-id'; // 用户的唯一标识
+    const baseUrl = ''; // 'http://xxxx' 请求的后台地址，请注意端口是否正确
+    const projectId = 'project-id';
+    const userId = 'user-id'; // 用户的唯一标识，也可以随机生成，例如 `user-${Math.floor(Math.random() * 1000)}`
 
     const checkEnqueue = async () => {
       document.querySelector('#mount-point').style.display = 'none';
 
       const data = await sendRequest({
         url: `${baseUrl}/Enqueue`,
-        data: { GameId: gameId},
+        data: { ProjectId: projectId},
       });
 
       console.log('%c checkEnqueue res', 'color: blue; font-size: 14px', data);
@@ -97,75 +94,64 @@
         const { Index } = Data;
         document.querySelector('.loading-queue-index').innerHTML = `当前第 ${Index} 位...`;
 
-        // 2s 轮训一次队列
+        // 5s 轮训一次队列
         setTimeout(async () => {
           await checkEnqueue();
-        }, 2000);
+        }, 5000);
       }
 
       // 排队成功
       if (Code === 10101) {
-        await startGame();
+        await startProject();
       }
     };
 
-    const startGame = async () => {
+    const startProject = async () => {
       // 后台服务可以参考后台一键部署方案
       const data = await sendRequest({
-        url: `${baseUrl}/StartGame`,
+        url: `${baseUrl}/StartProject`,
         data: {
-          GameId: gameId,
+          ProjectId: projectId,
           ClientSession: TCGSDK.getClientSession(),
         }
       });
 
-      console.log('%c startGame res', 'color: blue; font-size: 14px', data);
-      const { Code, SessionDescribe } = data
+      console.log('%c startProject res', 'color: blue; font-size: 14px', data);
+      const { Code, SessionDescribe } = data;
 
       if (Code === 0) {
         TCGSDK.start(SessionDescribe?.ServerSession);
 
         document.querySelector('#mount-point').style.display = 'block';
         document.querySelector('.loading-page').style.display = 'none';
-        startHeartbeat();
       } else {
         // 异常处理逻辑
       }
     }
 
-    // 心跳上报
-    let heartbeatTimer = null;
-    const startHeartbeat = () => {
-      heartbeatTimer = setTimeout(async () => {
-        await sendRequest({
-          url: `${baseUrl}/Heartbeat`,
-        });
-        startHeartbeat();
-      }, 3000);
-    };
-
     // | Code  | 描述                                               | 备注 |
     // | ----- | -------------------------------------------------- | ---- |
-    // | 0     | 请求成功                                           |      |
-    // | 10000 | sign 校验错误                                   |      |
-    // | 10001 | 缺少必要参数                   |      |
-    // | 10100 | 排队进行中，需要继续请求获取队列位置更新                             |      |
-    // | 10101 | 排队完成                                     |      |
-    // | 10200 | 创建应用云渲染会话失败                                       |      |
-    // | 10201 | 释放应用云渲染会话失败                                           |      |
-    // | 10202 | 申请并发失败          |      |
+    // | 0     | 请求成功                                            |      |
+    // | 10000 | sign 校验错误                                       |      |
+    // | 10001 | 缺少必要参数                                         |      |
+    // | 10100 | 排队进行中，需要继续请求获取队列位置更新                  |      |
+    // | 10101 | 排队完成                                            |      |
+    // | 10200 | 创建应用云渲染会话失败                                 |      |
+    // | 10201 | 释放应用云渲染会话失败                                 |      |
+    // | 10202 | 申请并发失败                                         |      |
     const sendRequest = async ({ url, data = {} }) => {
       let reqData = {
         ...data,
         UserId: userId,
-        TimeStamp: +new Date(),
         RequestId: `request-${Math.floor(Math.random() * 1000)}` // 随机一个request id
       };
-      // 计算数据签名
-      const sign = getSign(reqData);
+
+      // 计算数据签名，开启校验则必传
+      // const sign = getSign(reqData);
+
       reqData = {
         ...reqData,
-        Sign: sign,
+        // Sign: sign,
       };
 
       try {
@@ -180,7 +166,7 @@
       }
     };
 
-    // 用于对send 的request data 进行签名
+    // 用于对send 的request data 进行签名，默认签名未打开
     const getSign = (params) => {
       const key = ''; // 用于签名的字符串，可以后台设置  
 
@@ -197,29 +183,7 @@
     };
 
   </script>
-  <!-- <script>
-    // element draggable
-    const position = { x: 0, y: 0 }
-    interact('.button-back').draggable({
-      listeners: {
-        move (event) {
-          position.x += event.dx
-          position.y += event.dy
 
-          event.target.style.transform =
-            `translate(${position.x}px, ${position.y}px)`
-        },
-      }
-    })
-
-    // 点击发送返回消息
-    const goBack = () => {
-      TCGSDK.sendKeyboardEvent({ key: 158, down: true });
-      setTimeout(() => {
-        TCGSDK.sendKeyboardEvent({ key: 158, down: false });  
-      }, 0);
-    }
-  </script> -->
 </body>
 
 </html>
