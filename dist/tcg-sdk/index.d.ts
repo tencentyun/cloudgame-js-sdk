@@ -565,7 +565,7 @@ export type CameraProfileType = '120p' | '180p' | '240p' | '360p' | '480p' | '72
  */
 export interface InitConfig {
   /**
-   *  用户的腾讯云 APPID
+   *  用户的腾讯云 APPID，可选参数
    */
   appid?: number;
   /**
@@ -707,25 +707,35 @@ export interface InitConfig {
   /**
    * 云上应用交互模式，支持鼠标 或者 触摸
    *
+   * **该参数建议移动端使用，PC 端设置该参数会导致鼠标锁定**
+   *
    * @default 'cursor'
    */
   clientInteractMode?: 'cursor' | 'touch';
   /**
    * 劫持键盘 Ctrl+v/Cmd+v，当用户使用粘贴功能时候，直接将本地剪切板内容发送给云端
    *
-   * **通常在云端 input 框 focus 时候使用**
+   * **该接口适用PC 端，通常在云端 input 框 focus 时候使用**
    *
    * @default false
    */
   enablePaste?: boolean;
+  // /**
+  //  * 启动移动端系统输入法
+  //  *
+  //  * 云端input 框聚焦时候，拉起系统输入法
+  //  *
+  //  * @default false
+  //  */
+  // enableClientKeyboard?: boolean;
   /**
-   * 启动移动端系统输入法
+   * 启用云端计算鼠标
    *
-   * 云端input 框聚焦时候，拉起系统输入法
+   * 可能会更平滑
    *
-   * @default false
+   * @default true
    */
-  enableClientKeyboard?: boolean;
+  enableMousemoveV2?: boolean;
   /**
    * 初始化完毕的回调，触发此回调之后才能调用后面的 API
    *
@@ -840,6 +850,8 @@ export interface InitConfig {
    */
   onNetworkChange?: (response: OnNetworkChangeResponse) => void;
   /**
+   * **移动端适用**
+   *
    * 移动端触摸事件回调，调用 start 接口成功后才会触发
    *
    * 返回 OnTouchEventResponse[]，对应当前屏幕触控点数，可根据 array 长度判断多指操作
@@ -967,6 +979,8 @@ export interface InitConfig {
   onInputStatusChange?: (response: OnInputStatusChangeResponse) => void;
   /**
    * 手柄连接/断开事件回调
+   *
+   * **需要 Web 运行环境支持 Gamepad API**
    *
    * @function
    * @param {Object} response - onGamepadConnectChange 回调函数的 response
@@ -1176,12 +1190,15 @@ export class TCGSDK {
   reshapeWindow(): void;
   /**
    * 设置云渲染页面的背景图。
-   * 注意，这里设置的是前端container 的背景图，不是云端的背景图，云端背景图通过createSession 设置
+   * **注意，这里设置的是前端container 的背景图，不是云端的背景图，云端背景图通过createSession 设置**
    * @param {string} url 背景图片
    */
   setPageBackground(url: string): void;
   /**
    * 设置是否全屏
+   *
+   * **iOS 不可用**
+   *
    * @param {boolean} fullscreen 是全屏还是退出全屏
    * @param {HTMLElement} element 需要操作的节点
    *
@@ -1211,63 +1228,22 @@ export class TCGSDK {
    */
   gameResume(callback?: Function): void;
   /**
-   * 辅助登录，仅支持部分游戏
-   * @param {Object} [params]
-   * @param {string} [params.string]
-   * @param {string} params.acc - 账号
-   * @param {string} params.pwd - 密码
-   * @param {Function} [callback]
-   */
-  loginHelper(
-    params: { gameid?: string; acc: string; pwd: string },
-    callback?: ({ code: number, finish: boolean, msg: string }) => void,
-  ): void;
-  /**
-   * 获取当前窗口是否登录窗口，传入gameid 以及 callback 函数
-   * @param { string } gameid
-   * @param { Function } callback - 对应function response 如下
-   * @param { number } callback.code
-   * @param { string } callback.msg
-   * @param { Object } callback.data
-   * @param { number } callback.data.bottom
-   * @param { number } callback.data.left
-   * @param { number } callback.data.right
-   * @param { number } callback.data.top
-   * @param { number } callback.data.capslock
-   * @param { number } callback.data.found
-   * @param { string } callback.data.name
-   */
-  getLoginWindowStat(
-    gameid: string,
-    callback: ({
-      code,
-      data,
-      msg,
-    }: {
-      code: number;
-      data: {
-        bottom: number;
-        capslock: number;
-        found: number;
-        left: number;
-        name: string;
-        right: number;
-        top: number;
-      };
-      msg: string;
-    }) => void,
-  ): void;
-  /**
    * **聚焦输入框时**快速发送内容
+   *
    * @param {string} content 需要发送的内容
    * @param {Function} [callback] 回调 code: 0 success, 1 failed
+   *
    * @example
    * TCGSDK.sendText('abc');
    */
   sendText(content: string, callback?: Function): void;
   /**
    * 设置云端应用交互模式，也可通过 *InitConfig clientInteractMode* 设置
+   *
+   * **该参数建议移动端使用，PC 端设置该参数会导致鼠标锁定**
+   *
    * @param { string } mode='cursor' -'cursor' 表示鼠标，‘touch’ 表示触控，**需要云上应用支持**
+   *
    * @example
    * TCGSDK.setClientInteractMode('cursor');
    */
@@ -1320,13 +1296,14 @@ export class TCGSDK {
    *
    * @param {Object} param
    * @param {number} param.destPort - 目标端口
+   * @param {number} [param.protocol='text'] - 'text' | 'binary'，指定云端回复(onMessage 方法内收到的)数据类型
    * @param {Function} param.onMessage - dataChannel收到消息的回调函数
    *
    * @returns 返回 Promise 对象。
    * | Name          | Type                | Description                 |
    * | ------------- | ------------------- | --------------------------- |
-   * | code          | number              | 0 success, 1 ack dataChannel 未创建成功，请重试, 2 该数据通道已经存在, -1 创建失败(ack 返回)                     |
-   * | msg           | string              | dataChannel收到消息的回调函数  |
+   * | code          | number              | 0 success, 1 ack dataChannel 未创建成功，请重试, 2 该数据通道已经存在, 3 请求超时，请重试,  -1 创建失败(ack 返回)                     |
+   * | msg           | string              |   |
    * | sendMessage   | (message: string \| Blob \| ArrayBuffer \| ArrayBufferView) => void;  | 用于发送消息的方法，会透传数据给 peerConnection 的 dataChannel，参数message 支持 RTCDataChannel send 所有数据类型  |
    *
    * @example
@@ -1346,7 +1323,15 @@ export class TCGSDK {
    * }
    *
    */
-  createCustomDataChannel({ destPort, onMessage }: { destPort: number; onMessage: (res: any) => void }): Promise<{
+  createCustomDataChannel({
+    destPort,
+    onMessage,
+    protocol,
+  }: {
+    destPort: number;
+    onMessage: (res: any) => void;
+    protocol?: 'text' | 'binary';
+  }): Promise<{
     code: number; // 0 success, 1 ack dataChannel 未创建成功，请重试, 2 该数据通道已经存在
     msg: string;
     // 用于发送消息的方法，会透传数据给 peerConnection 的 dataChannel，参数message 支持 RTCDataChannel send 所有数据类型
@@ -1401,6 +1386,9 @@ export class TCGSDK {
   sendSeqRawEvents(params: RawEventData[]): void;
   /**
    * 设置鼠标移动灵敏度
+   *
+   * **该方法只针对 deltaMove 生效**
+   *
    * @param {number} value - 取值范围：[0.01, 100.0]之间的浮点数
    */
   setMoveSensitivity(value: number): void;
@@ -1414,6 +1402,8 @@ export class TCGSDK {
    */
   setMouseCanLock(param: boolean): void;
   /**
+   * 模拟鼠标移动
+   *
    * @param {number} identifier 触控点的 ID，多点触控时每个触控点 ID不能相等，同个触控点的所有事件的触控点 ID 必须一致
    * @param {TouchType} type 触控事件类型，值为touchstart、touchmove、touchend、touchcancel中的一个，对于同一个触控点，touchstart 必须且只对应一个 touchend 或 touchcancel
    * @param {number} x 触控点的 x 坐标，但是如果传浮点数，则按逻辑坐标处理
@@ -1426,10 +1416,17 @@ export class TCGSDK {
   mouseMove(identifier: number, type: string, x: number, y: number): void;
   /**
    * 开启或关闭滑屏鼠标移动模式，通常对于鼠标相对位移方式
+   *
+   * **该方法只针对移动端适用。该 mode 下鼠标产生相对位移。**
+   *
    * @param {boolean} param - true：打开，false：关闭
    */
   mouseTabletMode(param: boolean): void;
   /**
+   * 设置鼠标模式
+   *
+   * **该方法建议在PC 端使用**
+   *
    * @param {number} mode  目前支持三种鼠标样式：
    *
    * mode=0：页面渲染的固定鼠标图片
@@ -1450,14 +1447,11 @@ export class TCGSDK {
    */
   getCursorShowStat(): boolean;
   /**
+   * 移动端适用，设置虚拟鼠标放大系数
+   *
    * @param {number} value 放大系数，默认是1.0，与云端大小一致，取值范围[0.1,10]
    */
   setMobileCursorScale(value: number): void;
-  /**
-   * 样式字符串，值为以下的值之一：
-   * @param {('standard'|'default_huge')} style standard：系统默认鼠标样式，较小 default_huge：系统超大鼠标样式，较大
-   */
-  setRemoteCursorStyle(style: 'standard' | 'default_huge'): void;
   /**
    * 重置云端所有按键状态，用于云端按键卡住的场景。
    */
@@ -1473,6 +1467,9 @@ export class TCGSDK {
   setDefaultCursorImage(url: string): void;
   /**
    * 设置鼠标/键盘的可用状态，针对PC 上，鼠标键盘的对应事件默认会被SDK 捕获然后发向云端
+   *
+   * **该方法 PC 端适用**
+   *
    * @param {Object} param
    * @param {boolean} param.keyboard 键盘可用状态
    * @param {boolean} param.mouse 鼠标可用状态
@@ -1485,7 +1482,7 @@ export class TCGSDK {
   /**
    * 设置是否劫持 Ctrl+v/Cmd+v，当用户使用粘贴功能时候，直接将本地剪切板内容发送给云端
    *
-   * **通常在云端 input 框 focus 时候使用**
+   * **该方法PC 端适用，通常在云端 input 框 focus 时候使用**
    */
   setPaste(enable: boolean): void;
   // -------------- 音视频控制相关接口 ------------
@@ -1519,6 +1516,9 @@ export class TCGSDK {
   getDisplayRect(): { left: number; top: number; width: number; height: number; pixelRatio: number };
   /**
    * 设置video 音量
+   *
+   * **该接口 PC 端适用**
+   *
    * @param {number} value number [0-1]
    *
    * @example

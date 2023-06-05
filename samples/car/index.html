@@ -52,6 +52,7 @@
       const url = 'http://xxxx/StartProject'; // For backend implementation, see the backend demo solution.
 
       // For more information on other optional parameters, see the document of the `ApplyConcurrent` API.
+      // applicationId and projectId are the IDs of the application and project you created in the console, respectively
       const { data } = await axios.post(url, {
         ProjectId: 'project-id',
         UserId: 'user-id', // Random UserId
@@ -75,7 +76,7 @@
 
     // For more information on the SDK lifecycle, visit https://ex.cloud-gaming.myqcloud.com/cloud_gaming_web/docs/index.html.
     TCGSDK.init({
-      appid: 1234567,
+      appid: 1234567, // APPID is the Tencent cloud account ID information, which can be found at the Account Information (https://console.tencentcloud.com/developer).
       mount: 'mount-point',
       debugSetting: {
         showLog: true,
@@ -105,10 +106,10 @@
           // console.log('onTouchEvent', id, type, pageX, pageY);
           TCGSDK.mouseMove(id, type, pageX, pageY);
           if (type === 'touchstart') {
-            TCGSDK.sendRawEvent({ type: 'mouseleft', down: true });
+            TCGSDK.sendMouseEvent({ type: 'mouseleft', down: true });
           }
           if (type === 'touchend' || type === 'touchcancel') {
-            TCGSDK.sendRawEvent({ type: 'mouseleft', down: false });
+            TCGSDK.sendMouseEvent({ type: 'mouseleft', down: false });
           }
         }
         // The code for a two-finger pinch zoom operation. Here, the two fingers simulate a mouse scroll wheel event on a PC.
@@ -118,8 +119,8 @@
           const currentX = Math.ceil(Math.abs(oneX - twoX));
           const currentY = Math.ceil(Math.abs(oneY - twoY));
           // `lastX` and `lastY` indicates the previous position and can be defined globally like this: `let lastX = null, lastY = null`.
-          lastX ||= currentX;
-          lastY ||= currentY;
+          lastX || (lastX = currentX);
+          lastY || (lastY = currentY);
 
           if (lastX && currentX - lastX < 0 && lastY && currentY - lastY < 0) {
             TCGSDK.sendRawEvent({ type: 'mousescroll', delta: 1 });

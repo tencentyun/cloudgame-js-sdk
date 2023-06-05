@@ -1,3 +1,21 @@
+### [1.1.12](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.12)@2022.06.05
+
+**新增**
+
+- 数据通道新增接受二进制数据类型
+- local offer 新增 sps-pps-idr-in-keyframe
+
+**变更**
+
+- dataChannel message 重传优化
+
+**修复**
+
+- Stats 增加旋转后可见
+- 修复丢包显示小于 0
+- 修复旋转屏幕导致摇杆方向异常
+- setRemoteDesktopResolution 避免使用浮点数
+
 ### [1.1.11](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.11)@2022.02.01
 
 **新增**
