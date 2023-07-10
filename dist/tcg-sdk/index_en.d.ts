@@ -9,13 +9,14 @@ export interface OnInitSuccessResponse {
 }
 
 /**
+ *
+ * Usually the reconnection time exceeds two minutes (for example, disconnected or the in mobile switches to the background, and the reconnection is triggered after two minutes)
+ * The system will automatically recycle the instance, and it will return code > 0, needs to init and createSession
+ *
+ * code=-3 Retries exceeded, needs to init and createSession
  * code=-2 Auto reconnecting
  * code=-1 Connect failed, try again alter
- * code=2 Connect failed, token expired, needs to init and trylock
- * code=6 Connect failed, SDP error, needs to init and trylock
- * code=8 Connect failed, waiting host connection, needs to init and trylock
- * code=9 Connect failed, Player exceeds limit
- * code=100 Connect failed, proxy error, needs to init and trylock
+ * code>0 Proxy error, connect failed, needs to init and createSession
  * @ignore
  */
 export interface OnConnectFailedResponse extends BaseResponse {}
@@ -42,7 +43,7 @@ export interface OnConnectSuccessResponse {
 export interface OnWebrtcStatusChangeResponse extends BaseResponse {}
 
 /**
- * code=-2 Create offer failed, need to init and trylock
+ * code=-2 Create offer failed, need to init and createSession
  * code=-1 Need to reconnect, when fps is 0 for 10s, can not receive stream, connection timeout or ice disconnected. If you passed init param `reconnect: true`, SDK will reconnect automatically, or you can reconnect manually.
  * code=0	Server close
  * code=1	User repeated connection
@@ -248,6 +249,14 @@ export interface ServerSideDescription {
     height: number;
     orientation: 'landscape' | 'portrait';
   };
+  /**
+   * The webrtc structure returned by Proxy
+   */
+  readonly WebrtcResponse?: {
+    Code: number;
+    Msg: string;
+    Sdp: string;
+  };
 }
 
 /**
@@ -405,10 +414,12 @@ export type OnEventWebrtcStatsResponse = {
 
 export type OnEventNoflowResponse = {
   type: 'noflow';
+  data?: {};
 };
 
 export type OnEventNoflowcenterResponse = {
   type: 'noflowcenter';
+  data?: {};
 };
 
 export type OnEventLatencyResponse = {
@@ -427,6 +438,21 @@ export type OnEventLatencyResponse = {
   };
 };
 
+export type OnEventPointerLockErrorResponse = {
+  type: 'pointerlockerror';
+  data?: {};
+};
+
+/**
+ * Usually the http protocol will fail to read clipboard
+ */
+export type OnEventReadClipboardErrorResponse = {
+  type: 'readclipboarderror';
+  data?: {
+    message?: any;
+  };
+};
+
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventIdleResponse
@@ -434,7 +460,9 @@ export type OnEventResponse =
   | OnEventWebrtcStatsResponse
   | OnEventNoflowResponse
   | OnEventNoflowcenterResponse
-  | OnEventLatencyResponse;
+  | OnEventLatencyResponse
+  | OnEventReadClipboardErrorResponse
+  | OnEventPointerLockErrorResponse;
 
 /**
  * Push stream
@@ -551,14 +579,14 @@ export interface CameraProfileConstraints extends MediaTrackConstraints {
 /**
  * Camera resolution type for quick setup
  */
-export type CameraProfileType = '120p' | '180p' | '240p' | '360p' | '480p' | '720p' | '1080p' | '2K' | '4K';
+export type CameraProfileType = '120p' | '180p' | '240p' | '360p' | '480p' | '720p' | '1080p';
 
 /**
  * TCGSDK InitConfig related configuration.
  */
 export interface InitConfig {
   /**
-   *  Tencent cloud APPID
+   *  Tencent cloud APPID, Optional
    */
   appid?: number;
   /**
@@ -718,6 +746,14 @@ export interface InitConfig {
    */
   enablePaste?: boolean;
   /**
+   * Whether to enable cloud computing mouse
+   *
+   * Could be smoother
+   *
+   * @default true
+   */
+  enableMousemoveV2?: boolean;
+  /**
    *
    * Init success callback
    *
@@ -758,13 +794,10 @@ export interface InitConfig {
    * code as follows:
    * | code   | Description                               |
    * | ------ | ----------------------------------------- |
+   * | -3     | Retries exceeded, needs to init and createSession                                |
    * | -2     | Auto reconnecting                                  |
    * | -1     | Connect failed, try again alter        |
-   * | 2      | Connect failed, token expired, needs to init and trylock     |
-   * | 6      | Connect failed, SDP error, needs to init and trylock   |
-   * | 8      | Connect failed, waiting host connection, needs to init and trylock  |
-   * | 9      | Connect failed, Player exceeds limit                       |
-   * | 100    | Connect failed, proxy error, needs to init and trylock |
+   * | code > 0 | Proxy error, connect failed, needs to init and createSession     |
    * @param {string} response.msg - message
    *
    */
@@ -805,7 +838,7 @@ export interface InitConfig {
    * code as follows:
    * | code    | Description                                                     |
    * | ------- | --------------------------------------------------------------- |
-   * | -2      | -2 Create offer failed, need to init and trylock                    |
+   * | -2      | -2 Create offer failed, need to init and createSession                    |
    * | -1      | Need to reconnect, when fps is 0 for 10s, can not receive stream, connection timeout or ice disconnected. |
    * | 0       | Server close                                                         |
    * | 1       | User repeated connection                                                      |
@@ -855,10 +888,10 @@ export interface InitConfig {
    *     // console.log('onTouchEvent', id, type, pageX, pageY);
    *     TCGSDK.mouseMove(id, type, pageX, pageY);
    *     if (type === 'touchstart') {
-   *       TCGSDK.sendRawEvent({ type: 'mouseleft', down: true });
+   *       TCGSDK.sendMouseEvent({ type: 'mouseleft', down: true });
    *     }
    *     if (type === 'touchend' || type === 'touchcancel') {
-   *       TCGSDK.sendRawEvent({ type: 'mouseleft', down: false });
+   *       TCGSDK.sendMouseEvent({ type: 'mouseleft', down: false });
    *     }
    *   }
    *   // Multi-finger, simulate the mouse wheel event of the PC
@@ -915,7 +948,7 @@ export interface InitConfig {
    */
   onGameStop?: (response: OnGameStopResponse) => void;
   /**
-   * 游戏存档加载回调，会不断回调size
+   * Game archive loading callback, will continue to call back size
    *
    * @function
    * @param {Object} response - onLoadGameArchive response
@@ -1043,7 +1076,7 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onConfigurationChange response
-   * @param {string} response.type - event type: 'idle' | 'noflow' | 'noflowcenter' | 'stats' | 'openurl' | 'latency' | 'pointerlockerror'
+   * @param {string} response.type - event type: 'idle' | 'noflow' | 'noflowcenter' | 'webrtc_stats' | 'openurl' | 'latency' | 'pointerlockerror' ｜ 'readclipboarderror'
    * @param {any} response.data
    */
   onEvent?: (response: OnEventResponse) => void;
@@ -1073,15 +1106,6 @@ export interface InitConfig {
    * @param {string} response
    */
   onLog?: (response: string) => void;
-  /**
-   * @ignore
-   */
-  onVmafChange?: (response: {
-    status?: 'start_evaluation' | 'evaluation_completed';
-    normal?: number;
-    phone?: number;
-    time?: number;
-  }) => void;
 }
 
 /**
@@ -1201,60 +1225,6 @@ export class TCGSDK {
    */
   gameResume(callback?: Function): void;
   /**
-   * @deprecated
-   *
-   * Sets auxiliary login. This API is supported only by certain games.
-   *
-   * @param {Object} [params]
-   * @param {string} [params.string]
-   * @param {string} params.acc - Account
-   * @param {string} params.pwd - Password
-   * @param {Function} [callback]
-   *
-   */
-  loginHelper(
-    params: { gameid?: string; acc: string; pwd: string },
-    callback?: ({ code: number, finish: boolean, msg: string }) => void,
-  ): void;
-  /**
-   * @deprecated
-   *
-   * Queries whether the current window is a login window. The `gameid` and callback function need to be passed in.
-   *
-   * @param { string } gameid
-   * @param { Function } callback - Below is the function response:
-   * @param { number } callback.code
-   * @param { string } callback.msg
-   * @param { Object } callback.data
-   * @param { number } callback.data.bottom
-   * @param { number } callback.data.left
-   * @param { number } callback.data.right
-   * @param { number } callback.data.top
-   * @param { number } callback.data.capslock
-   * @param { number } callback.data.found
-   * @param { string } callback.data.name
-   */
-  getLoginWindowStat(
-    gameid: string,
-    callback: ({
-      code,
-      data,
-      msg,
-    }: {
-      code: number;
-      data: {
-        bottom: number;
-        capslock: number;
-        found: number;
-        left: number;
-        name: string;
-        right: number;
-        top: number;
-      };
-      msg: string;
-    }) => void,
-  ): void;
-  /**
    * Quickly sends content when the input box is focused.
    *
    * @param {string} content The content to be sent.
@@ -1276,6 +1246,18 @@ export class TCGSDK {
    * @description Sets the resolution width and height of the cloud desktop.
    *
    * We recommend you call this API in **onConnectSuccess**.
+   *
+   * Cloud applications can be roughly divided into the following four modes
+   * 1. Window with borders - the application has a border, similar to a folder browser window, you can see the desktop while opening the application
+   * 2. Window without borders - the application has no borders, the application resolution is smaller than the desktop resolution, and the status bar such as the title bar cannot be seen. When the application is opened, the desktop can be seen at the same time
+   * 3. Fullscreen without borders - the application has no borders and the application resolution is equal to the desktop resolution, and the desktop is completely blocked by the application.
+   * 4. Exclusive fullscreen - the application exclusively occupies the fullscreen, and the display resolution is controlled by the application. At this time, forcibly modifying the desktop resolution may cause the application to crash
+   *
+   * *How to distinguish Fullscreen without borders and Exclusive fullscreen?*
+   *
+   * Pressing alt-tab to switch windows of a Fullscreen without borders application will not cause the display to flicker, and an Exclusive fullscreen application will have a flickering phenomenon
+   *
+   * All the above four modes can use this interface except 4 (Exclusive fullscreen) mode
    *
    * @param {Object} param
    * @param {number} param.width - The cloud desktop width.
@@ -1307,6 +1289,7 @@ export class TCGSDK {
    *
    * @param {Object} param
    * @param {number} param.destPort - The target port.
+   * @param {string} [param.protocol='text'] - 'text' | 'binary', for data type from server (response from onMessage)
    * @param {Function} param.onMessage - The callback function for message receipt by `dataChannel`.
    *
    * @returns Promise object.
@@ -1355,9 +1338,9 @@ export class TCGSDK {
    * @param {boolean} param.down - Whether the key is pressed.
    *
    * @example
-   * // 按下时
+   * // keydown
    * TCGSDK.sendKeyboardEvent({key: 32, down: true});
-   * // 抬起时
+   * // keyup
    * TCGSDK.sendKeyboardEvent({key: 32, down:  false});
    *
    */
@@ -1369,9 +1352,9 @@ export class TCGSDK {
    * @param {boolean} param.down Whether the mouse button is pressed (down) or released (up).
    *
    * @example
-   * // 鼠标左键按下
+   * // mouseleft down
    * TCGSDK.sendMouseEvent({type: 'mouseleft', down: true});
-   * // 鼠标左键抬起
+   * // mouseleft up
    * TCGSDK.sendMouseEvent({type: 'mouseleft', down: false});
    */
   sendMouseEvent({ type, down }: { type: MouseEvent; down: boolean }): void;

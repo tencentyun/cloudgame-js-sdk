@@ -1,4 +1,20 @@
-### [1.1.12](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.12)@2022.06.05
+### [1.1.13](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.13)@2023.07.10
+
+**新增**
+
+- 获取剪切板失败回调
+
+**变更**
+
+- catch pointerlockerror
+
+**修复**
+
+- 自动重连逻辑梳理，对齐 Proxy 返回错误码
+- 取消摄像头上行码率限制
+- 修复切换麦克风导致画面闪烁问题
+
+### [1.1.12](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.12)@2023.06.05
 
 **新增**
 
@@ -16,7 +32,7 @@
 - 修复旋转屏幕导致摇杆方向异常
 - setRemoteDesktopResolution 避免使用浮点数
 
-### [1.1.11](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.11)@2022.02.01
+### [1.1.11](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.11)@2023.02.01
 
 **新增**
 

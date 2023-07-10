@@ -9,13 +9,14 @@ export interface OnInitSuccessResponse {
 }
 
 /**
+ *
+ * 通常重连时间超过两分钟（例如连接断开/移动端切后台，两分钟后触发重连）
+ * 系统会自动回收实例，表现为返回 code > 0，建议该情况下 重新init + createSession
+ *
+ * code=-3 超出重试次数，需重新init + createSession
  * code=-2 自动重连中
  * code=-1 连接失败，触发了限频操作 5s，可稍后再连接
- * code=2 连接失败，token过期，需重新init + trylock
- * code=6 重连失败, SDP error，需重新init + trylock
- * code=8 重连失败, 等待主机连接，需重新init + trylock
- * code=9 重连失败, 超出玩家限制
- * code=100 重连失败, proxy error，需重新init + trylock
+ * code > 0 Proxy 返回的重连错误，通常连不上，需重新init + createSession
  * @ignore
  */
 export interface OnConnectFailedResponse extends BaseResponse {}
@@ -44,11 +45,11 @@ export interface OnConnectSuccessResponse {
 export interface OnWebrtcStatusChangeResponse extends BaseResponse {}
 
 /**
- * code=-2 创建local offer 失败，需要重新init + trylock
+ * code=-2 创建local offer 失败，需要重新init + createSession
  * code=-1 需要重连，通常出现在码率掉0，收不到推流，连接超时，ice 断开，可以尝试重连（如设置了 init reconnect 参数，SDK 会主动重连）
  * code=0	主动关闭
  * code=1	用户重复连接
- * code=2 用户心跳超时，webrtc服务端主动断开，这个消息有可能丢失 init + trylock
+ * code=2 用户心跳超时，webrtc服务端主动断开，这个消息有可能丢失 init + createSession
  * @ignore
  */
 export interface OnDisconnectResponse extends BaseResponse {}
@@ -250,6 +251,14 @@ export interface ServerSideDescription {
     height: number;
     orientation: 'landscape' | 'portrait';
   };
+  /**
+   * Proxy 返回的 webrtc 结构体
+   */
+  readonly WebrtcResponse?: {
+    Code: number;
+    Msg: string;
+    Sdp: string;
+  };
 }
 
 /**
@@ -376,8 +385,6 @@ export type EventIdleResponse = {
   };
 };
 
-export type OnEventResponseType = 'autoplay' | 'idle';
-
 export type OnEventAutoplayResponse = {
   type: 'autoplay';
   data: {
@@ -407,10 +414,12 @@ export type OnEventWebrtcStatsResponse = {
 
 export type OnEventNoflowResponse = {
   type: 'noflow';
+  data?: {};
 };
 
 export type OnEventNoflowcenterResponse = {
   type: 'noflowcenter';
+  data?: {};
 };
 
 export type OnEventLatencyResponse = {
@@ -431,6 +440,17 @@ export type OnEventLatencyResponse = {
 
 export type OnEventPointerLockErrorResponse = {
   type: 'pointerlockerror';
+  data?: {};
+};
+
+/**
+ * 通常 http 协议会读取剪切板失败
+ */
+export type OnEventReadClipboardErrorResponse = {
+  type: 'readclipboarderror';
+  data?: {
+    message?: any;
+  };
 };
 
 export type OnEventResponse =
@@ -441,7 +461,8 @@ export type OnEventResponse =
   | OnEventNoflowResponse
   | OnEventNoflowcenterResponse
   | OnEventLatencyResponse
-  | OnEventPointerLockErrorResponse;
+  | OnEventPointerLockErrorResponse
+  | OnEventReadClipboardErrorResponse;
 
 /**
  * 直播推流相关
@@ -558,7 +579,7 @@ export interface CameraProfileConstraints extends MediaTrackConstraints {
 /**
  * 摄像头分辨率类型，用于快速设置
  */
-export type CameraProfileType = '120p' | '180p' | '240p' | '360p' | '480p' | '720p' | '1080p' | '2K' | '4K';
+export type CameraProfileType = '120p' | '180p' | '240p' | '360p' | '480p' | '720p' | '1080p';
 
 /**
  * TCGSDK InitConfig 相关配置，对应TCGSDK 中的 init 方法的。
@@ -768,19 +789,20 @@ export interface InitConfig {
   /**
    * 连接失败回调，调用 start 接口成功后才会触发
    *
+   * 通常重连时间超过两分钟（例如连接断开/移动端切后台，两分钟后触发重连）
+   * 系统会自动回收实例，表现为返回 code > 0，建议该情况下 重新init + createSession
+   *
+   *
    * @function
    * @param {Object} response - onConnectFail 回调函数的 response
    * @param {number} response.code
    * code 详情如下：
    * | code   | Description                               |
    * | ------ | ----------------------------------------- |
+   * | -3     | 超出重连次数                                |
    * | -2     | 自动重连中                                  |
    * | -1     | 连接失败，触发了限频操作 5s，可稍后再连接        |
-   * | 2      | 连接失败，token过期，需重新init + trylock     |
-   * | 6      | 重连失败, SDP error，需重新init + trylock    |
-   * | 8      | 重连失败, 等待主机连接，需重新init + trylock   |
-   * | 9      | 重连失败, 超出玩家限制                        |
-   * | 100    | 重连失败, proxy error，需重新init + trylock  |
+   * | 大于0(code > 0) | Proxy 返回的重连错误，通常连不上，需重新init + createSession     |
    * @param {string} response.msg - message
    *
    */
@@ -820,11 +842,11 @@ export interface InitConfig {
    * code 详情如下：
    * | code    | Description                                                     |
    * | ------- | --------------------------------------------------------------- |
-   * | -2      | 创建local offer 失败，需要重新init + trylock                       |
+   * | -2      | 创建local offer 失败，需要重新init + createSession                       |
    * | -1      | 需要重连，通常出现在码率掉0，收不到推流，连接超时，ice 断开，可以尝试重连  |
    * | 0       | 主动关闭                                                         |
    * | 1       | 用户重复连接                                                      |
-   * | 2       | 用户心跳超时，webrtc服务端主动断开，这个消息有可能丢失 init + trylock   |
+   * | 2       | 用户心跳超时，webrtc服务端主动断开，这个消息有可能丢失 init + createSession   |
    * @param {string} response.msg - message
    *
    * @description
@@ -876,10 +898,10 @@ export interface InitConfig {
    *     // console.log('onTouchEvent', id, type, pageX, pageY);
    *     TCGSDK.mouseMove(id, type, pageX, pageY);
    *     if (type === 'touchstart') {
-   *       TCGSDK.sendRawEvent({ type: 'mouseleft', down: true });
+   *       TCGSDK.sendMouseEvent({ type: 'mouseleft', down: true });
    *     }
    *     if (type === 'touchend' || type === 'touchcancel') {
-   *       TCGSDK.sendRawEvent({ type: 'mouseleft', down: false });
+   *       TCGSDK.sendMouseEvent({ type: 'mouseleft', down: false });
    *     }
    *   }
    *   // 针对双指缩放操作，这里双指模拟了PC 的鼠标滚轮事件
@@ -1066,7 +1088,7 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onEvent 回调函数的 response
-   * @param {string} response.type - 对应类型 'autoplay' | 'idle' | 'noflow' | 'noflowcenter' | 'stats' | 'openurl' | 'latency' | 'pointerlockerror'
+   * @param {string} response.type - 对应类型 'autoplay' | 'idle' | 'noflow' | 'noflowcenter' | 'webrtc_stats' | 'openurl' | 'latency' | 'pointerlockerror' | 'readclipboarderror'
    * @param {any} response.data - 根据对应 code 判断
    */
   onEvent?: (response: OnEventResponse) => void;
@@ -1098,16 +1120,6 @@ export interface InitConfig {
    * @param {string} response
    */
   onLog?: (response: string) => void;
-  /**
-   * VMAF 测试的回调，具体参数如下：
-   * @ignore
-   */
-  onVmafChange?: (response: {
-    status?: 'start_evaluation' | 'evaluation_completed';
-    normal?: number;
-    phone?: number;
-    time?: number;
-  }) => void;
 }
 
 /**
@@ -1296,7 +1308,7 @@ export class TCGSDK {
    *
    * @param {Object} param
    * @param {number} param.destPort - 目标端口
-   * @param {number} [param.protocol='text'] - 'text' | 'binary'，指定云端回复(onMessage 方法内收到的)数据类型
+   * @param {string} [param.protocol='text'] - 'text' | 'binary'，指定云端回复(onMessage 方法内收到的)数据类型
    * @param {Function} param.onMessage - dataChannel收到消息的回调函数
    *
    * @returns 返回 Promise 对象。
@@ -1375,10 +1387,15 @@ export class TCGSDK {
    */
   sendMouseEvent({ type, down }: { type: MouseEvent; down: boolean }): void;
   /**
-   * 发送鼠标及键盘事件（底层实现）
+   * 发送鼠标及键盘事件（底层实现 ACK 通道）
    * @param {RawEventData} params - 底层原始数据类型，可用于鼠标/键盘/手柄消息的发送
    */
   sendRawEvent(params: RawEventData): void;
+  /**
+   * 发送鼠标及键盘事件（底层实现 KM 通道）
+   * @param {RawEventData} params - 底层原始数据类型，可用于鼠标/键盘/手柄消息的发送
+   */
+  sendKmData(params: RawEventData): void;
   /**
    * 发送按键序列（底层实现）
    * @param {RawEventData[]} params - 序列化发送数据
@@ -1599,7 +1616,7 @@ export class TCGSDK {
    *
    * @description 设置摄像头采集质量
    *
-   * @param {(CameraProfileType|CameraProfileConstraints)} profile CameraProfileType = "120p" | "180p" | "240p" | "360p" | "480p" | "720p" | "1080p" | "2K" | "4K"
+   * @param {(CameraProfileType|CameraProfileConstraints)} profile CameraProfileType = "120p" | "180p" | "240p" | "360p" | "480p" | "720p" | "1080p"
    *
    * CameraProfileConstraints 为 Object 具体如下
    *
