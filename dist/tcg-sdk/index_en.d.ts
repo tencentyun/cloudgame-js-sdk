@@ -52,7 +52,7 @@ export interface OnWebrtcStatusChangeResponse extends BaseResponse {}
  */
 export interface OnDisconnectResponse extends BaseResponse {}
 
-interface WebrtcStats {
+export interface WebrtcStats {
   readonly bit_rate?: number; // Bit rate received by the client, unit: Mbps
   readonly cpu?: number | string; // Cloud CPU usage
   readonly gpu?: string; // Cloud GPU usage
@@ -438,11 +438,6 @@ export type OnEventLatencyResponse = {
   };
 };
 
-export type OnEventPointerLockErrorResponse = {
-  type: 'pointerlockerror';
-  data?: {};
-};
-
 /**
  * Usually the http protocol will fail to read clipboard
  */
@@ -451,6 +446,11 @@ export type OnEventReadClipboardErrorResponse = {
   data?: {
     message?: any;
   };
+};
+
+export type OnEventPointerLockErrorResponse = {
+  type: 'pointerlockerror';
+  data?: {};
 };
 
 export type OnEventResponse =
@@ -522,7 +522,17 @@ export type DebugSettingParams = {
 /**
  * Mouse events on PC
  */
-export type MouseEvent = 'mousedeltamove' | 'mousemove' | 'mouseleft' | 'mouseright' | 'mousescroll';
+export type MouseEvent =
+  | 'mouseleft'
+  | 'mouseright'
+  | 'mousemiddle'
+  | 'mouseforward'
+  | 'mousebackward'
+  | 'mousescroll'
+  | 'mousemove'
+  | 'mousemove_v2'
+  | 'mousedeltamove'
+  | 'mousedeltamove_v2';
 
 /**
  * Gamepad events
@@ -538,13 +548,16 @@ export type GamePadEvent =
 
 export type KeyBoardEvent = 'keyboard';
 
-type RawEventType = MouseEvent | GamePadEvent | KeyBoardEvent;
+/**
+ * KM DataChannel data types
+ */
+type KMMessageType = MouseEvent | GamePadEvent | KeyBoardEvent;
 
 /**
  * The underlying raw data type, which can be used to send mouse, keyboard, and joystick messages.
  */
 type RawEventData = {
-  type: RawEventType;
+  type: KMMessageType;
   x?: number;
   y?: number;
   down?: boolean;
@@ -568,12 +581,23 @@ export interface MicProfileConstraints extends MediaTrackConstraints {
  * Camera parameters, specific values ​​can be set according to requirements.
  * @ignore
  */
-export interface CameraProfileConstraints extends MediaTrackConstraints {
-  width?: number; // default 1280
-  height?: number; // default 720
-  frameRate?: number; // default 15
-  bitrate?: number; // 1500 kbps
-  deviceId?: string; // You can through getDevices interface to get deviceID. The default deviceId depends on system default value.
+export interface CameraProfileConstraints {
+  /**
+   * default 1280, pass null to use the default value
+   */
+  width?: number | null;
+  /**
+   * default 720, pass null to use the default value
+   */
+  height?: number | null;
+  frameRate?: number;
+  bitrate?: number;
+  /**
+   * You can through getDevices interface to get deviceID. The default deviceId depends on system default value.
+   *
+   * Mobile can pass 'user' | 'environment', to use front/rear camera.
+   */
+  deviceId?: string | 'user' | 'environment';
 }
 
 /**
@@ -901,17 +925,17 @@ export interface InitConfig {
    *     const currentX = Math.ceil(Math.abs(oneX - twoX));
    *     const currentY = Math.ceil(Math.abs(oneY - twoY));
    *     // lastX, lastY, can be defined globally, like: let lastX = null, lastY = null
-   *     lastX ||= currentX;
-   *     lastY ||= currentY;
+   *     lastX || (lastX = currentX);
+   *     lastY || (lastY = currentY);
    *
    *     if (lastX && currentX - lastX < 0 && lastY && currentY - lastY < 0) {
-   *       TCGSDK.sendRawEvent({ type: 'mousescroll', delta: 1 });
+   *       TCGSDK.sendMouseEvent({ type: 'mousescroll', delta: 1 });
    *       lastX = currentX;
    *       lastY = currentY;
    *     }
    *
    *     if (lastX && currentX - lastX > 0 && lastY && currentY - lastY > 0) {
-   *       TCGSDK.sendRawEvent({ type: 'mousescroll', delta: -1 });
+   *       TCGSDK.sendMouseEvent({ type: 'mousescroll', delta: -1 });
    *       lastX = currentX;
    *       lastY = currentY;
    *     }
@@ -1046,6 +1070,19 @@ export interface InitConfig {
    * @param {number} response.left
    */
   onRemoteScreenResolutionChange?: (response: OnRemoteScreenResolutionChangeResponse) => void;
+  /**
+   * Video stream resolution changed.
+   *
+   * The difference between onRemoteScreenResolutionChange and onRemoteScreenResolutionChange is that the former is the resolution of the cloud screen/application, and the latter is the resolution of the stream decoded.
+   *
+   * There may be a case where the screen/application resolution is set to 1280*720, but the resolution of the push stream is 1920*1080.
+   *
+   * @function
+   * @param {Object} response - onVideoStreamConfigChange response
+   * @param {number} response.width
+   * @param {number} response.height
+   */
+  onVideoStreamConfigChange?: (response: { width: number; height: number }) => void;
   /**
    * Connected devices have changed and can be get by `navigator.mediaDevices.enumerateDevices()`.
    * @function
@@ -1346,10 +1383,12 @@ export class TCGSDK {
    */
   sendKeyboardEvent({ key, down }: { key: number; down: boolean }): void;
   /**
-   *Sends a mouse event.
+   * Sends a mouse event.
+   *
    * @param {Object} param
    * @param {MouseEvent} param.type - The mouse event type. Valid values: 'mousedeltamove', 'mousemove', 'mouseleft', 'mouseright', 'mousescroll'.
    * @param {boolean} param.down Whether the mouse button is pressed (down) or released (up).
+   * @param {boolean} [param.delta] mouse scroll，values between 1 and -1
    *
    * @example
    * // mouseleft down
@@ -1357,13 +1396,58 @@ export class TCGSDK {
    * // mouseleft up
    * TCGSDK.sendMouseEvent({type: 'mouseleft', down: false});
    */
-  sendMouseEvent({ type, down }: { type: MouseEvent; down: boolean }): void;
+  sendMouseEvent({ type, down, delta }: { type: MouseEvent; down?: boolean; delta?: number }): void;
   /**
+   * Sends a gamepad event.
+   *
+   * For the PC (if the browser supports the Gamepad API), TCGSDK has automatically listened and handled the event.
+   *
+   * @param {Object} param
+   * @param {GamePadEvent} param.type - GamePadEvent 'gamepadconnect' | 'gamepaddisconnect' | 'gamepadkey' | 'axisleft' | 'axisright' | 'lt' | 'rt'
+   * @param {boolean} [param.down] Whether the button is pressed (down) or released (up).
+   * @param {number} [param.key] Gamepad key values 
+                                        • D-pad values: up: 0x01, down: 0x02 left: 0x04, right: 0x08
+                                        • X: 0x4000, Y: 0x8000, A: 0x1000, B: 0x2000
+                                        • select: 0x20
+                                        • start: 0x10
+   * @param {number} [param.x] Using in lt/rt value: [0-255] or axisleft/axisright value: [-32767~32767]
+   * @param {number} [param.y] Using in axisleft/axisright value: [-32767~32767]
+   *
+   * @example
+   * // gamepadconnect
+   * TCGSDK.sendGamepadEvent({ type: 'gamepadconnect' });
+   * // gamepaddisconnect
+   * TCGSDK.sendGamepadEvent({ type: 'gamepaddisconnect' });
+   * // Send key for X
+   * TCGSDK.sendGamepadEvent({ type: 'gamepadkey', key: '0x4000', down: true });
+   * // lt
+   * TCGSDK.sendGamepadEvent({ type: 'lt', x:  200, down: true });
+   * // axisleft
+   * TCGSDK.sendGamepadEvent({ type: 'axisleft', x: 10000, y: -10000 });
+   */
+  sendGamepadEvent({
+    type,
+    down,
+    key,
+    x,
+    y,
+  }: {
+    type: GamepadEvent;
+    down?: boolean;
+    key?: number;
+    x?: number;
+    y?: number;
+  }): void;
+  /**
+   * @deprecated
+   *
    * Sends mouse and keyboard events (underlying implementation).
    * @param {RawEventData} params - The underlying raw data type, which can be used to send mouse, keyboard, and joystick messages.
    */
   sendRawEvent(params: RawEventData): void;
   /**
+   * @deprecated
+   *
    * Sends the key sequence (underlying implementation).
    * @param {RawEventData[]} params - The serialized data to be sent.
    */
@@ -1557,7 +1641,7 @@ export class TCGSDK {
    *
    * @description Sets the camera capturing quality.
    *
-   * @param {(CameraProfileType|CameraProfileConstraints)} profile CameraProfileType = "120p" | "180p" | "240p" | "360p" | "480p" | "720p" | "1080p" | "2K" | "4K"
+   * @param {(CameraProfileType|CameraProfileConstraints)} profile CameraProfileType = "120p" | "180p" | "240p" | "360p" | "480p" | "720p" | "1080p"
    *
    * `CameraProfileConstraints` is an `Object`, which contains the following parameters:
    *
@@ -1565,7 +1649,7 @@ export class TCGSDK {
    * @param {number} [profile.height=720] - The height. Default value: `720`.
    * @param {number} [profile.frameRate=30] - The frame rate. Default value: `30`.
    * @param {number} [profile.bitrate=1500] - The bitrate in Kbps. Default value: `1500`.
-   * @param {string} [profile.deviceId] - The ID of the input device, which can be obtained through the `getDevices` API. The device selected by the system is used by default.
+   * @param {string} [profile.deviceId] - The ID of the input device, which can be obtained through the `getDevices` API. The device selected by the system is used by default. Mobile can pass 'user' | 'environment', to use front/rear camera.
    *
    * @example
    * // Set the resolution
@@ -1759,4 +1843,6 @@ export class TCGSDK {
   changeMicStatus(param: { status: number; user_id: string }): Promise<ChangeMicStatusResponse>;
 }
 
-export default new TCGSDK();
+declare const TCGSDKStatic: TCGSDK;
+
+export default TCGSDKStatic;

@@ -54,7 +54,7 @@ export interface OnWebrtcStatusChangeResponse extends BaseResponse {}
  */
 export interface OnDisconnectResponse extends BaseResponse {}
 
-interface WebrtcStats {
+export interface WebrtcStats {
   readonly bit_rate?: number; // 	客户端接收的码率，单位：Mbps
   readonly cpu?: number | string; // 	云端 CPU 占用率，单位：百分比
   readonly gpu?: string; // 	云端 GPU 占用率，单位：百分比
@@ -522,7 +522,17 @@ export type DebugSettingParams = {
 /**
  * PC 上的鼠标事件
  */
-export type MouseEvent = 'mousedeltamove' | 'mousemove' | 'mouseleft' | 'mouseright' | 'mousescroll';
+export type MouseEvent =
+  | 'mouseleft'
+  | 'mouseright'
+  | 'mousemiddle'
+  | 'mouseforward'
+  | 'mousebackward'
+  | 'mousescroll'
+  | 'mousemove'
+  | 'mousemove_v2'
+  | 'mousedeltamove'
+  | 'mousedeltamove_v2';
 
 /**
  * 手柄事件
@@ -538,13 +548,16 @@ export type GamePadEvent =
 
 export type KeyBoardEvent = 'keyboard';
 
-type RawEventType = MouseEvent | GamePadEvent | KeyBoardEvent;
+/**
+ * KM 通道数据类型
+ */
+type KMMessageType = MouseEvent | GamePadEvent | KeyBoardEvent;
 
 /**
  * 底层接收的原始数据类型
  */
 type RawEventData = {
-  type: RawEventType;
+  type: KMMessageType;
   x?: number;
   y?: number;
   down?: boolean;
@@ -568,12 +581,23 @@ export interface MicProfileConstraints extends MediaTrackConstraints {
  * 摄像头参数，可根据需求设置具体值
  * @ignore
  */
-export interface CameraProfileConstraints extends MediaTrackConstraints {
-  width?: number; // 默认值 1280
-  height?: number; // 默认值 720
-  frameRate?: number; // 默认值 15
-  bitrate?: number; // 1500 kbps
-  deviceId?: string; // input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备
+export interface CameraProfileConstraints {
+  /**
+   * 默认值 1280，传入 null 则采用系统默认选择值
+   */
+  width?: number | null;
+  /**
+   * 默认值 720，传入 null 则采用系统默认选择值
+   */
+  height?: number | null;
+  frameRate?: number;
+  bitrate?: number;
+  /**
+   * input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备。
+   *
+   * 移动端可传入 'user' | 'environment', 来区前置/后置摄像头
+   */
+  deviceId?: string | 'user' | 'environment';
 }
 
 /**
@@ -911,17 +935,17 @@ export interface InitConfig {
    *     const currentX = Math.ceil(Math.abs(oneX - twoX));
    *     const currentY = Math.ceil(Math.abs(oneY - twoY));
    *     // lastX，lastY 为上一次的位置，可定义在全局 如 let lastX = null, lastY = null
-   *     lastX ||= currentX;
-   *     lastY ||= currentY;
+   *     lastX || (lastX = currentX);
+   *     lastY || (lastY = currentY);
    *
    *     if (lastX && currentX - lastX < 0 && lastY && currentY - lastY < 0) {
-   *       TCGSDK.sendRawEvent({ type: 'mousescroll', delta: 1 });
+   *       TCGSDK.sendMouseEvent({ type: 'mousescroll', delta: 1 });
    *       lastX = currentX;
    *       lastY = currentY;
    *     }
    *
    *     if (lastX && currentX - lastX > 0 && lastY && currentY - lastY > 0) {
-   *       TCGSDK.sendRawEvent({ type: 'mousescroll', delta: -1 });
+   *       TCGSDK.sendMouseEvent({ type: 'mousescroll', delta: -1 });
    *       lastX = currentX;
    *       lastY = currentY;
    *     }
@@ -1058,6 +1082,17 @@ export interface InitConfig {
    * @param {number} response.left
    */
   onRemoteScreenResolutionChange?: (response: OnRemoteScreenResolutionChangeResponse) => void;
+  /**
+   * 推流分辨率发生变化
+   *
+   * 与 onRemoteScreenResolutionChange 区别在于，前者是云端屏幕/应用的分辨率，后者是推流分辨率，可能存在设置的屏幕/应用分辨率为 1280*720，但是推流的分辨率为 1920*1080的情况。
+   *
+   * @function
+   * @param {Object} response - onVideoStreamConfigChange 回调函数的 response
+   * @param {number} response.width
+   * @param {number} response.height
+   */
+  onVideoStreamConfigChange?: (response: { width: number; height: number }) => void;
   /**
    * 连接设备发生变化，需要通过 navigator.mediaDevices.enumerateDevices() 拿到可用设备
    * @function
@@ -1376,8 +1411,9 @@ export class TCGSDK {
   /**
    * 发送鼠标事件
    * @param {Object} param
-   * @param {MouseEvent} param.type - 鼠标事件类型 'mousedeltamove' | 'mousemove' | 'mouseleft' | 'mouseright' | 'mousescroll'
-   * @param {boolean} param.down 是否是按下状态(就像正常鼠标点击，通常是down/up组合)
+   * @param {MouseEvent} param.type - 鼠标事件类型 'mouseleft' | 'mouseright' | 'mousemiddle' | 'mouseforward' | 'mousebackward' | 'mousescroll' | 'mousemove' | 'mousedeltamove'
+   * @param {boolean} [param.down] 是否是按下状态(就像正常鼠标点击，通常是down/up组合)
+   * @param {number} [param.delta] 鼠标滚轮，通常传 1/-1
    *
    * @example
    * // 鼠标左键按下
@@ -1385,18 +1421,57 @@ export class TCGSDK {
    * // 鼠标左键抬起
    * TCGSDK.sendMouseEvent({type: 'mouseleft', down: false});
    */
-  sendMouseEvent({ type, down }: { type: MouseEvent; down: boolean }): void;
+  sendMouseEvent({ type, down, delta }: { type: MouseEvent; down?: boolean; delta?: number }): void;
   /**
+   * 发送手柄事件
+   *
+   * 对于PC 端（如果浏览器支持 Gamepad API），TCGSDK 已自动监听/处理了手柄事件，无需手动调用
+   *
+   * @param {Object} param
+   * @param {GamePadEvent} param.type - 手柄事件类型 'gamepadconnect' | 'gamepaddisconnect' | 'gamepadkey' | 'axisleft' | 'axisright' | 'lt' | 'rt'
+   * @param {boolean} [param.down] 是否是按下状态
+   * @param {number} [param.key] 手柄键值 • 方向键事件值：向上键值为0x01，向下键值为0x02，向左键值为0x04，向右键值为0x08
+                                        • 按键事件值：X 键值为0x4000，Y 键值为0x8000，A 键值为0x1000, B键值为0x2000
+                                        •select 事件值：键值为0x20
+                                        •start 事件值：键值为0x10
+   * @param {number} [param.x] lt/rt 取值[0-255], axisleft/axisright [-32767~32767]
+   * @param {number} [param.y] 针对 axisleft/axisright [-32767~32767]
+   *
+   * @example
+   * // 连接手柄
+   * TCGSDK.sendGamepadEvent({ type: 'gamepadconnect' });
+   * // 断开手柄
+   * TCGSDK.sendGamepadEvent({ type: 'gamepaddisconnect' });
+   * // key X 按下
+   * TCGSDK.sendGamepadEvent({ type: 'gamepadkey', key: '0x4000', down: true });
+   * // lt
+   * TCGSDK.sendGamepadEvent({ type: 'lt', x:  200, down: true });
+   * // axisleft
+   * TCGSDK.sendGamepadEvent({ type: 'axisleft', x: 10000, y: -10000 });
+   */
+  sendGamepadEvent({
+    type,
+    down,
+    key,
+    x,
+    y,
+  }: {
+    type: GamePadEvent;
+    down?: boolean;
+    key?: number;
+    x?: number;
+    y?: number;
+  }): void;
+  /**
+   * @deprecated
+   *
    * 发送鼠标及键盘事件（底层实现 ACK 通道）
    * @param {RawEventData} params - 底层原始数据类型，可用于鼠标/键盘/手柄消息的发送
    */
   sendRawEvent(params: RawEventData): void;
   /**
-   * 发送鼠标及键盘事件（底层实现 KM 通道）
-   * @param {RawEventData} params - 底层原始数据类型，可用于鼠标/键盘/手柄消息的发送
-   */
-  sendKmData(params: RawEventData): void;
-  /**
+   * @deprecated
+   *
    * 发送按键序列（底层实现）
    * @param {RawEventData[]} params - 序列化发送数据
    */
@@ -1624,7 +1699,7 @@ export class TCGSDK {
    * @param {number} [profile.height=720] - 高 默认值 720
    * @param {number} [profile.frameRate=30] - 帧率 默认值 30
    * @param {number} [profile.bitrate=1500] - 码率 1500 kbps
-   * @param {string} [profile.deviceId] - input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备
+   * @param {string} [profile.deviceId] - input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备。移动端可传入 'user' | 'environment', 来区前置/后置摄像头
    *
    * @example
    * // 根据分辨率设置
@@ -1822,4 +1897,6 @@ export class TCGSDK {
   changeMicStatus(param: { status: number; user_id: string }): Promise<ChangeMicStatusResponse>;
 }
 
-export default new TCGSDK();
+declare const TCGSDKStatic: TCGSDK;
+
+export default TCGSDKStatic;

@@ -1,3 +1,18 @@
+### [1.1.14](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.14)@2023.08.02
+
+**新增**
+
+- 新增接口 sendGamepadEvent
+- 新增移动端前后摄像头切换功能
+
+**变更**
+
+- 删除 sendRawEvent 接口
+
+**修复**
+
+- show stats 针对异常情况兼容
+
 ### [1.1.13](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.13)@2023.07.10
 
 **新增**

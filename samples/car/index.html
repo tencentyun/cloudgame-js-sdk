@@ -123,13 +123,13 @@
           lastY || (lastY = currentY);
 
           if (lastX && currentX - lastX < 0 && lastY && currentY - lastY < 0) {
-            TCGSDK.sendRawEvent({ type: 'mousescroll', delta: 1 });
+            TCGSDK.sendMouseEvent({ type: 'mousescroll', delta: 1 });
             lastX = currentX;
             lastY = currentY;
           }
 
           if (lastX && currentX - lastX > 0 && lastY && currentY - lastY > 0) {
-            TCGSDK.sendRawEvent({ type: 'mousescroll', delta: -1 });
+            TCGSDK.sendMouseEvent({ type: 'mousescroll', delta: -1 });
             lastX = currentX;
             lastY = currentY;
           }
