@@ -55,6 +55,7 @@
       // applicationId and projectId are the IDs of the application and project you created in the console, respectively
       const { data } = await axios.post(url, {
         ProjectId: 'project-id',
+        // ApplicationId: 'app-123', // If the project is multi-application type, it is necessary to also specify the ApplicationId (app-xxxxx) to launch the required application in the cloud.
         UserId: 'user-id', // Random UserId
         ClientSession: TCGSDK.getClientSession(),
       });
