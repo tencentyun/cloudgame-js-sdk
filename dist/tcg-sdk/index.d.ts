@@ -266,7 +266,7 @@ export interface ServerSideDescription {
  * @ignore
  */
 export interface OnInputStatusChangeResponse {
-  readonly field_type: 'normal_input' | 'autologin_input' | 'unfocused';
+  readonly field_type: 'normal_input' | 'unfocused';
   readonly status: 'disabled' | 'enabled';
 }
 
@@ -682,6 +682,8 @@ export interface InitConfig {
   /**
    * 是否自动重连，会在弱网，或帧率持续掉 0所导致的断连时，主动重连
    *
+   * 重连策略：每5秒尝试一次，最多重连5次
+   *
    * @default true
    */
   reconnect?: boolean;
@@ -1017,9 +1019,11 @@ export interface InitConfig {
   /**
    * 云端输入状态改变，有点击事件的时候都会触发，可根据状态判断 input 框是否聚焦
    *
+   * 该回调可能会触发两次，分别对应鼠标左右按下/抬起
+   *
    * @function
    * @param {Object} response - onInputStatusChange 回调函数的 response
-   * @param {('normal_input' | 'autologin_input' | 'unfocused')} response.field_type - unfocused 脱焦，normal_input 常规input 输入，autologin_input 可自动输入
+   * @param {('normal_input' | 'unfocused')} response.field_type - unfocused 脱焦，normal_input 常规input 输入
    * @param {('disabled' | 'enabled')} response.status - 输入可用状态
    */
   onInputStatusChange?: (response: OnInputStatusChangeResponse) => void;
@@ -1210,6 +1214,8 @@ export class TCGSDK {
   destroy(params?: { message?: string; code?: number }): void;
   /**
    * 重连接口，也可以设置 *init reconnect* 参数由SDK 自动调用。或根据 onDisconnect 回调 code，结合自身场景，主动调用该接口
+   *
+   * 重连策略：每5秒尝试一次，最多重连5次
    *
    * @example
    * TCGSDK.reconnect();
@@ -1430,10 +1436,16 @@ export class TCGSDK {
    * @param {Object} param
    * @param {GamePadEvent} param.type - 手柄事件类型 'gamepadconnect' | 'gamepaddisconnect' | 'gamepadkey' | 'axisleft' | 'axisright' | 'lt' | 'rt'
    * @param {boolean} [param.down] 是否是按下状态
-   * @param {number} [param.key] 手柄键值 • 方向键事件值：向上键值为0x01，向下键值为0x02，向左键值为0x04，向右键值为0x08
-                                        • 按键事件值：X 键值为0x4000，Y 键值为0x8000，A 键值为0x1000, B键值为0x2000
-                                        •select 事件值：键值为0x20
-                                        •start 事件值：键值为0x10
+   * @param {number} [param.key] 手柄键值 
+   * 
+• 方向键事件值：向上键值为0x01，向下键值为0x02，向左键值为0x04，向右键值为0x08
+
+• 按键事件值：X 键值为0x4000，Y 键值为0x8000，A 键值为0x1000, B键值为0x2000
+
+•select 事件值：键值为0x20
+
+•start 事件值：键值为0x10
+
    * @param {number} [param.x] lt/rt 取值[0-255], axisleft/axisright [-32767~32767]
    * @param {number} [param.y] 针对 axisleft/axisright [-32767~32767]
    *

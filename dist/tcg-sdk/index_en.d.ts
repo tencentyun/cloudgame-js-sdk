@@ -264,7 +264,7 @@ export interface ServerSideDescription {
  * @ignore
  */
 export interface OnInputStatusChangeResponse {
-  readonly field_type: 'normal_input' | 'autologin_input' | 'unfocused';
+  readonly field_type: 'normal_input' | 'unfocused';
   readonly status: 'disabled' | 'enabled';
 }
 
@@ -682,6 +682,8 @@ export interface InitConfig {
   /**
    * Whether to enable auto reconnect. It will happen when FPS is 0 for 10s or first connect failed.
    *
+   * Rule: Attempts every 5 seconds, maximum 5 times
+   *
    * @default true
    */
   reconnect?: boolean;
@@ -1007,9 +1009,11 @@ export interface InitConfig {
   /**
    * When the cloud input state changes, it will be triggered, You can judge whether the input box is focused.
    *
+   * This callback might be called twice, once when the mouseleft clicks down, and once when the mouseleft clicks up.
+   *
    * @function
    * @param {Object} response - onInputStatusChange response
-   * @param {('normal_input' | 'autologin_input' | 'unfocused')} response.field_type - unfocused, normal_input, autologin_input
+   * @param {('normal_input' | 'unfocused')} response.field_type - unfocused, normal_input
    * @param {('disabled' | 'enabled')} response.status
    */
   onInputStatusChange?: (response: OnInputStatusChangeResponse) => void;
@@ -1198,6 +1202,8 @@ export class TCGSDK {
   destroy(params?: { message?: string; code?: number }): void;
   /**
    * Reconnects to the service. You can set the `_init reconnect_ ` parameter to make the SDK automatically call this API. You can also actively call this API based on the callback code of `onDisconnect` and your actual business scenario.
+   *
+   * Rule: Attempts every 5 seconds, maximum 5 times
    *
    * @example
    * TCGSDK.reconnect();
@@ -1406,10 +1412,15 @@ export class TCGSDK {
    * @param {GamePadEvent} param.type - GamePadEvent 'gamepadconnect' | 'gamepaddisconnect' | 'gamepadkey' | 'axisleft' | 'axisright' | 'lt' | 'rt'
    * @param {boolean} [param.down] Whether the button is pressed (down) or released (up).
    * @param {number} [param.key] Gamepad key values 
-                                        • D-pad values: up: 0x01, down: 0x02 left: 0x04, right: 0x08
-                                        • X: 0x4000, Y: 0x8000, A: 0x1000, B: 0x2000
-                                        • select: 0x20
-                                        • start: 0x10
+
+• D-pad values: up: 0x01, down: 0x02 left: 0x04, right: 0x08
+
+• X: 0x4000, Y: 0x8000, A: 0x1000, B: 0x2000
+
+• select: 0x20
+
+• start: 0x10
+
    * @param {number} [param.x] Using in lt/rt value: [0-255] or axisleft/axisright value: [-32767~32767]
    * @param {number} [param.y] Using in axisleft/axisright value: [-32767~32767]
    *

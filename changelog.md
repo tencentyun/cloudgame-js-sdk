@@ -1,3 +1,15 @@
+### [1.1.15](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.15)@2023.08.15
+
+**变更**
+
+- offer 取消 sps-pps-idr-in-keyframe=1 配置
+- 移除 auto login 相关回调
+
+**优化**
+
+- 优化动态切换摄像头/麦克风逻辑
+- 增加前后台切换日志
+
 ### [1.1.14](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.14)@2023.08.02
 
 **新增**
