@@ -1138,17 +1138,27 @@ export interface InitConfig {
    */
   onStreamPushStateChange?: (response: OnStreamPushStateChangeResponse) => void;
   /**
-   * **多人云游（测试阶段）**
    *
    * 多人云游场景的回调函数，包括 user_state，seats_info
    *
    * @function
-   * @param {Object} response - onConfigurationChange 回调函数的 response
+   * @param {Object} response - onMultiPlayerChange 回调函数的 response
    * @param {Object} response.user_state
    * @param {('offline' | 'online')} response.user_state.state - 用户状态
    * @param {string} response.user_state.user_id - 用户 id
-   * @param {SeatsInfo} response.seats_info - 座位信息
-   * @param {SeatChangeInfo} response.submit_seat_change - 对于主机玩家才能收到该消息
+   * @param {Object} response.seats_info - 座位信息
+   * @param {Object[]} response.seats_info.players
+   * @param {string} response.seats_info.players.name - 用户名称
+   * @param {number} response.seats_info.players.seat_index - 坐席位置
+   * @param {number} response.seats_info.players.mic_status - 麦克风状态 0 管理员禁麦 1 闭麦（自己主动）2 开麦
+   * @param {Object[]} response.seats_info.viewers
+   * @param {string} response.seats_info.viewers.name - 用户名称
+   * @param {number} response.seats_info.viewers.seat_index - 坐席位置
+   * @param {number} response.seats_info.viewers.mic_status - 麦克风状态 0 管理员禁麦 1 闭麦（自己主动）2 开麦
+   * @param {Object} response.submit_seat_change - 只有主机玩家才能收到该消息
+   * @param {string} response.submit_seat_change.user_id - 用户 id
+   * @param {('viewer' | 'player')} response.submit_seat_change.to_role - 需要切换至的角色
+   * @param {number} response.submit_seat_change.seat_index - 需要切换至的坐席
    *
    */
   onMultiPlayerChange?: (response: OnMultiPlayerChangeResponse) => void;
@@ -1621,8 +1631,6 @@ export class TCGSDK {
   /**
    * 设置video 音量
    *
-   * **该接口 PC 端适用**
-   *
    * @param {number} value number [0-1]
    *
    * @example
@@ -1645,14 +1653,6 @@ export class TCGSDK {
    * TCGSDK.playVideo('play');
    */
   playVideo(status: 'play' | 'pause'): void | Promise<void>;
-  /**
-   * 播放音频
-   * @param {('play'|'pause')} status
-   *
-   * @example
-   * TCGSDK.playAudio('play');
-   */
-  playAudio(status: 'play' | 'pause'): void;
   /**
    * 获取 video 对象
    *
@@ -1815,7 +1815,6 @@ export class TCGSDK {
   toggleMetricReportBulk(start: boolean): void;
   // -------------- 多人云游相关接口 ------------
   /**
-   * **多人云游（测试阶段）**
    *
    * 获取对应玩家 音量
    *
@@ -1823,7 +1822,6 @@ export class TCGSDK {
    */
   getPlayerVolume(id: string): number;
   /**
-   * **多人云游（测试阶段）**
    *
    * 获取audio 音量
    *
@@ -1832,7 +1830,6 @@ export class TCGSDK {
    */
   setPlayerVolume(id: string, val: number): number;
   /**
-   * **多人云游（测试阶段）**
    *
    * 获取所有坐席
    *
@@ -1840,7 +1837,6 @@ export class TCGSDK {
    */
   getSeats(): Promise<SeatsInfo>;
   /**
-   * **多人云游（测试阶段）**
    *
    * 申请切换角色或席位（非主机玩家），返回code及描述如下：
    * @param {Object} param
@@ -1863,7 +1859,6 @@ export class TCGSDK {
    */
   submitSeatChange(param: SeatChangeInfo): Promise<{ code: number }>;
   /**
-   * **多人云游（测试阶段）**
    *
    * 只有主机玩家才能调用该接口，返回code及描述如下：
    *
@@ -1888,7 +1883,6 @@ export class TCGSDK {
    */
   seatChange(param: SeatChangeInfo): Promise<{ code: number }>;
   /**
-   * **多人云游（测试阶段）**
    *
    * 切换麦克风状态
    *

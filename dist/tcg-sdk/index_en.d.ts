@@ -1116,7 +1116,7 @@ export interface InitConfig {
    * It is mainly used to callback whether the autoplay is successful or not.
    *
    * @function
-   * @param {Object} response - onConfigurationChange response
+   * @param {Object} response - onEvent response
    * @param {string} response.type - event type: 'idle' | 'noflow' | 'noflowcenter' | 'webrtc_stats' | 'openurl' | 'latency' | 'pointerlockerror' ｜ 'readclipboarderror'
    * @param {any} response.data
    */
@@ -1128,15 +1128,26 @@ export interface InitConfig {
    */
   onStreamPushStateChange?: (response: OnStreamPushStateChangeResponse) => void;
   /**
-   * **Multi-player cloud game (in beta test)**
+   * **Multi-player cloud game**
    *
    * @function
-   * @param {Object} response - onConfigurationChange response
+   * @param {Object} response - onMultiPlayerChange response
    * @param {Object} response.user_state
    * @param {('offline' | 'online')} response.user_state.state - user state
    * @param {string} response.user_state.user_id
-   * @param {SeatsInfo} response.seats_info
-   * @param {SeatChangeInfo} response.submit_seat_change - Only host can receive this message
+   * @param {Object} response.seats_info
+   * @param {Object[]} response.seats_info.players
+   * @param {string} response.seats_info.players.name
+   * @param {number} response.seats_info.players.seat_index
+   * @param {number} response.seats_info.players.mic_status - 0 host forbid mic 1 close mic(self) 2 open mic
+   * @param {Object[]} response.seats_info.viewers
+   * @param {string} response.seats_info.viewers.name
+   * @param {number} response.seats_info.viewers.seat_index
+   * @param {number} response.seats_info.viewers.mic_status - 0 host forbid mic 1 close mic(self) 2 open mic
+   * @param {Object} response.submit_seat_change - Only host can receive this message
+   * @param {string} response.submit_seat_change.user_id
+   * @param {('viewer' | 'player')} response.submit_seat_change.to_role
+   * @param {number} response.submit_seat_change.seat_index - to seta index
    *
    */
   onMultiPlayerChange?: (response: OnMultiPlayerChangeResponse) => void;
@@ -1602,14 +1613,6 @@ export class TCGSDK {
    */
   playVideo(status: 'play' | 'pause'): void;
   /**
-   * Plays back the audio.
-   * @param {('play'|'pause')} status
-   *
-   * @example
-   * TCGSDK.playAudio('play');
-   */
-  playAudio(status: 'play' | 'pause'): void;
-  /**
    * Gets the user media stream.
    */
   getUserMedia(): MediaStream;
@@ -1760,7 +1763,7 @@ export class TCGSDK {
   toggleMetricReportBulk(start: boolean): void;
   // -------------- Multi-player cloud game interfaces ------------
   /**
-   * **Multi-player cloud game (in beta test)**
+   * **Multi-player cloud game**
    *
    * Gets the volume level of the specified player.
    *
@@ -1768,7 +1771,7 @@ export class TCGSDK {
    */
   getPlayerVolume(id: string): number;
   /**
-   * **Multi-player cloud game (in beta test)**
+   * **Multi-player cloud game**
    *
    * Gets the audio volume level.
    *
@@ -1777,7 +1780,7 @@ export class TCGSDK {
    */
   setPlayerVolume(id: string, val: number): number;
   /**
-   * **Multi-player cloud game (in beta test)**
+   * **Multi-player cloud game**
    *
    * Gets all seats.
    *
@@ -1785,7 +1788,7 @@ export class TCGSDK {
    */
   getSeats(): Promise<SeatsInfo>;
   /**
-   * **Multi-player cloud game (in beta test)**
+   * **Multi-player cloud game**
    *
    * Applies for switching the role or seat (by a guest). The response codes are as detailed below:
    * @param {Object} param
@@ -1808,7 +1811,7 @@ export class TCGSDK {
    */
   submitSeatChange(param: SeatChangeInfo): Promise<{ code: number }>;
   /**
-   * **Multi-player cloud game (in beta test)**
+   * **Multi-player cloud game**
    *
    * Only the host player can call this API. The response codes are as detailed below:
    *
@@ -1833,7 +1836,7 @@ export class TCGSDK {
    */
   seatChange(param: SeatChangeInfo): Promise<{ code: number }>;
   /**
-   * **Multi-player cloud game (in beta test)**
+   * **Multi-player cloud game**
    *
    * Switches the mic status.
    *
