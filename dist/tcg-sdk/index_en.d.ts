@@ -1773,7 +1773,7 @@ export class TCGSDK {
   /**
    * **Multi-player cloud game**
    *
-   * Gets the audio volume level.
+   * Sets the volume level of the specified player.
    *
    * @param {string} id 用户id
    * @param {number} val 音量 [0-1]

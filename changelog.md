@@ -1,3 +1,9 @@
+### [1.1.17](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.17)@2023.09.19
+
+**修复**
+
+- 兼容 iOS17 webrtc stats
+
 ### [1.1.16](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.16)@2023.09.12
 
 **变更**

@@ -1823,7 +1823,7 @@ export class TCGSDK {
   getPlayerVolume(id: string): number;
   /**
    *
-   * 获取audio 音量
+   * 设置对应玩家 音量
    *
    * @param {string} id 用户id
    * @param {number} val 音量 [0-1]
