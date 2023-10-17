@@ -1,3 +1,19 @@
+### [1.1.18](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.18)@2023.10.17
+
+**新增**
+
+- 新增重复init 回调
+
+**变更**
+
+- 切换摄像头/麦克风返回值
+
+**优化**
+
+- 优化web端日志
+- 优化摄像头/麦克风切换逻辑
+- 优化stats 回调
+
 ### [1.1.17](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.17)@2023.09.19
 
 **修复**

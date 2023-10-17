@@ -591,6 +591,9 @@ export interface CameraProfileConstraints {
    */
   height?: number | null;
   frameRate?: number;
+  /**
+   * @deprecated
+   */
   bitrate?: number;
   /**
    * You can through getDevices interface to get deviceID. The default deviceId depends on system default value.
@@ -787,7 +790,7 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - OnInitSuccess response
-   * @param {number} response.code  code=-1 localOffer can noe get H264 encoding. code=0 Success
+   * @param {number} response.code code=-2 The peerConnection is not disconnected, you need to call TCGSDK.destroy() first. code=-1 LocalOffer can noe get H264 encoding. code=0 Success.
    * @param {string} response.msg
    * @param {any} response.description
    *
@@ -1097,17 +1100,19 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onGetUserMediaStatusChange response
-   * @param {number} response.code - 0 Success；1 NotFoundError；2 NotAllowedError
+   * @param {number} response.code - 0 Success; 1 NotFoundError; 2 NotAllowedError; 3 OverconstrainedError
    * @param {string} response.msg - 'NotFoundError' | 'NotAllowedError' | string;
-   * @param {MediaStream} response.userMedia -
+   * @param {MediaStream} response.userMedia - userMedia
    */
   onGetUserMediaStatusChange?: ({
     code,
     msg,
+    type,
     userMedia,
   }: {
     code: number;
     msg: 'NotFoundError' | 'NotAllowedError' | string;
+    type: 'mic' | 'camera';
     userMedia: MediaStream;
   }) => void;
   /**
@@ -1621,19 +1626,35 @@ export class TCGSDK {
    * @param {Object} param
    * @param {('open'|'close')} param.status - The on/off status.
    *
+   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   *
+   * | Response      | Type    | Description                                                          |
+   * | ------------- | ------- | -------------------------------------------------------------------- |
+   * | code          | 0 or 1   | 0 success 1 failed |
+   * | msg           | string  | message                          |
+   * | userMedia     | MediaStream | mic media stream                                                 |
+   *
    * @example
    * TCGSDK.switchMic({status: 'open'});
    */
-  switchMic({ status }: { status: 'open' | 'close' }): void;
+  switchMic({ status }: { status: 'open' | 'close' }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * Turns on/off the camera.
    * @param {Object} param
    * @param {('open'|'close')} param.status - The on/off status.
    *
+   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   *
+   * | Response      | Type    | Description                                                          |
+   * | ------------- | ------- | -------------------------------------------------------------------- |
+   * | code          | 0 or 1   | 0 success 1 failed |
+   * | msg           | string  | message                          |
+   * | userMedia     | MediaStream | camera media stream                                              |
+   *
    * @example
    * TCGSDK.switchCamera({status: 'open'});
    */
-  switchCamera({ status }: { status: 'open' | 'close' }): void;
+  switchCamera({ status }: { status: 'open' | 'close' }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * @async
    *
@@ -1646,10 +1667,18 @@ export class TCGSDK {
    * @param {ConstrainBoolean} [profile.autoGainControl=true] - Whether to enable automatic gain control. Default value: `true`.
    * @param {string} [profile.deviceId] - The ID of the input device, which can be obtained through the `getDevices` API. The device selected by the system is used by default.
    *
+   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   *
+   * | Response      | Type    | Description                                                          |
+   * | ------------- | ------- | -------------------------------------------------------------------- |
+   * | code          | 0 or 1   | 0 success 1 failed |
+   * | msg           | string  | message                          |
+   * | userMedia     | MediaStream | mic media stream                                                 |
+   *
    * @example
    * TCGSDK.setMicProfile({sampleRate: 44100, echoCancellation: true, noiseSuppression: true, autoGainControl: true});
    */
-  setMicProfile(profile: MicProfileConstraints): void;
+  setMicProfile(profile: MicProfileConstraints): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * @async
    *
@@ -1665,14 +1694,27 @@ export class TCGSDK {
    * @param {number} [profile.bitrate=1500] - The bitrate in Kbps. Default value: `1500`.
    * @param {string} [profile.deviceId] - The ID of the input device, which can be obtained through the `getDevices` API. The device selected by the system is used by default. Mobile can pass 'user' | 'environment', to use front/rear camera.
    *
+   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   *
+   * | Response      | Type    | Description                                                          |
+   * | ------------- | ------- | -------------------------------------------------------------------- |
+   * | code          | 0 or 1   | 0 success 1 failed |
+   * | msg           | string  | message                          |
+   * | userMedia     | MediaStream | camera media stream                                              |
+   *
    * @example
    * // Set the resolution
    * TCGSDK.setCameraProfile('720p');
    * // Custom settings
    * TCGSDK.setCameraProfile({width: '1920', height: '1080', frameRate: '60', bitrate: 2000});
+   * // 移动端切换前后摄像头
+   * TCGSDK.setCameraProfile({ deviceId: 'environment' });
+   * TCGSDK.setCameraProfile({ deviceId: 'user' });
    *
    */
-  setCameraProfile(profile: CameraProfileConstraints | CameraProfileType): Promise<void>;
+  setCameraProfile(
+    profile: CameraProfileConstraints | CameraProfileType,
+  ): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * Gets all devices.
    *

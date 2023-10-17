@@ -591,6 +591,9 @@ export interface CameraProfileConstraints {
    */
   height?: number | null;
   frameRate?: number;
+  /**
+   * @deprecated
+   */
   bitrate?: number;
   /**
    * input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备。
@@ -790,7 +793,7 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - OnInitSuccess 回调函数的 response
-   * @param {number} response.code  code=-1 localOffer 无法获取H264 编码 code=0 Success
+   * @param {number} response.code  code=-2 peerConnection 未断开，需要先调用 TCGSDK.destroy() code=-1 localOffer 无法获取H264 编码 code=0 Success
    * @param {string} response.msg - message
    * @param {any} response.description -相关描述
    *
@@ -871,7 +874,7 @@ export interface InitConfig {
    * | -2      | 创建local offer 失败，需要重新init + createSession                       |
    * | -1      | 需要重连，通常出现在码率掉0，收不到推流，连接超时，ice 断开，可以尝试重连  |
    * | 0       | 主动关闭                                                         |
-   * | 1       | 用户重复连接                                                      |
+   * | 1       | 用户重复连接(该消息不可靠)                                          |
    * | 2       | 用户心跳超时，webrtc服务端主动断开，这个消息有可能丢失 init + createSession   |
    * @param {string} response.msg - message
    *
@@ -1107,17 +1110,19 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onGetUserMediaStatusChange 回调函数的 response
-   * @param {number} response.code - 0 Success；1 NotFoundError；2 NotAllowedError
+   * @param {number} response.code - 0 Success; 1 NotFoundError; 2 NotAllowedError; 3 OverconstrainedError
    * @param {string} response.msg - 'NotFoundError' | 'NotAllowedError' | string;
-   * @param {MediaStream} response.userMedia - 屏幕方向
+   * @param {MediaStream} response.userMedia - userMedia
    */
   onGetUserMediaStatusChange?: ({
     code,
     msg,
+    type,
     userMedia,
   }: {
     code: number;
     msg: 'NotFoundError' | 'NotAllowedError' | string;
+    type: 'mic' | 'camera';
     userMedia: MediaStream;
   }) => void;
   /**
@@ -1669,19 +1674,37 @@ export class TCGSDK {
    * @param {Object} param
    * @param {('open'|'close')} param.status - 开关状态
    *
+   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   *
+   * | Response      | Type    | Description                                                          |
+   * | ------------- | ------- | -------------------------------------------------------------------- |
+   * | code          | 0 or 1   | 0 success 1 failed |
+   * | msg           | string  | message                          |
+   * | userMedia     | MediaStream | 获取的媒体信息                                                      |
+   *
+   *
    * @example
    * TCGSDK.switchMic({status: 'open'});
    */
-  switchMic({ status }: { status: 'open' | 'close' }): void;
+  switchMic({ status }: { status: 'open' | 'close' }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * 开关摄像头
    * @param {Object} param
    * @param {('open'|'close')} param.status - 开关状态
    *
+   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   *
+   * | Response      | Type    | Description                                                          |
+   * | ------------- | ------- | -------------------------------------------------------------------- |
+   * | code          | 0 or 1   | 0 success 1 failed |
+   * | msg           | string  | message                          |
+   * | userMedia     | MediaStream | 获取的媒体信息                                                      |
+   *
+   *
    * @example
    * TCGSDK.switchCamera({status: 'open'});
    */
-  switchCamera({ status }: { status: 'open' | 'close' }): void;
+  switchCamera({ status }: { status: 'open' | 'close' }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * @async
    *
@@ -1694,10 +1717,18 @@ export class TCGSDK {
    * @param {ConstrainBoolean} [profile.autoGainControl=true] - 增益 默认值 true
    * @param {string} [profile.deviceId] - input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备
    *
+   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   *
+   * | Response      | Type    | Description                                                          |
+   * | ------------- | ------- | -------------------------------------------------------------------- |
+   * | code          | 0 or 1   | 0 success 1 failed |
+   * | msg           | string  | message                          |
+   * | userMedia     | MediaStream | 获取的媒体信息                                                      |
+   *
    * @example
    * TCGSDK.setMicProfile({sampleRate: 44100, echoCancellation: true, noiseSuppression: true, autoGainControl: true});
    */
-  setMicProfile(profile: MicProfileConstraints): Promise<void>;
+  setMicProfile(profile: MicProfileConstraints): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * @async
    *
@@ -1713,14 +1744,27 @@ export class TCGSDK {
    * @param {number} [profile.bitrate=1500] - 码率 1500 kbps
    * @param {string} [profile.deviceId] - input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备。移动端可传入 'user' | 'environment', 来区前置/后置摄像头
    *
+   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   *
+   * | Response      | Type    | Description                                                          |
+   * | ------------- | ------- | -------------------------------------------------------------------- |
+   * | code          | 0 or 1   | 0 success 1 failed |
+   * | msg           | string  | message                          |
+   * | userMedia     | MediaStream | 获取的媒体信息                                                      |
+   *
    * @example
    * // 根据分辨率设置
    * TCGSDK.setCameraProfile('720p');
    * // 个性化设置
-   * TCGSDK.setCameraProfile({width: '1920', height: '1080', frameRate: '60', bitrate: 2000});
+   * TCGSDK.setCameraProfile({width: '1920', height: '1080', frameRate: '60'});
+   * // 移动端切换前后摄像头
+   * TCGSDK.setCameraProfile({ deviceId: 'environment' });
+   * TCGSDK.setCameraProfile({ deviceId: 'user' });
    *
    */
-  setCameraProfile(profile: CameraProfileConstraints | CameraProfileType): Promise<void>;
+  setCameraProfile(
+    profile: CameraProfileConstraints | CameraProfileType,
+  ): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * 获取所有设备
    *
