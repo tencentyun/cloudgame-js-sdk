@@ -18,13 +18,13 @@
 
 **修复**
 
-- 兼容 iOS17 webrtc stats
+- 修复 iOS17 webrtc stats异常导致无法正常连接的问题
 
 ### [1.1.16](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.16)@2023.09.12
 
 **变更**
 
-- 调整 iOS 15.4 以下版本，重协商策略
+- 调整 iOS 15.4 以下版本重协商策略
 - 调整touch 模式鼠标逻辑
 - 调整重连策略
 
