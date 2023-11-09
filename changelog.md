@@ -1,3 +1,18 @@
+### [1.1.19](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.19)@2023.11.09
+
+**新增**
+
+- 新增 getRequestId() 方法
+
+**变更**
+
+- switchCamera 接口新增 profile 参数
+
+**修复**
+
+- 设置鼠标图片失败问题
+- 修复 onConnectSuccess 回调中报错，导致状态更新失败问题
+
 ### [1.1.18](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.18)@2023.10.17
 
 **新增**

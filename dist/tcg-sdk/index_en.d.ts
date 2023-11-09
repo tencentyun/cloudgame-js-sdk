@@ -851,7 +851,7 @@ export interface InitConfig {
    * | 6       | Incorrect media description information               |
    * | 7       | Launch game failed                  |
    * | 100     | Proxy error                   |
-   * | 225     | Device does not support webrtc            |
+   * | 255     | Device does not support webrtc            |
    * @param {string} response.msg - message
    */
   onWebrtcStatusChange?: (response: OnWebrtcStatusChangeResponse) => void;
@@ -1270,6 +1270,11 @@ export class TCGSDK {
    * Queries page orientation.
    */
   getPageOrientation(): 'portrait' | 'landscape';
+  /**
+   *
+   * ** Available after calling TCGSDK.start() **
+   */
+  getRequestId(): string;
   // -------------- 游戏进程相关接口 ------------
   /**
    * Restarts the currently running game process.
@@ -1626,7 +1631,7 @@ export class TCGSDK {
    * @param {Object} param
    * @param {('open'|'close')} param.status - The on/off status.
    *
-   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   * @returns {Promise<Object>}
    *
    * | Response      | Type    | Description                                                          |
    * | ------------- | ------- | -------------------------------------------------------------------- |
@@ -1642,8 +1647,9 @@ export class TCGSDK {
    * Turns on/off the camera.
    * @param {Object} param
    * @param {('open'|'close')} param.status - The on/off status.
+   * @param {(boolean | CameraProfileConstraints | CameraProfileType)} param.profile - Camera profile.
    *
-   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   * @returns {Promise<Object>}
    *
    * | Response      | Type    | Description                                                          |
    * | ------------- | ------- | -------------------------------------------------------------------- |
@@ -1653,8 +1659,17 @@ export class TCGSDK {
    *
    * @example
    * TCGSDK.switchCamera({status: 'open'});
+   * TCGSDK.switchCamera({status: 'close'});
+   * // Open 'environment' camera in mobile devices.
+   * TCGSDK.switchCamera({ status: 'open', profile: { deviceId: 'environment' } });
    */
-  switchCamera({ status }: { status: 'open' | 'close' }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
+  switchCamera({
+    status,
+    profile,
+  }: {
+    status: 'open' | 'close';
+    profile?: boolean | CameraProfileConstraints | CameraProfileType;
+  }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * @async
    *
@@ -1667,7 +1682,7 @@ export class TCGSDK {
    * @param {ConstrainBoolean} [profile.autoGainControl=true] - Whether to enable automatic gain control. Default value: `true`.
    * @param {string} [profile.deviceId] - The ID of the input device, which can be obtained through the `getDevices` API. The device selected by the system is used by default.
    *
-   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   * @returns {Promise<Object>}
    *
    * | Response      | Type    | Description                                                          |
    * | ------------- | ------- | -------------------------------------------------------------------- |
@@ -1694,7 +1709,7 @@ export class TCGSDK {
    * @param {number} [profile.bitrate=1500] - The bitrate in Kbps. Default value: `1500`.
    * @param {string} [profile.deviceId] - The ID of the input device, which can be obtained through the `getDevices` API. The device selected by the system is used by default. Mobile can pass 'user' | 'environment', to use front/rear camera.
    *
-   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   * @returns {Promise<Object>}
    *
    * | Response      | Type    | Description                                                          |
    * | ------------- | ------- | -------------------------------------------------------------------- |
@@ -1707,7 +1722,7 @@ export class TCGSDK {
    * TCGSDK.setCameraProfile('720p');
    * // Custom settings
    * TCGSDK.setCameraProfile({width: '1920', height: '1080', frameRate: '60', bitrate: 2000});
-   * // 移动端切换前后摄像头
+   * // Switch camera in mobile
    * TCGSDK.setCameraProfile({ deviceId: 'environment' });
    * TCGSDK.setCameraProfile({ deviceId: 'user' });
    *

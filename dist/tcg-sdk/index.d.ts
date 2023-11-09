@@ -856,7 +856,7 @@ export interface InitConfig {
    * | 6       | 媒体描述信息错误                |
    * | 7       | 游戏拉起失败                   |
    * | 100     | proxy 错误                    |
-   * | 225     | 设备不支持webrtc               |
+   * | 255     | 设备不支持webrtc               |
    * @param {string} response.msg - message
    */
   onWebrtcStatusChange?: (response: OnWebrtcStatusChangeResponse) => void;
@@ -1282,6 +1282,12 @@ export class TCGSDK {
    * 获取页面方向
    */
   getPageOrientation(): 'portrait' | 'landscape';
+  /**
+   * 获取当前连接 requestId
+   *
+   * **在调用 TCGSDK.start() 后生效**
+   */
+  getRequestId(): string;
   // -------------- 游戏进程相关接口 ------------
   /**
    * 重启当前运行的游戏进程
@@ -1674,7 +1680,8 @@ export class TCGSDK {
    * @param {Object} param
    * @param {('open'|'close')} param.status - 开关状态
    *
-   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   *
+   * @returns {Promise<Object>} 结构如下
    *
    * | Response      | Type    | Description                                                          |
    * | ------------- | ------- | -------------------------------------------------------------------- |
@@ -1682,17 +1689,18 @@ export class TCGSDK {
    * | msg           | string  | message                          |
    * | userMedia     | MediaStream | 获取的媒体信息                                                      |
    *
-   *
    * @example
    * TCGSDK.switchMic({status: 'open'});
+   *
    */
   switchMic({ status }: { status: 'open' | 'close' }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * 开关摄像头
    * @param {Object} param
    * @param {('open'|'close')} param.status - 开关状态
+   * @param {(boolean | CameraProfileConstraints | CameraProfileType)} param.profile - 摄像头设置
    *
-   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   * @returns {Promise<Object>} 结构如下
    *
    * | Response      | Type    | Description                                                          |
    * | ------------- | ------- | -------------------------------------------------------------------- |
@@ -1703,8 +1711,17 @@ export class TCGSDK {
    *
    * @example
    * TCGSDK.switchCamera({status: 'open'});
+   * TCGSDK.switchCamera({status: 'close'});
+   * // 移动端打开后置摄像头
+   * TCGSDK.switchCamera({ status: 'open', profile: { deviceId: 'environment' } });
    */
-  switchCamera({ status }: { status: 'open' | 'close' }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
+  switchCamera({
+    status,
+    profile,
+  }: {
+    status: 'open' | 'close';
+    profile?: boolean | CameraProfileConstraints | CameraProfileType;
+  }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * @async
    *
@@ -1717,7 +1734,7 @@ export class TCGSDK {
    * @param {ConstrainBoolean} [profile.autoGainControl=true] - 增益 默认值 true
    * @param {string} [profile.deviceId] - input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备
    *
-   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   * @returns {Promise<Object>} 结构如下
    *
    * | Response      | Type    | Description                                                          |
    * | ------------- | ------- | -------------------------------------------------------------------- |
@@ -1744,7 +1761,7 @@ export class TCGSDK {
    * @param {number} [profile.bitrate=1500] - 码率 1500 kbps
    * @param {string} [profile.deviceId] - input 的设备id，可以通过 getDevices 接口获取, 默认采用系统自选设备。移动端可传入 'user' | 'environment', 来区前置/后置摄像头
    *
-   * @returns {Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>} 返回 Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }
+   * @returns {Promise<Object>} 结构如下
    *
    * | Response      | Type    | Description                                                          |
    * | ------------- | ------- | -------------------------------------------------------------------- |
