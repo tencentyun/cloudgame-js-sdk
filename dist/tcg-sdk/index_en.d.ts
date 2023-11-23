@@ -393,6 +393,14 @@ export type OnEventAutoplayResponse = {
   };
 };
 
+export type OnEventVideoPlayStateResponse = {
+  type: 'video_state';
+  data: {
+    code: number; // 0 playing 1 pause 2 ended
+    message: string;
+  };
+};
+
 export type OnEventIdleResponse = {
   type: 'idle';
   data: {
@@ -455,6 +463,7 @@ export type OnEventPointerLockErrorResponse = {
 
 export type OnEventResponse =
   | OnEventAutoplayResponse
+  | OnEventVideoPlayStateResponse
   | OnEventIdleResponse
   | OnEventOpenUrlResponse
   | OnEventWebrtcStatsResponse
@@ -1122,8 +1131,20 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onEvent response
-   * @param {string} response.type - event type: 'idle' | 'noflow' | 'noflowcenter' | 'webrtc_stats' | 'openurl' | 'latency' | 'pointerlockerror' ｜ 'readclipboarderror'
-   * @param {any} response.data
+   * @param {string} response.type - Event types: 'autoplay'| 'video_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'latency'
+   * @param {Object} [response.data] - The data may be different for different types, refer to the following table
+   * | type    | data                                                     |
+   * | ------- | --------------------------------------------------------------- |
+   * | autoplay   | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | idle      | Object<{times: number;}> <table><tr><th>times</th><th>number</th></tr></table> |
+   * | noflow      | - |
+   * | noflowcenter      | - |
+   * | openurl      | Object<{value: string;}> <table><tr><th>value</th><th>string</th></tr></table> |
+   * | pointerlockerror      | - |
+   * | readclipboarderror      | Object<{message?: string;}> <table><tr><th>message</th><th>string</th></tr></table> |
+   * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>Bit rate received by the client, unit: Mbps</th></tr><tr><th>cpu</th><th>number</th><th>Cloud CPU usage</th></tr><tr><th>gpu</th><th>string</th><th>Cloud GPU usage</th></tr><tr><th>delay</th><th>number</th><th></th></tr><tr><th>fps</th><th>number</th><th></th></tr><tr><th>load_cost_time</th><th>number</th><th>unit: ms</th></tr><tr><th>nack</th><th>number</th><th></th></tr><tr><th>packet_lost</th><th>number</th><th></th></tr><tr><th>packet_received</th><th>number</th><th></th></tr><tr><th>rtt</th><th>number</th><th>unit: ms</th></tr><tr><th>timestamp</th><th>number</th><th>unit: ms</th></tr></table> |
+   * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
    */
   onEvent?: (response: OnEventResponse) => void;
   /**
@@ -1351,8 +1372,22 @@ export class TCGSDK {
    *
    * **We recommend you call this API in `onConnectSuccess`.**
    *
+   * **FAQs**
+   * - The dataChannel has been created, web sends data successfully, but can not receive data back from the cloud application.
+   *
+   *    1. The dataChannel has been created，but maybe the cloud application isn't fully launched at this point. Web can send customized data via timeout/interval/polling etc, ensure that cloud application receives the customized data sent by the web properly after lunched successfully. As long as the dataChannel has been created successfully, the data can be sent successfully.
+   *    2. If you receive cloud application data in the onMessage callback, you can unpoll and send the data normally.
+   *
+   * - Types of data that can be sent and received
+   *
+   *    The interface supports String and ArrayBuffer
+   *
+   * - Is there a limit to the packet transmission size?
+   *
+   *    The service has no limitation on the size of the packet for transmission, but the maximum packet length of UDP is 64KB, and it is recommended that the packet size should be less than MTU 1500. If the packet is too large, it is recommended that it be transmitted in the form of a sub-packet.
+   *
    * @param {Object} param
-   * @param {number} param.destPort - The target port.
+   * @param {number} param.destPort - The target port, the recommended port range is 10000-20000.
    * @param {string} [param.protocol='text'] - 'text' | 'binary', for data type from server (response from onMessage)
    * @param {Function} param.onMessage - The callback function for message receipt by `dataChannel`.
    *
@@ -1364,19 +1399,30 @@ export class TCGSDK {
    * | sendMessage   | (message: string \| Blob \| ArrayBuffer \| ArrayBufferView) => void;  | The method for sending messages, which will pass through data to the data channel of `peerConnection`. The `message` parameter supports all data types of `RTCDataChannel`. |
    *
    * @example
+   * let timer = null;
+   *
    * const { sendMessage, code } = await TCGSDK.createCustomDataChannel({
-   *   destPort: 6060,
+   *   destPort: 10005,
    *   onMessage: (res) => {
    *     console.log('CustomDataChannel onMessage', res);
+   *
+   *     // If you receive cloud application data in the onMessage callback, you can unpoll and send the data normally.
+   *     // clearInterval(timer)
    *   },
    * });
    *
+   * // The code of 0 means that the dataChannel has been created. but maybe the cloud application isn't fully launched at this point. Web can send customized data via timeout/interval/polling etc, ensure that cloud application receives the customized data sent by the we properly after lunched successfully.
    * if (code === 0) {
+   *   // Send a customized message
    *   sendMessage('abc123');
+   *
+   *   // timer = setInterval(() => {
+   *   //   sendMessage('abc123');
+   *   // }, 5000);
    * }
    *
    * if (code === 1) {
-   *   // 考虑 retry
+   *   // Recreate the data channel
    * }
    *
    */
@@ -1647,7 +1693,7 @@ export class TCGSDK {
    * Turns on/off the camera.
    * @param {Object} param
    * @param {('open'|'close')} param.status - The on/off status.
-   * @param {(boolean | CameraProfileConstraints | CameraProfileType)} param.profile - Camera profile.
+   * @param {(boolean | CameraProfileConstraints | CameraProfileType)} [param.profile] - Camera profile.
    *
    * @returns {Promise<Object>}
    *

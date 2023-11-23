@@ -1,3 +1,19 @@
+### [1.1.20](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.20)@2023.11.23
+
+**新增**
+
+- 新增 video 状态回调
+
+**变更**
+
+- PC 默认开启粘贴功能
+
+**修复**
+
+- PC(Mac) 输入卡键问题修复
+- 重复 Init，清除 EventListener
+
+
 ### [1.1.19](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.19)@2023.11.09
 
 **新增**
@@ -7,6 +23,7 @@
 **变更**
 
 - switchCamera 接口新增 profile 参数
+- 调整云手游 finger_id 初始值
 
 **修复**
 

@@ -393,6 +393,14 @@ export type OnEventAutoplayResponse = {
   };
 };
 
+export type OnEventVideoPlayStateResponse = {
+  type: 'video_state';
+  data: {
+    code: number; // 0 playing 1 pause 2 ended
+    message: string;
+  };
+};
+
 export type OnEventIdleResponse = {
   type: 'idle';
   data: {
@@ -455,6 +463,7 @@ export type OnEventReadClipboardErrorResponse = {
 
 export type OnEventResponse =
   | OnEventAutoplayResponse
+  | OnEventVideoPlayStateResponse
   | OnEventIdleResponse
   | OnEventOpenUrlResponse
   | OnEventWebrtcStatsResponse
@@ -1132,8 +1141,23 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onEvent 回调函数的 response
-   * @param {string} response.type - 对应类型 'autoplay' | 'idle' | 'noflow' | 'noflowcenter' | 'webrtc_stats' | 'openurl' | 'latency' | 'pointerlockerror' | 'readclipboarderror'
-   * @param {any} response.data - 根据对应 code 判断
+   * @param {string} response.type - 对应类型 'autoplay'| 'video_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'latency'
+   * @param {Object} [response.data] - 不同 type可能 data 不同，参考下表
+   *
+   * 对照表
+   * | type    | data                                                     |
+   * | ------- | --------------------------------------------------------------- |
+   * | autoplay   | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | idle      | Object<{times: number;}> <table><tr><th>times</th><th>number</th></tr></table> |
+   * | noflow      | - |
+   * | noflowcenter      | - |
+   * | openurl      | Object<{value: string;}> <table><tr><th>value</th><th>string</th></tr></table> |
+   * | pointerlockerror      | - |
+   * | readclipboarderror      | Object<{message?: string;}> <table><tr><th>message</th><th>string</th></tr></table> |
+   * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>客户端接收的码率，单位：Mbps</th></tr><tr><th>cpu</th><th>number</th><th>云端CPU占用率，单位：百分比</th></tr><tr><th>gpu</th><th>string</th><th>云端GPU占用率，单位：百分比</th></tr><tr><th>delay</th><th>number</th><th>客户端收到图像帧到解码显示的延时，单位：ms，iOS可能收不到</th></tr><tr><th>fps</th><th>number</th><th>客户端显示帧率</th></tr><tr><th>load_cost_time</th><th>number</th><th>云端加载时长，单位：ms</th></tr><tr><th>nack</th><th>number</th><th>客户端重传次数</th></tr><tr><th>packet_lost</th><th>number</th><th>客户端丢包次数</th></tr><tr><th>packet_received</th><th>number</th><th>客户端收到的包总数</th></tr><tr><th>rtt</th><th>number</th><th>客户端到云端，网络端数据包往返耗时</th></tr><tr><th>timestamp</th><th>number</th><th>此数据回调的时间戳，单位：ms</th></tr></table> |
+   * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
+   *
    */
   onEvent?: (response: OnEventResponse) => void;
   /**
@@ -1366,10 +1390,25 @@ export class TCGSDK {
    *
    * @description 创建自定义dataChannel，建议在onConnectSuccess 回调中使用，请求参数具体如下:
    *
-   * **建议在 onConnectSuccess 内调用**
+   * **建议在 onConnectSuccess 内 setTimeout 调用**
+   *
+   * **常见问题**
+   * - 数据通道创建成功，业务前端发送数据成功，但没有收到云端应用回复的数据
+   *
+   *    **参考流程**
+   *    1. 该接口调用成功表示业务前端与云端数据通道已建立成功，但可能此时云端应用并未完全拉起，业务前端可以通过 timeout/interval/轮询等形式发送自定义数据，确保云端应用成功拉起后正常接收到业务前端发送的自定义数据。只要数据通道创建成功，默认数据能发送成功。
+   *    2. 在onMessage 回调中确定收到云端应用数据，可以取消轮询，之后正常发送数据。
+   *
+   * - 可以收发的数据类型
+   *
+   *    该接口支持 string \| ArrayBuffer
+   *
+   * - 数据包传输大小是否有限制
+   *
+   *    服务对传输数据包大小没有限制，但是需要注意 UDP 最大包长是 64KB，建议包大小应该小于 MTU 1500。如果包体过大，建议通过分包形式传输，如果太多数据上行容易导致拥塞影响体验。
    *
    * @param {Object} param
-   * @param {number} param.destPort - 目标端口
+   * @param {number} param.destPort - 目标端口，端口范围建议为 10000-20000
    * @param {string} [param.protocol='text'] - 'text' | 'binary'，指定云端回复(onMessage 方法内收到的)数据类型
    * @param {Function} param.onMessage - dataChannel收到消息的回调函数
    *
@@ -1381,22 +1420,34 @@ export class TCGSDK {
    * | sendMessage   | (message: string \| Blob \| ArrayBuffer \| ArrayBufferView) => void;  | 用于发送消息的方法，会透传数据给 peerConnection 的 dataChannel，参数message 支持 RTCDataChannel send 所有数据类型  |
    *
    * @example
+   * let timer = null;
+   *
    * const { sendMessage, code } = await TCGSDK.createCustomDataChannel({
-   *   destPort: 6060,
+   *   destPort: 10005,
    *   onMessage: (res) => {
    *     console.log('CustomDataChannel onMessage', res);
+   *
+   *     // 收到该回调后，表示云端应用已成功拉起并收到数据，可以 clearInterval，之后正常发送数据
+   *     // clearInterval(timer)
    *   },
    * });
    *
+   * // code 为 0表示，web 端与云端数据通道已建立成功，但此时可能云端应用并未完全拉起，web 端可以通过 setTimeout/setInterval/轮询发送消息
    * if (code === 0) {
+   *   // 发送自定义消息
    *   sendMessage('abc123');
+   *
+   *   // timer = setInterval(() => {
+   *   //   sendMessage('abc123');
+   *   // }, 5000);
    * }
    *
    * if (code === 1) {
-   *   // 考虑 retry
+   *   // 考虑重新创建数据通道
    * }
    *
    */
+
   createCustomDataChannel({
     destPort,
     onMessage,
@@ -1698,7 +1749,7 @@ export class TCGSDK {
    * 开关摄像头
    * @param {Object} param
    * @param {('open'|'close')} param.status - 开关状态
-   * @param {(boolean | CameraProfileConstraints | CameraProfileType)} param.profile - 摄像头设置
+   * @param {(boolean | CameraProfileConstraints | CameraProfileType)} [param.profile] - 摄像头设置
    *
    * @returns {Promise<Object>} 结构如下
    *
