@@ -1,3 +1,22 @@
+### [1.1.21](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.21)@2024.01.04
+
+**新增**
+
+- 新增部分页面日志
+- 新增init 参数，remoteDesktopResolution
+- 新增init 参数，enableEventIntercept 用于关闭事件拦截
+- 华为浏览器新增音频标签
+
+**变更**
+
+- inbound-rtp 增加 JitterBuffer 计算
+
+**修复**
+
+- touchcancel 清理 touchList
+- 修复idleThreshold 未设置，回调不成功问题
+
+
 ### [1.1.20](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.20)@2023.11.23
 
 **新增**

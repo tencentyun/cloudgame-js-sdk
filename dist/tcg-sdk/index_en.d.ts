@@ -680,7 +680,9 @@ export interface InitConfig {
    */
   clickBodyToPlay?: boolean;
   /**
-   * User no action threshold, in seconds. Default value 300s, it will callback on onNetworkChange witt message `{status: 'idle', times: 1}`
+   * User no action threshold, in seconds. Default value 300s, it will callback on onEvent with message `{type: 'idle', data: {times: 1}}`
+   *
+   * **Instance can be released in the callback by calling TCGSDK.destroy()**
    *
    * @default 300
    */
@@ -694,7 +696,7 @@ export interface InitConfig {
   /**
    * Whether to enable auto reconnect. It will happen when FPS is 0 for 10s or first connect failed.
    *
-   * Rule: Attempts every 5 seconds, maximum 5 times
+   * Rule: Attempts every 6 seconds, maximum 10 times
    *
    * @default true
    */
@@ -766,7 +768,13 @@ export interface InitConfig {
    */
   bgImgUrl?: string;
   /**
-   * Default cursor image(https/http url), default is a 3px dots, pass '' does not show cursor.
+   * Default does not show cursor.
+   *
+   * Default cursor image(https/http url)
+   *
+   * Pass 'dot' to show a 3px blue dot in mobile.
+   *
+   * @default null
    */
   defaultCursorImgUrl?: string;
   /**
@@ -780,7 +788,7 @@ export interface InitConfig {
    *
    * **This method is usually used when the cloud input box is focused.**
    *
-   * @default false
+   * @default true
    */
   enablePaste?: boolean;
   /**
@@ -791,6 +799,25 @@ export interface InitConfig {
    * @default true
    */
   enableMousemoveV2?: boolean;
+  /**
+   * Initialize Cloud Desktop Resolution
+   *
+   * **You can use TCGSDK.getPageSize() to get the width and height of the page to adapt resolution (for mobile, you can set the width*2 and height*2 to ensure a clear resolution).**
+   *
+   * @default null
+   */
+  remoteDesktopResolution?: {
+    width: number;
+    height: number;
+  };
+  /**
+   * Whether to enable event interception
+   *
+   * Intercept events such as mouse/keyboard. Send commands to the cloud only for cloud rendering nodes.
+   *
+   * @default true
+   */
+  enableEventIntercept?: boolean;
   /**
    *
    * Init success callback
@@ -823,7 +850,11 @@ export interface InitConfig {
    */
   onConnectSuccess?: (response: OnConnectSuccessResponse) => void;
   /**
-   * Connect failed callback, it will trigger after call `TCGSDK.start()`.
+   * Connect failed callback.
+   *
+   * Reconnection take longer than two minutes (e.g. connection disconnected/mobile switch to background, reconnection triggered after two minutes)
+   * CAR backend will automatically destroy the instance and return code > 0. It is recommended to init + createSession again in this case.
+   *
    *
    * @function
    * @param {Object} response - onConnectFail response
@@ -922,7 +953,7 @@ export interface InitConfig {
    *   // console.log('onTouchEvent', res);
    *   // Single finger
    *   if (res.length === 1) {
-   *     const { id, type, pageX, pageY } = res.pop();
+   *     const [{ id, type, pageX, pageY }] = res;
    *     // console.log('onTouchEvent', id, type, pageX, pageY);
    *     TCGSDK.mouseMove(id, type, pageX, pageY);
    *     if (type === 'touchstart') {
@@ -934,7 +965,7 @@ export interface InitConfig {
    *   }
    *   // Multi-finger, simulate the mouse wheel event of the PC
    *   if (res.length === 2) {
-   *     const [{ pageX: oneX, pageY: oneY }, { pageX: twoX, pageY: twoY }] = res;
+   *     const [{ pageX: oneX, pageY: oneY, type: oneType }, { pageX: twoX, pageY: twoY, type: twoType }] = res;
    *
    *     const currentX = Math.ceil(Math.abs(oneX - twoX));
    *     const currentY = Math.ceil(Math.abs(oneY - twoY));
@@ -952,6 +983,16 @@ export interface InitConfig {
    *       TCGSDK.sendMouseEvent({ type: 'mousescroll', delta: -1 });
    *       lastX = currentX;
    *       lastY = currentY;
+   *     }
+   *
+   *     // Sends a mouse up action after two fingers are touchend or touchcancel
+   *     if (
+   *       oneType === 'touchend' ||
+   *       oneType === 'touchcancel' ||
+   *       twoType === 'touchend' ||
+   *       twoType === 'touchcancel'
+   *     ) {
+   *       TCGSDK.sendMouseEvent({ type: 'mouseleft', down: false });
    *     }
    *   }
    * }

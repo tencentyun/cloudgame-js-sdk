@@ -678,7 +678,9 @@ export interface InitConfig {
    */
   clickBodyToPlay?: boolean;
   /**
-   * 用户操作空闲时间阈值，单位为秒，默认值：300s 空闲超过这个时间将触发 onNetworkChange 事件，消息为 {status: 'idle', times: 1}
+   * 用户操作空闲时间阈值，单位为秒，默认值：300s 空闲超过这个时间将触发 onEvent 事件，消息为 {type: 'idle', data: {times: 1}}
+   *
+   * **可在回调中调用 TCGSDK.destroy() 释放并发**
    *
    * @default 300
    */
@@ -694,7 +696,7 @@ export interface InitConfig {
   /**
    * 是否自动重连，会在弱网，或帧率持续掉 0所导致的断连时，主动重连
    *
-   * 重连策略：每5秒尝试一次，最多重连5次
+   * 重连策略：每6秒尝试一次，最多重连10次
    *
    * @default true
    */
@@ -760,13 +762,19 @@ export interface InitConfig {
    */
   bgImgUrl?: string;
   /**
-   * 默认鼠标图片 https/http 地址，不传默认展示一个宽高 3px 的圆形小点，传 ''，不展示。
+   * 默认不展示
+   *
+   * 鼠标图片格式 https/http 地址
+   *
+   * 移动端传 'dot' 展示一个宽高 3px 的圆形小点。
+   *
+   * @default null
    */
   defaultCursorImgUrl?: string;
   /**
    * 云上应用交互模式，支持鼠标 或者 触摸
    *
-   * **该参数建议移动端使用，PC 端设置该参数会导致鼠标锁定**
+   * **该参数建议移动端使用**
    *
    * @default 'cursor'
    */
@@ -776,7 +784,7 @@ export interface InitConfig {
    *
    * **该接口适用PC 端，通常在云端 input 框 focus 时候使用**
    *
-   * @default false
+   * @default true
    */
   enablePaste?: boolean;
   // /**
@@ -795,6 +803,25 @@ export interface InitConfig {
    * @default true
    */
   enableMousemoveV2?: boolean;
+  /**
+   * 初始化云端桌面分辨率
+   *
+   * **可通过 TCGSDK.getPageSize() 获取页面 width，height 来实现自适应分辨率（移动端可将 width * 2，height * 2 保证画面清晰）**
+   *
+   * @default null
+   */
+  remoteDesktopResolution?: {
+    width: number;
+    height: number;
+  };
+  /**
+   * 是否开启事件拦截
+   *
+   * 拦截鼠标/键盘等事件，只针对云渲染节点操作时才向云端发送指令。
+   *
+   * @default true
+   */
+  enableEventIntercept?: boolean;
   /**
    * 初始化完毕的回调，触发此回调之后才能调用后面的 API
    *
@@ -825,7 +852,7 @@ export interface InitConfig {
    */
   onConnectSuccess?: (response: OnConnectSuccessResponse) => void;
   /**
-   * 连接失败回调，调用 start 接口成功后才会触发
+   * 连接失败回调，连接断开，重连中会回调该接口
    *
    * 通常重连时间超过两分钟（例如连接断开/移动端切后台，两分钟后触发重连）
    * 系统会自动回收实例，表现为返回 code > 0，建议该情况下 重新init + createSession
@@ -872,7 +899,9 @@ export interface InitConfig {
   /**
    * 断开/被踢触发此回调，调用 start 接口成功后才会触发
    *
-   * 如果开启自动重连即init 参数 reconnect: true，点开连接也会调用此回调，可根据对应code 判断是否需要刷新页面(window.location.reload())
+   * 当出现 -1 时候，如果设置了 init 参数 `reconnect: true`（默认值 true） 不用任何操作，SDK 会主动重连，未设置需要调用 TCGSDK.reconnect()
+   *
+   * 如果持续链接不上，可以看回调 onConnectFail 相关错误码，在里面完善相关逻辑
    *
    * @function
    * @param {Object} response - onDisconnect 回调函数的 response
@@ -881,15 +910,12 @@ export interface InitConfig {
    * | code    | Description                                                     |
    * | ------- | --------------------------------------------------------------- |
    * | -2      | 创建local offer 失败，需要重新init + createSession                       |
-   * | -1      | 需要重连，通常出现在码率掉0，收不到推流，连接超时，ice 断开，可以尝试重连  |
+   * | -1      | 需要重连，通常出现在码率掉0，收不到推流，连接超时，ice 断开，SDK 会自动重连  |
    * | 0       | 主动关闭                                                         |
    * | 1       | 用户重复连接(该消息不可靠)                                          |
    * | 2       | 用户心跳超时，webrtc服务端主动断开，这个消息有可能丢失 init + createSession   |
    * @param {string} response.msg - message
    *
-   * @description
-   * 当出现 -1 时候，如果设置了 init 参数 `reconnect: true`（默认值 true） 不用任何操作，SDK 会主动重连，未设置需要调用 TCGSDK.reconnect()
-   * 如果持续链接不上，可以看回调 onConnectFail 相关错误嘛，在里面完善相关逻辑
    */
   onDisconnect?: (response: OnDisconnectResponse) => void;
   /**
@@ -932,7 +958,7 @@ export interface InitConfig {
    *   // console.log('onTouchEvent', res);
    *   // 针对单指触控操作
    *   if (res.length === 1) {
-   *     const { id, type, pageX, pageY } = res.pop();
+   *     const [{ id, type, pageX, pageY }] = res;
    *     // console.log('onTouchEvent', id, type, pageX, pageY);
    *     TCGSDK.mouseMove(id, type, pageX, pageY);
    *     if (type === 'touchstart') {
@@ -944,7 +970,7 @@ export interface InitConfig {
    *   }
    *   // 针对双指缩放操作，这里双指模拟了PC 的鼠标滚轮事件
    *   if (res.length === 2) {
-   *     const [{ pageX: oneX, pageY: oneY }, { pageX: twoX, pageY: twoY }] = res;
+   *     const [{ pageX: oneX, pageY: oneY, type: oneType }, { pageX: twoX, pageY: twoY, type: twoType }] = res;
    *
    *     const currentX = Math.ceil(Math.abs(oneX - twoX));
    *     const currentY = Math.ceil(Math.abs(oneY - twoY));
@@ -962,6 +988,16 @@ export interface InitConfig {
    *       TCGSDK.sendMouseEvent({ type: 'mousescroll', delta: -1 });
    *       lastX = currentX;
    *       lastY = currentY;
+   *     }
+   *
+   *     // 双指离开后，发送一次鼠标抬起操作
+   *     if (
+   *       oneType === 'touchend' ||
+   *       oneType === 'touchcancel' ||
+   *       twoType === 'touchend' ||
+   *       twoType === 'touchcancel'
+   *     ) {
+   *       TCGSDK.sendMouseEvent({ type: 'mouseleft', down: false });
    *     }
    *   }
    * }
