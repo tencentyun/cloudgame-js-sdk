@@ -461,6 +461,13 @@ export type OnEventPointerLockErrorResponse = {
   data?: {};
 };
 
+export type OnEventIceConnectionStateChangeResponse = {
+  type: 'ice_state';
+  data?: {
+    value?: 'connected' | 'disconnected';
+  };
+};
+
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventVideoPlayStateResponse
@@ -471,7 +478,8 @@ export type OnEventResponse =
   | OnEventNoflowcenterResponse
   | OnEventLatencyResponse
   | OnEventReadClipboardErrorResponse
-  | OnEventPointerLockErrorResponse;
+  | OnEventPointerLockErrorResponse
+  | OnEventIceConnectionStateChangeResponse;
 
 /**
  * Push stream
@@ -1186,6 +1194,7 @@ export interface InitConfig {
    * | readclipboarderror      | Object<{message?: string;}> <table><tr><th>message</th><th>string</th></tr></table> |
    * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>Bit rate received by the client, unit: Mbps</th></tr><tr><th>cpu</th><th>number</th><th>Cloud CPU usage</th></tr><tr><th>gpu</th><th>string</th><th>Cloud GPU usage</th></tr><tr><th>delay</th><th>number</th><th></th></tr><tr><th>fps</th><th>number</th><th></th></tr><tr><th>load_cost_time</th><th>number</th><th>unit: ms</th></tr><tr><th>nack</th><th>number</th><th></th></tr><tr><th>packet_lost</th><th>number</th><th></th></tr><tr><th>packet_received</th><th>number</th><th></th></tr><tr><th>rtt</th><th>number</th><th>unit: ms</th></tr><tr><th>timestamp</th><th>number</th><th>unit: ms</th></tr></table> |
    * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | ice_state    | Object<{value: string;}> <table><tr><th>value</th><th>connected / disconnected</th></tr></table> |
    */
   onEvent?: (response: OnEventResponse) => void;
   /**
@@ -1717,6 +1726,7 @@ export class TCGSDK {
    * Turns on/off the mic.
    * @param {Object} param
    * @param {('open'|'close')} param.status - The on/off status.
+   * @param {(boolean | MicProfileConstraints )} [param.profile] - mic profile
    *
    * @returns {Promise<Object>}
    *
@@ -1729,7 +1739,13 @@ export class TCGSDK {
    * @example
    * TCGSDK.switchMic({status: 'open'});
    */
-  switchMic({ status }: { status: 'open' | 'close' }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
+  switchMic({
+    status,
+    profile,
+  }: {
+    status: 'open' | 'close';
+    profile?: boolean | MicProfileConstraints;
+  }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * Turns on/off the camera.
    * @param {Object} param

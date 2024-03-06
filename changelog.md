@@ -1,3 +1,16 @@
+### [1.2.0](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.2.0)@2024.03.06
+
+**新增**
+
+- 新增 ice state 回调
+- Mac OS 鼠标滚动事件增加限频
+
+**变更**
+
+- 收到推流后回调 onConnectSuccess
+- 取消FPS 持续掉0 的重连逻辑
+
+
 ### [1.1.21](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.1.21)@2024.01.04
 
 **新增**

@@ -461,6 +461,16 @@ export type OnEventReadClipboardErrorResponse = {
   };
 };
 
+/**
+ * ice 链接状态回调
+ */
+export type OnEventIceConnectionStateChangeResponse = {
+  type: 'ice_state';
+  data?: {
+    value?: 'connected' | 'disconnected';
+  };
+};
+
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventVideoPlayStateResponse
@@ -471,7 +481,8 @@ export type OnEventResponse =
   | OnEventNoflowcenterResponse
   | OnEventLatencyResponse
   | OnEventPointerLockErrorResponse
-  | OnEventReadClipboardErrorResponse;
+  | OnEventReadClipboardErrorResponse
+  | OnEventIceConnectionStateChangeResponse;
 
 /**
  * 直播推流相关
@@ -1193,6 +1204,7 @@ export interface InitConfig {
    * | readclipboarderror      | Object<{message?: string;}> <table><tr><th>message</th><th>string</th></tr></table> |
    * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>客户端接收的码率，单位：Mbps</th></tr><tr><th>cpu</th><th>number</th><th>云端CPU占用率，单位：百分比</th></tr><tr><th>gpu</th><th>string</th><th>云端GPU占用率，单位：百分比</th></tr><tr><th>delay</th><th>number</th><th>客户端收到图像帧到解码显示的延时，单位：ms，iOS可能收不到</th></tr><tr><th>fps</th><th>number</th><th>客户端显示帧率</th></tr><tr><th>load_cost_time</th><th>number</th><th>云端加载时长，单位：ms</th></tr><tr><th>nack</th><th>number</th><th>客户端重传次数</th></tr><tr><th>packet_lost</th><th>number</th><th>客户端丢包次数</th></tr><tr><th>packet_received</th><th>number</th><th>客户端收到的包总数</th></tr><tr><th>rtt</th><th>number</th><th>客户端到云端，网络端数据包往返耗时</th></tr><tr><th>timestamp</th><th>number</th><th>此数据回调的时间戳，单位：ms</th></tr></table> |
    * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | ice_state    | Object<{value: string;}> <table><tr><th>value</th><th>connected / disconnected</th></tr></table> |
    *
    */
   onEvent?: (response: OnEventResponse) => void;
@@ -1766,6 +1778,7 @@ export class TCGSDK {
    * 开关麦克风
    * @param {Object} param
    * @param {('open'|'close')} param.status - 开关状态
+   * @param {(boolean | MicProfileConstraints )} [param.profile] - 麦克风设置
    *
    *
    * @returns {Promise<Object>} 结构如下
@@ -1780,7 +1793,13 @@ export class TCGSDK {
    * TCGSDK.switchMic({status: 'open'});
    *
    */
-  switchMic({ status }: { status: 'open' | 'close' }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
+  switchMic({
+    status,
+    profile,
+  }: {
+    status: 'open' | 'close';
+    profile?: boolean | MicProfileConstraints;
+  }): Promise<{ code: 0 | 1; msg: string; userMedia: MediaStream }>;
   /**
    * 开关摄像头
    * @param {Object} param
