@@ -2,7 +2,7 @@
 
 **新增**
 
-- 新增设置鼠标状态接口 setCursorState
+- 新增设置鼠标状态接口 setCursorStatus
 
 **修复**
 

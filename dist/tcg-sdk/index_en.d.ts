@@ -1628,15 +1628,17 @@ export class TCGSDK {
   /**
    * Setting the mouse status.
    *
-   * Used to force display/force lock/auto-follow cloud apps to display or lock the mouse
+   * Used to force show/force lock/auto-follow cloud apps to display or lock the mouse
    *
-   * status= 'forceShow'
+   * @param {string} status Three states are currently supported
    *
-   * status= 'forceLock'
+   * status='forceShow'
    *
-   * status= 'auto' Automatically follow the cloud application's mouse state, e.g. if the cloud application shows the mouse, the web page shows the mouse, if the cloud application hides the mouse, the web page locks the mouse.
+   * status='forceLock'
    *
-   * @param status
+   * status='auto' Automatically follow the cloud application's mouse state, e.g. if the cloud application shows the mouse, the web page shows the mouse, if the cloud application hides the mouse, the web page locks the mouse.
+   *
+   *
    */
   setCursorStatus(status: 'forceShow' | 'forceLock' | 'auto'): void;
   /**

@@ -1665,13 +1665,14 @@ export class TCGSDK {
   /**
    * 设置鼠标状态，用于强制显示/强制锁定/自动跟随云端应用显示或锁定鼠标
    *
-   * status= 'forceShow' 强制网页鼠标显示鼠标
+   * @param {string} status 目前支持三种状态
    *
-   * status= 'forceLock' 强制锁定网页鼠标
+   * status='forceShow' 强制网页鼠标显示鼠标
    *
-   * status= 'auto' 自动跟随云端应用的鼠标状态，如云端应用显示鼠标则网页显示鼠标，云端应用隐藏鼠标则网页锁定鼠标
+   * status='forceLock' 强制锁定网页鼠标
    *
-   * @param status
+   * status='auto' 自动跟随云端应用的鼠标状态，如云端应用显示鼠标则网页显示鼠标，云端应用隐藏鼠标则网页锁定鼠标
+   *
    */
   setCursorStatus(status: 'forceShow' | 'forceLock' | 'auto'): void;
   /**
