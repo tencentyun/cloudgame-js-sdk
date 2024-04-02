@@ -671,7 +671,13 @@ export interface InitConfig {
    */
   mobileVpx?: boolean;
   /**
-   * 鼠标模式： 0 本地鼠标图片，1 云端下发鼠标图片，2 云端渲染
+   * 鼠标模式
+   *
+   * mode=0: 页面渲染的固定鼠标图片，如为设置默认鼠标图片，会采用系统鼠标
+   *
+   * mode=1: 采用云端应用内的鼠标图片，图片会下发到前端，由前端在浏览器页面绘制
+   *
+   * mode=2: (不建议使用)云端画面内渲染鼠标图片，此时会隐藏本地渲染的鼠标，兼容性最好，但是有延时
    *
    * @default 0
    */
@@ -1621,11 +1627,6 @@ export class TCGSDK {
    */
   getMoveSensitivity(): number;
   /**
-   * 设置是否允许锁定鼠标
-   * @param {boolean} param=true - 其中 true 为允许，false 为禁止。默认为 true。
-   */
-  setMouseCanLock(param: boolean): void;
-  /**
    * 模拟鼠标移动
    *
    * @param {number} identifier 触控点的 ID，多点触控时每个触控点 ID不能相等，同个触控点的所有事件的触控点 ID 必须一致
@@ -1653,16 +1654,33 @@ export class TCGSDK {
    *
    * @param {number} mode  目前支持三种鼠标样式：
    *
-   * mode=0：页面渲染的固定鼠标图片
+   * mode=0：页面渲染的固定鼠标图片，如未设置默认鼠标图片，会采用系统鼠标
    *
-   * mode=1：云端下发鼠标图片，由浏览器页面渲染
+   * mode=1：采用云端应用内的鼠标图片，图片会下发到前端，由前端在浏览器页面绘制
    *
-   * mode=2：云端画面内渲染鼠标图片，此时会隐藏本地渲染的鼠标，兼容性最好，但是有延时
+   * mode=2：(不建议使用)云端画面内渲染鼠标图片，此时会隐藏本地渲染的鼠标，兼容性最好，但是有延时
    *
    */
   setRemoteCursor(mode: 0 | 1 | 2 | number): void;
   /**
-   * 设置鼠标隐藏或显示，但是云端下发的鼠标显隐可能会覆盖掉该设置
+   * 设置鼠标状态，用于强制显示/强制锁定/自动跟随云端应用显示或锁定鼠标
+   *
+   * status= 'forceShow' 强制网页鼠标显示鼠标
+   *
+   * status= 'forceLock' 强制锁定网页鼠标
+   *
+   * status= 'auto' 自动跟随云端应用的鼠标状态，如云端应用显示鼠标则网页显示鼠标，云端应用隐藏鼠标则网页锁定鼠标
+   *
+   * @param status
+   */
+  setCursorStatus(status: 'forceShow' | 'forceLock' | 'auto'): void;
+  /**
+   * (不建议使用) 如果鼠标显示/锁定需求调用 setCursorStatus
+   *
+   * 设置鼠标隐藏或显示
+   *
+   * **但是云端下发的鼠标显隐会覆盖掉该设置**
+   *
    * @param {boolean} show
    */
   setCursorShowStat(show: boolean): void;
@@ -1670,6 +1688,18 @@ export class TCGSDK {
    * 获取云端鼠标隐藏状态，true｜false
    */
   getCursorShowStat(): boolean;
+  /**
+   * 设置是否允许锁定鼠标，该接口适用于云端应用会下发锁定鼠标指令，这里设置成 false会强制显示鼠标
+   *
+   * @param {boolean} param=true - 其中 true 为允许，false 为禁止。默认为 true。
+   */
+  setMouseCanLock(param: boolean): void;
+  /**
+   * 强制锁定鼠标
+   *
+   * @param {boolean} param=true - 其中 true 为允许，false 为禁止。
+   */
+  lockMouse(param: boolean): void;
   /**
    * 移动端适用，设置虚拟鼠标放大系数
    *

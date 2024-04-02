@@ -670,7 +670,14 @@ export interface InitConfig {
    */
   mobileVpx?: boolean;
   /**
-   * Cursor mode valid values: `0` local default cursor, `1` cursor image for cloud delivery, `2` cloud cursor
+   * Cursor mode valid values:
+   *
+   * mode=0: Fixed cursor image rendered on the page, if the default mouse image is not set, the system mouse will be used.
+   *
+   * mode=1: Cursor image delivered from the cloud and rendered by the browser page
+   *
+   * mode=2: (Not recommended) Cursor image rendered on the cloud page. In this case, the locally rendered cursor will be hidden. This mode has the best compatibility but causes a delay in cursor movement.
+   *
    *
    * @default 0
    */
@@ -1590,11 +1597,6 @@ export class TCGSDK {
    */
   getMoveSensitivity(): number;
   /**
-   * Sets whether to allow the cursor to be locked.
-   * @param {boolean} param=true - Valid values: `true` (yes), `false` (no). Default value: `true`.
-   */
-  setMouseCanLock(param: boolean): void;
-  /**
    * @param {number} identifier The touch identifier, which must be unique for each touch point in case of multi-touch. The touch identifier of all events of the same touch point must be the same.
    * @param {TouchType} type The touch event type. Valid values: `touchstart`, `touchmove`, `touchend`, `touchcancel`. For the same touch point, `touchstart` must and can correspond to only one `touchend` or `touchcancel`.
    * @param {number} x The X coordinate of the touch point, which should be a number. However, if a floating point number is passed in, it will be processed as a logical coordinate.
@@ -1615,14 +1617,28 @@ export class TCGSDK {
    *
    * Currently, three cursor modes are supported:
    *
-   * mode=0: Fixed cursor image rendered on the page
+   * mode=0: Fixed cursor image rendered on the page, if the default mouse image is not set, the system mouse will be used.
    *
    * mode=1: Cursor image delivered from the cloud and rendered by the browser page
    *
-   * mode=2: Cursor image rendered on the cloud page. In this case, the locally rendered cursor will be hidden. This mode has the best compatibility but causes a delay in cursor movement.
+   * mode=2: (Not recommended) Cursor image rendered on the cloud page. In this case, the locally rendered cursor will be hidden. This mode has the best compatibility but causes a delay in cursor movement.
    *
    */
   setRemoteCursor(mode: 0 | 1 | 2 | number): void;
+  /**
+   * Setting the mouse status.
+   *
+   * Used to force display/force lock/auto-follow cloud apps to display or lock the mouse
+   *
+   * status= 'forceShow'
+   *
+   * status= 'forceLock'
+   *
+   * status= 'auto' Automatically follow the cloud application's mouse state, e.g. if the cloud application shows the mouse, the web page shows the mouse, if the cloud application hides the mouse, the web page locks the mouse.
+   *
+   * @param status
+   */
+  setCursorStatus(status: 'forceShow' | 'forceLock' | 'auto'): void;
   /**
    * Sets whether to hide/show the cursor. However, the cursor hide/show setting distributed from the cloud may overwrite this setting.
    * @param {boolean} show
@@ -1632,6 +1648,18 @@ export class TCGSDK {
    * Gets the cursor hide/show status. Valid values: `true`, `false`.
    */
   getCursorShowStat(): boolean;
+  /**
+   * Sets whether to allow the cursor to be locked.
+   *
+   * @param {boolean} param=true - Valid values: `true` (yes), `false` (no). Default value: `true`.
+   */
+  setMouseCanLock(param: boolean): void;
+  /**
+   * Force Mouse Lock
+   *
+   * @param {boolean} param=true - Valid values: `true` (yes), `false` (no). Default value: `true`.
+   */
+  lockMouse(param: boolean): void;
   /**
    * @param {number} value The zooming factor, which is 1.0 by default and is the same as that in the cloud. Value range: [0.1,10].
    */

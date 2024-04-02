@@ -1,3 +1,14 @@
+### [1.2.1](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.2.0)@2024.04.02
+
+**新增**
+
+- 新增设置鼠标状态接口 setCursorState
+
+**修复**
+
+- 鼠标高采样率数据发送问题
+
+
 ### [1.2.0](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.2.0)@2024.03.06
 
 **新增**
