@@ -703,7 +703,7 @@ export interface InitConfig {
    */
   idleThreshold?: number;
   /**
-   * 断开的时候是否保留最后一帧画面，如果需要保留最后一帧画面并重连，不能再次调用 init 函数，而是先调用 destroy() 接口，再调用 start() 接口。
+   * 断开的时候是否保留最后一帧画面。
    *
    * mac safari/ios webview 无法生效
    *
@@ -763,7 +763,13 @@ export interface InitConfig {
    */
   debugSetting?: DebugSettingParams;
   /**
-   * 0：关闭鼠标高频采样， 1:打开，但是打包发送， 2:拆开发送， 3: 限制包长度，多的丢掉
+   * 0: 关闭鼠标高频采样
+   *
+   * 1: 打开鼠标高采样
+   *
+   * 2: 打开鼠标高采样，打包发送
+   *
+   * 3: 限制包长度，多的丢掉
    *
    * @default 0
    */
@@ -1603,14 +1609,18 @@ export class TCGSDK {
   /**
    * @deprecated
    *
+   * @description
    * 发送鼠标及键盘事件（底层实现 ACK 通道）
+   *
    * @param {RawEventData} params - 底层原始数据类型，可用于鼠标/键盘/手柄消息的发送
    */
   sendRawEvent(params: RawEventData): void;
   /**
    * @deprecated
    *
+   * @description
    * 发送按键序列（底层实现）
+   *
    * @param {RawEventData[]} params - 序列化发送数据
    */
   sendSeqRawEvents(params: RawEventData[]): void;
@@ -1674,9 +1684,9 @@ export class TCGSDK {
    * status='auto' 自动跟随云端应用的鼠标状态，如云端应用显示鼠标则网页显示鼠标，云端应用隐藏鼠标则网页锁定鼠标
    *
    */
-  setCursorStatus(status: 'forceShow' | 'forceLock' | 'auto'): void;
+  setCursorState(status: 'forceShow' | 'forceLock' | 'auto'): void;
   /**
-   * (不建议使用) 如果鼠标显示/锁定需求调用 setCursorStatus
+   * (不建议使用) 如果鼠标显示/锁定需求调用 setCursorState
    *
    * 设置鼠标隐藏或显示
    *
@@ -1742,6 +1752,9 @@ export class TCGSDK {
   setPaste(enable: boolean): void;
   // -------------- 音视频控制相关接口 ------------
   /**
+   * @deprecated
+   *
+   * @description
    * 设置码流参数，该接口为设置建议码流参数，云端可能会根据游戏动态调整
    *
    * **如果CreateSession 参数中设置了 MinBitrate/MaxBitrate，参数 min_bitrate/max_bitrate 必须在前者设置范围内**

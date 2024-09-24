@@ -1,8 +1,21 @@
-### [1.2.1](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.2.0)@2024.04.02
+### [1.2.2](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.2.2)@2024.09.24
 
 **新增**
 
-- 新增设置鼠标状态接口 setCursorStatus
+- 支持私有化重连
+
+**修复**
+
+- 修复 gamepad 摇杆按钮映射问题
+- 修复微信webview 可能无法收到 onloadedmetadata 回调问题
+- 修复 onConnectFail 错误码
+
+
+### [1.2.1](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.2.1)@2024.04.02
+
+**新增**
+
+- 新增设置鼠标状态接口 setCursorState
 
 **修复**
 

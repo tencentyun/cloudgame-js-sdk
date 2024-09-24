@@ -763,9 +763,9 @@ export interface InitConfig {
   /**
    * 0: Turn off mouse high frequency sampling
    *
-   * 1: Open and send as package
+   * 1: Open mouse high frequency sampling
    *
-   * 2: Send as single message
+   * 2: Open mouse high frequency sampling and send as package
    *
    * 3: Limit the length of the packet, and lose more
    *
@@ -1576,14 +1576,18 @@ export class TCGSDK {
   /**
    * @deprecated
    *
+   * @description
    * Sends mouse and keyboard events (underlying implementation).
+   *
    * @param {RawEventData} params - The underlying raw data type, which can be used to send mouse, keyboard, and joystick messages.
    */
   sendRawEvent(params: RawEventData): void;
   /**
    * @deprecated
    *
+   * @description
    * Sends the key sequence (underlying implementation).
+   *
    * @param {RawEventData[]} params - The serialized data to be sent.
    */
   sendSeqRawEvents(params: RawEventData[]): void;
@@ -1640,7 +1644,7 @@ export class TCGSDK {
    *
    *
    */
-  setCursorStatus(status: 'forceShow' | 'forceLock' | 'auto'): void;
+  setCursorState(status: 'forceShow' | 'forceLock' | 'auto'): void;
   /**
    * Sets whether to hide/show the cursor. However, the cursor hide/show setting distributed from the cloud may overwrite this setting.
    * @param {boolean} show
@@ -1703,7 +1707,11 @@ export class TCGSDK {
   setPaste(enable: boolean): void;
   // -------------- Video/Audio interfaces ------------
   /**
+   * @deprecated
+   *
+   * @description
    * Sets bitrate and stream parameters. This API is used to set the recommended parameters, which may be dynamically adjusted in the cloud based on the game conditions.
+   *
    * @param {Object} profile Currently available parameters include:
    * @param {number} profile.fps - The frame rate in fps. Value range: [10,60].
    * @param {number} profile.max_bitrate - The maximum bitrate in Mbps. Value range: [1,15].
