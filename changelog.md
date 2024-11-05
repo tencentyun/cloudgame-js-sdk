@@ -1,3 +1,19 @@
+### [1.2.3](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.2.3)@2024.11.05
+
+**新增**
+
+- 新增鼠标横向滚动事件
+
+**修复**
+
+- 修复移动端鸿蒙(Harmony Next)系统判断错误
+- 修复移动端touch 模式，touch cancel 事件指令
+
+**变更**
+
+- PC 端touch 模式指令调整
+
+
 ### [1.2.2](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.2.2)@2024.09.24
 
 **新增**

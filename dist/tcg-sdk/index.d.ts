@@ -552,7 +552,8 @@ export type MouseEvent =
   | 'mousemove'
   | 'mousemove_v2'
   | 'mousedeltamove'
-  | 'mousedeltamove_v2';
+  | 'mousedeltamove_v2'
+  | 'mousehorizontalscroll';
 
 /**
  * 手柄事件
