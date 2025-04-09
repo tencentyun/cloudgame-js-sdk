@@ -15,7 +15,10 @@
 
 ## 云渲染接入功能流程说明
 
-![url](https://ex.cloud-gaming.myqcloud.com/assets/images/docs/rcr-flow.png)
+[云手机](https://cloud.tencent.com/document/product/1162/113726)
+
+
+[应用云渲染](https://cloud.tencent.com/document/product/1547/82731)
 
 ## 安装
 

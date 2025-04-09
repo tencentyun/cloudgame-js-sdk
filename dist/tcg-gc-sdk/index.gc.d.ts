@@ -5,7 +5,7 @@ import { InitConfig, CloudGamingWebSDK } from '.';
  */
 export interface GCInitConfig extends InitConfig {
   /**
-   * 群控的 instanceId 列表
+   * 需要控制的 instanceId 列表
    *
    * **默认会将 instanceIds 的第 0 位设置为主控**
    *
@@ -99,10 +99,10 @@ class CloudGamingGroupControlWebSDK extends CloudGamingWebSDK {
    */
   init(config?: GCInitConfig): void;
   /**
-   * 启动云渲染群控
+   * 启动云渲染
    *
    *
-   * @param {string} serverSession 调用群控对应的云API 获取的 ServerSession
+   * @param {string} serverSession 调用对应的云API 获取的 ServerSession
    *
    * @example
    * TCGGCSDK.start(serverSession);
