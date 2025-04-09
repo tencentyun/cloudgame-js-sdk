@@ -1,3 +1,22 @@
+### [2.0.0](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.0.0)@2024.04.09
+
+**新增**
+
+- 新增 Cursor mode 5，支持前端delta move 自绘鼠标
+- 新增 sv 消息，切换摄像头
+- 新增 cloud device 数据通道
+
+
+**修复**
+
+- 修复多次事件监听问题
+- 修复重复重建可能会出现 play error 问题
+
+**变更**
+
+- 调整 SDK 架构，支持创建多个云渲染实例
+
+
 ### [1.2.3](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v1.2.3)@2024.11.05
 
 **新增**

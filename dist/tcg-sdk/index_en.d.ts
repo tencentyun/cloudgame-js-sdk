@@ -1248,7 +1248,7 @@ export interface InitConfig {
  * The TCG(Tencent Cloud Gaming) JavaScript SDK (TCGSDK) is used to develop PaaS cloud rendering applications. It is exported as a singleton, adopts configuration and callback registration methods, and provides mouse/keyboard, audio/video, and game process control APIs as detailed below.
  * @hideconstructor
  */
-export class TCGSDK {
+export class CloudGamingWebSDK {
   // -------------- 云渲染生命周期相关接口 ------------
   /**
    * @param {InitConfig} config
@@ -2056,6 +2056,8 @@ export class TCGSDK {
   changeMicStatus(param: { status: number; user_id: string }): Promise<ChangeMicStatusResponse>;
 }
 
-declare const TCGSDKStatic: TCGSDK;
+export { CloudGamingWebSDK };
 
-export default TCGSDKStatic;
+declare const TCGSDK = new CloudGamingWebSDK();
+
+export default TCGSDK;

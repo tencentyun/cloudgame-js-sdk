@@ -5,3 +5,4 @@ yarn-debug.log*
 yarn-error.log
 node_modules
 index.js.LICENSE.txt
+index.gc.js.LICENSE.txt
