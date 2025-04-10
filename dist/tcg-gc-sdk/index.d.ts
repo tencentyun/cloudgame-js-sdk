@@ -1279,9 +1279,10 @@ export interface InitConfig {
 
 /**
  * 云渲染JSSDK（TCGSDK），用于云渲染 PaaS 应用的开发。TCGSDK 采用注册回调方式，并提供了包括鼠标键盘控制，音视频控制，游戏进程控制相关接口，接口详情请参考下列说明。
- * @hideconstructor
+ *
+ * @class
  */
-class CloudGamingWebSDK {
+export class CloudGamingWebSDK {
   constructor();
   // -------------- 云渲染生命周期相关接口 ------------
   /**
@@ -2179,8 +2180,7 @@ class CloudGamingWebSDK {
   changeMicStatus(param: { status: number; user_id: string }): Promise<ChangeMicStatusResponse>;
 }
 
-export { CloudGamingWebSDK };
-
-declare const TCGSDK = new CloudGamingWebSDK();
+// TCGSDK 是 CloudGamingWebSDK 的实例, 已经挂载在 window 上，可以直接使用
+declare const TCGSDK: CloudGamingWebSDK;
 
 export default TCGSDK;

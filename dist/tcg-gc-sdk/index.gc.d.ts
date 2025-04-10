@@ -7,7 +7,7 @@ export interface GCInitConfig extends InitConfig {
   /**
    * 需要控制的 instanceId 列表
    *
-   * **默认会将 instanceIds 的第 0 位设置为主控**
+   * **默认会将 instanceIds 的第 0 位设置为 master**
    *
    */
   instanceIds?: string[];
@@ -88,11 +88,11 @@ export type BatchTaskResponse = {
 
 /**
  * 云渲染 CloudGamingGroupControlWebSDK（TCGGCSDK），用于云渲染 PaaS 应用的开发。该SDK extends from TCGSDK，上层封装了 Group Control 相关方法，底层接口也同时适用，可参考 CloudGamingWebSDK 。
- * @hideconstructor
  *
+ * @class
  *
  */
-class CloudGamingGroupControlWebSDK extends CloudGamingWebSDK {
+export class CloudGamingGroupControlWebSDK extends CloudGamingWebSDK {
   constructor();
   /**
    * @param {GCInitConfig} config - 初始化配置
@@ -110,10 +110,10 @@ class CloudGamingGroupControlWebSDK extends CloudGamingWebSDK {
    */
   start(serverSession: string): void;
   /**
-   * 设置主控
+   * 设置 master
    *
    * @param {Object} params
-   * @param {string} params.instanceId - 主控的 instanceId
+   * @param {string} params.instanceId - master的 instanceId
    *
    * @example
    * TCGGCSDK.setMaster({instanceId: 'cai-xxx1'});
@@ -234,7 +234,7 @@ class CloudGamingGroupControlWebSDK extends CloudGamingWebSDK {
    * 获取实例截图信息
    *
    * @param {Object} params
-   * @param {Object} params.instanceId
+   * @param {string} params.instanceId
    *
    * @example
    * TCGGCSDK.getInstanceImage({instanceId: 'cai-xxx1'});
@@ -242,8 +242,7 @@ class CloudGamingGroupControlWebSDK extends CloudGamingWebSDK {
   getInstanceImage({ instanceId }: { instanceId: string }): void;
 }
 
-export { CloudGamingGroupControlWebSDK };
-
-declare const TCGGCSDK = new CloudGamingGroupControlWebSDK();
+// TCGGCSDK 是 CloudGamingGroupControlWebSDK 的实例, 已经挂载在 window 上，可以直接使用
+declare const TCGGCSDK: CloudGamingGroupControlWebSDK;
 
 export default TCGGCSDK;
