@@ -1,3 +1,5 @@
+import { AndroidInstance } from './androidInstance';
+
 interface BaseResponse {
   readonly code: number;
   readonly msg?: string;
@@ -23,8 +25,8 @@ export interface OnConnectFailedResponse extends BaseResponse {}
 
 export interface OnConnectSuccessResponse {
   readonly code: number;
-  readonly seat_index: number; // 座位号，多人云游场景可能会用到
-  readonly role: string; // 角色，多人云游场景可能会用到
+  readonly seat_index?: number; // 座位号，多人云游场景可能会用到
+  readonly role?: string; // 角色，多人云游场景可能会用到
 }
 
 /**
@@ -471,6 +473,13 @@ export type OnEventIceConnectionStateChangeResponse = {
   };
 };
 
+export type OnEventTokenNotFoundResponse = {
+  type: 'token_not_found';
+  data?: {
+    instance_ids: string[];
+  };
+};
+
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventVideoPlayStateResponse
@@ -482,7 +491,48 @@ export type OnEventResponse =
   | OnEventLatencyResponse
   | OnEventPointerLockErrorResponse
   | OnEventReadClipboardErrorResponse
-  | OnEventIceConnectionStateChangeResponse;
+  | OnEventIceConnectionStateChangeResponse
+  | OnEventTokenNotFoundResponse;
+
+export type OnAndroidInstanceEventResponse =
+  | OnAndroidInstanceTransMessageResponse
+  | OnAndroidInstanceSystemUSageResponse
+  | OnAndroidInstanceClipboardEventResponse
+  | OnAndroidInstanceNotificationEventResponse;
+
+export type OnAndroidInstanceTransMessageResponse = {
+  type: 'trans_message';
+  data: {
+    package_name: string;
+    msg: string;
+  };
+};
+
+export type OnAndroidInstanceSystemUSageResponse = {
+  type: 'system_usage';
+  data: {
+    cpu_usage: number;
+    mem_usage: number;
+    gpu_usage: number;
+  };
+};
+
+export type OnAndroidInstanceClipboardEventResponse = {
+  type: 'clipboard_event';
+  data: {
+    text: string;
+    writeText?: boolean;
+  };
+};
+
+export type OnAndroidInstanceNotificationEventResponse = {
+  type: 'notification_event';
+  data: {
+    package_name: string;
+    title: string;
+    text: string;
+  };
+};
 
 /**
  * 直播推流相关
@@ -537,6 +587,10 @@ export type DebugSettingParams = {
    * 打印CloudDevice回包消息
    */
   showOnCloudDeviceMessage?: boolean;
+  /**
+   * 打印 Muxer 相关信息
+   */
+  showMuxer?: boolean;
   /**
    * 打印SDK 所有日志
    */
@@ -637,6 +691,16 @@ export interface CameraProfileConstraints {
  */
 export type CameraProfileType = '120p' | '180p' | '240p' | '360p' | '480p' | '720p' | '1080p';
 
+export type OnImageEventResponse = OnImageEventScreenshotResponse;
+
+export type OnImageEventScreenshotResponse = {
+  type: 'screenshot';
+  data: {
+    instanceId: string;
+    url: string;
+  }[];
+};
+
 /**
  * TCGSDK InitConfig 相关配置，对应TCGSDK 中的 init 方法的。
  */
@@ -658,6 +722,48 @@ export interface InitConfig {
     type: 'master' | 'slave';
   };
   /**
+   * 串流设置
+   *
+   * @default 'webrtc'
+   */
+  streaming?: {
+    /**
+     * 串流模式，默认采用 webrtc 串流
+     */
+    mode: 'webrtc' | 'websocket';
+    /**
+     * 推流格式，默认采用 H264
+     */
+    videoCodecList?: string[];
+  };
+  /**
+   * Group Control 配置
+   */
+  groupControl?: {
+    /**
+     * 截图相关配置
+     */
+    image?: {
+      /**
+       * 截图间隔，单位秒，默认 1
+       * @default 1
+       */
+      interval?: number;
+      /**
+       * quality 截图质量，取值范围 0-100，默认 20
+       * @default 20
+       */
+      quality?: number;
+    };
+  };
+  /**
+   * 实例访问 token，通过云 API 获取
+   */
+  accessToken?: {
+    token: string;
+    accessInfo: string;
+  };
+  /**
    * 是否开启本地麦克风
    *
    * @default false
@@ -676,7 +782,7 @@ export interface InitConfig {
    */
   tabletMode?: boolean;
   /**
-   * true 为使用接入手游，false 为适用端游
+   * true 为使用接入手游/云手机，false 为适用端游
    *
    * @default false
    */
@@ -1268,6 +1374,37 @@ export interface InitConfig {
    *
    */
   onMultiPlayerChange?: (response: OnMultiPlayerChangeResponse) => void;
+  // -------------- 云手机消息 ------------
+
+  /**
+   *
+   * 云手机事件回调
+   *
+   * @function
+   * @param {Object} response - onAndroidInstanceEvent 回调函数的 response
+   * @param {string} response.type - 事件名称  'trans_message' | 'system_usage' | 'clipboard_event
+   * @param {Object} response.data - 事件数据，不同 type可能 data 不同，参考下表
+   *
+   *
+   * 对照表
+   * | type    | data                                                     |
+   * | ------- | --------------------------------------------------------------- |
+   * | trans_message   | Object<{msg: string; package_name: string;}> |
+   * | system_usage    | Object<{cpu_usage: number; mem_usage: number; gpu_usage: number;}> |
+   * | clipboard_event | Object<{text: string; writeText?: boolean}> <table><tr><th>text</th><th>string</th></tr><tr><th>writeText</th><th>boolean 是否已写入剪切板</th></tr></table> |
+   *
+   */
+  onAndroidInstanceEvent?: (response: OnAndroidInstanceEventResponse) => void;
+  /**
+   * 连接成功后会根据 image.interval 间隔时间，截取屏幕画面，并通过 onImageEvent 回调
+   *
+   * @function
+   * @param {Object} response - onImageEvent 回调函数的 response
+   * @param {'screenshot'} response.type  - 事件类型，'screenshot' 截图
+   * @param {Object} response.data - screenshot type 对应 [{instanceId: string, url: string}]
+   *
+   */
+  onImageEvent?: (response: OnImageEventResponse) => void;
   /**
    * 日志回调函数，用于外部获取日志，作用与 setLogHandler 接口一致
    *
@@ -1296,6 +1433,10 @@ export class CloudGamingWebSDK {
    */
   getInitOptions(): InitConfig;
   /**
+   * Cloud Device 模块
+   */
+  getAndroidInstance(): AndroidInstance;
+  /**
    * **获取 Client 端会话信息**
    *
    * ClientSession 在每次 init 生命周期可用，当 destroy 后，需要重新 init，再获取最新 ClientSession
@@ -1314,6 +1455,39 @@ export class CloudGamingWebSDK {
    *
    */
   start(serverSession: string): void;
+  /**
+   * 设置 accessToken
+   *
+   * @param {Object} params
+   * @param {string} params.accessInfo
+   * @param {string} params.token
+   *
+   * @example
+   * TCGSDK.setAccessToken({accessInfo: 'xxx', token: 'xxx'});
+   *
+   */
+  setAccessToken({ accessInfo, token }: { accessInfo: string; token: string }): void;
+  /**
+   * 启动云渲染，需要 init 内传入 accessToken 或调用 setAccessToken
+   *
+   * @param {Object} params
+   * @param {string} [params.instanceId] - 实例 Id，单连接
+   * @param {string} [params.instanceIds] - 实例 Ids，group control
+   * @param {boolean} [params.groupControl] - groupControl 标志位 default false
+   *
+   * @example
+   * TCGSDK.access({instanceId: 'cai-xxxx-xxxx'});
+   *
+   */
+  access({
+    instanceId,
+    instanceIds,
+    groupControl,
+  }: {
+    instanceId?: string;
+    instanceIds?: string[];
+    groupControl?: boolean;
+  }): void;
   /**
    * 立即停止云渲染；
    *
@@ -1463,6 +1637,18 @@ export class CloudGamingWebSDK {
    * const {width, height} = TCGSDK.getRemoteStreamResolution();
    */
   getRemoteStreamResolution(): { width: number; height: number };
+  /**
+   * 推流视频截图
+   *
+   * @param {Object} param
+   * @param {string} [param.name] - 截图名称，默认为 `tcgsdk-${+new Date()}`
+   * @param {number} [param.width] - 截图宽度，默认取视频流宽度
+   * @param {number} [param.height] - 截图高度，默认取视频流高度
+   *
+   * @example
+   * TCGSDK.screenShot({name: 'abc123', width: 720, height: 1280});
+   */
+  screenShot({ name, width, height }: { name?: string; width?: number; height?: number }): void;
   // -------------- 数据通道/媒体数据相关接口 ------------
   /**
    * @async
@@ -1771,6 +1957,51 @@ export class CloudGamingWebSDK {
    * **该方法PC 端适用，通常在云端 input 框 focus 时候使用**
    */
   setPaste(enable: boolean): void;
+  /**
+   * 云手机/云手游发送touch 事件
+   *
+   * **根据 onRemoteScreenResolutionChange 会调，可拿到云端屏幕分辨率，x/y 坐标是相对于该分辨率的 width/height 的位置**
+   *
+   * @param {Object} param
+   * @param {number} param.finger_id touch finger id
+   * @param {number} param.event_type touch 事件类型 touchstart - 0，touchmove - 1，touchend - 2，touchcancel - 2
+   * @param {number} param.x 相对x轴坐标
+   * @param {number} param.y 相对y轴坐标
+   *
+   * @example
+   * // start/end 成对发送
+   * TCGSDK.mobileTouchMove({finger_id: 0, event_type: 0, x: 111, y: 1102 });
+   * TCGSDK.mobileTouchMove({finger_id: 0, event_type: 2, x: 111, y: 1102 });
+   *
+   */
+  mobileTouchMove({
+    finger_id,
+    event_type,
+    x,
+    y,
+  }: {
+    /**
+     * 支持多指操作，通过 finger_id 区分
+     */
+    finger_id: number;
+    /**
+     * touch 事件类型
+     *
+     * touchstart - 0
+     * touchmove - 1
+     * touchend - 2
+     * touchcancel - 2
+     */
+    event_type: 0 | 1 | 2;
+    /**
+     * 相对x轴坐标，按照推流分辨率计算，左上角为 (0,0) 点
+     */
+    x: number;
+    /**
+     * 相对y轴坐标，按照推流分辨率计算，左上角为 (0,0) 点
+     */
+    y: number;
+  }): void;
   // -------------- 音视频控制相关接口 ------------
   /**
    * @deprecated
@@ -1998,51 +2229,6 @@ export class CloudGamingWebSDK {
    *
    */
   getPageSize(): { width: number; height: number };
-  // ------------   云手机群控 方法  --------------
-  /**
-   * 请求被控串流
-   *
-   * @param {Object} param
-   * @param {string} param.instanceId - 请求串流的 instanceId
-   * @param {('open'|'close')} param.status - 串流状态
-   *
-   * @example
-   * TCGSDK.requestCloudDeviceStream({instanceId: 'cai-xxxx-xxxx', status: 'open', level: 'normal'});
-   *
-   */
-  requestCloudDeviceStream({
-    instanceId,
-    status,
-    level,
-  }: {
-    instanceId: string;
-    status: 'open' | 'close';
-    level?: 'low' | 'normal' | 'high';
-  }): void;
-  /**
-   * 设置为主控
-   *
-   * @param {Object} param
-   * @param {string} param.instanceId - instanceId: cai-xxxx-xxx1
-   * @param {('on'|'off')} param.status - 主控状态
-   *
-   * @example
-   * TCGSDK.setCloudDeviceMaster();
-   *
-   */
-  setCloudDeviceMaster({ status, instanceId }: { status?: 'on' | 'off'; instanceId: string }): void;
-  /**
-   * 设置同步列表
-   *
-   * @param {Object} param
-   * @param {string[]} param.list - 需要同步的 instanceId 列表
-   *
-   * @example
-   * TCGSDK.setCloudDeviceSyncList({list: ['cai-xxxx-xxx1', 'cai-xxxx-xxx2']});
-   *
-   */
-  setCloudDeviceSyncList({ list }: { list: string[] }): void;
-
   // -------------- 调试及日志相关接口 ------------
   /**
    * 打开或关闭调试模式，打开的情况下将在控制台打印日志。也可以通过 Init 参数设置。

@@ -1,4 +1,16 @@
-### [2.0.0](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.0.0)@2024.04.09
+### [2.1.0](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.0)@2025.06.13
+
+**新增**
+
+- 新增 Access Token 接入形式
+- 新增云手机模块
+- 新增云手机 Operators
+- 新增 cloud device 数据通道
+- 云手机/云手游新增 mobileTouchMove 方法
+- 新增推流截图功能
+
+
+### [2.0.0](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.0.0)@2025.04.09
 
 **新增**
 

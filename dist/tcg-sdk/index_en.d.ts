@@ -1422,6 +1422,18 @@ export class CloudGamingWebSDK {
    * const {width, height} = TCGSDK.getRemoteStreamResolution();
    */
   getRemoteStreamResolution(): { width: number; height: number };
+  /**
+   * Gets screenshot from the video stream.
+   *
+   * @param {Object} param
+   * @param {string} [param.name] - default `tcgsdk-${+new Date()}`
+   * @param {number} [param.width] - Screenshot width, default is steaming width
+   * @param {number} [param.height] - Screenshot height, default is steaming height
+   *
+   * @example
+   * TCGSDK.screenShot({name: 'abc123', width: 720, height: 1280});
+   */
+  screenShot({ name, width, height }: { name?: string; width?: number; height?: number }): void;
   // -------------- DataChannel/Media interfaces ------------
   /**
    * @async
@@ -1706,6 +1718,51 @@ export class CloudGamingWebSDK {
    * **This method is usually used when the cloud input box is focused.**
    */
   setPaste(enable: boolean): void;
+  /**
+   * Cloud Phone/Cloud Mobile Game touch event
+   *
+   * **Get width and height from onRemoteScreenResolutionChange callback，the x and the y coordinates are relative coordinates of position **
+   *
+   * @param {Object} param
+   * @param {number} param.finger_id touch finger id
+   * @param {number} param.event_type touch event touchstart - 0，touchmove - 1，touchend - 2，touchcancel - 2
+   * @param {number} param.x x coordinate
+   * @param {number} param.y y coordinate
+   *
+   * @example
+   * // start/end paired
+   * TCGSDK.mobileTouchMove({finger_id: 0, event_type: 0, x: 111, y: 1102 });
+   * TCGSDK.mobileTouchMove({finger_id: 0, event_type: 2, x: 111, y: 1102 });
+   *
+   */
+  mobileTouchMove({
+    finger_id,
+    event_type,
+    x,
+    y,
+  }: {
+    /**
+     * Using multi fingers by finger_id
+     */
+    finger_id: number;
+    /**
+     * touch event
+     *
+     * touchstart - 0
+     * touchmove - 1
+     * touchend - 2
+     * touchcancel - 2
+     */
+    event_type: 0 | 1 | 2;
+    /**
+     * x coordinate, the top left corner is (0,0)
+     */
+    x: number;
+    /**
+     * y coordinate, the top left corner is (0,0)
+     */
+    y: number;
+  }): void;
   // -------------- Video/Audio interfaces ------------
   /**
    * @deprecated
