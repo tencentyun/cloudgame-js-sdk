@@ -1,0 +1,42 @@
+{
+  "name": "android_instance",
+  "version": "1.0.0",
+  "description": "Cloud rendering android instance web front-end project. ",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack server --mode=development",
+    "build": "rm -rf ./dist && webpack --mode=production"
+  },
+  "author": "ranpeng, mayjia",
+  "license": "ISC",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tdesign-icons-react": "^0.5.0",
+    "tdesign-react": "^1.5.3",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.14",
+    "@types/react-dom": "^18.2.7",
+    "babel-loader": "^9.2.1",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.3",
+    "mini-css-extract-plugin": "^2.9.2",
+    "postcss": "^8.4.21",
+    "postcss-loader": "^7.2.3",
+    "postcss-preset-env": "^8.3.0",
+    "sass": "^1.81.0",
+    "sass-loader": "^16.0.3",
+    "source-map-loader": "^4.0.2",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^4.0.14",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.96.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.1.0"
+  }
+}
