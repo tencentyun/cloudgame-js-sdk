@@ -176,7 +176,6 @@ export interface OnSaveGameArchiveResponse {
 
 export interface ServerSideDescriptionGameConfig {
   readonly sdk_conf: {
-    login_helper?: any;
     virtual_keys?: any;
     user_keys?: any;
     cursor_mode?: number;
@@ -208,9 +207,9 @@ export interface ServerSideDescriptionFeatureSwitch {
 }
 
 export interface ServerSideDescription {
-  readonly app_id: number;
-  readonly game_id: string;
-  readonly group_id: string;
+  readonly app_id?: number;
+  readonly game_id?: string;
+  readonly group_id?: string;
   /**
    * code=-2 获取H264 编码失败
    * code=-1 setRemoteDescription 失败
@@ -222,36 +221,37 @@ export interface ServerSideDescription {
    * code=9	角色已达上限
    * code=100 Proxy 错误
    */
-  readonly code: number;
+  readonly code?: number;
   readonly msg?: string;
-  readonly message: string;
-  readonly type: string;
-  readonly sdp: string;
-  readonly server_ip: string;
-  readonly server_version: string;
+  readonly message?: string;
+  readonly type?: string;
+  readonly sdp?: string;
+  readonly server_ip?: string;
+  readonly server_version?: string;
   readonly server_port?: string;
-  readonly region: string;
+  readonly region?: string;
+  readonly instance_id?: string;
   readonly instance_type?: string; // L1 S1 M1
-  readonly request_id: string;
-  readonly user_id: string;
-  readonly user_ip: string;
-  readonly input_seat: number;
+  readonly request_id?: string;
+  readonly user_id?: string;
+  readonly user_ip?: string;
   readonly game_config?: ServerSideDescriptionGameConfig;
   readonly feature_switch?: ServerSideDescriptionFeatureSwitch;
-  readonly role: string;
-  readonly metric_key: string;
-  readonly plat: 'android' | 'pc' | 'Android';
+  readonly role?: string;
+  readonly metric_key?: string;
+  readonly plat?: 'android' | 'pc' | 'Android';
   readonly sig_key?: string;
-  readonly host_name: string; // 只有手游有
-  readonly video: {
+  readonly host_name?: string; // 只有手游有
+  readonly video?: {
     height: number;
     width: number;
   };
-  readonly video_codec: string;
+  readonly video_codec?: string;
   readonly screen_config?: {
     width: number;
     height: number;
     orientation: 'landscape' | 'portrait';
+    degree: '0_degree' | '90_degree' | '180_degree' | '270_degree';
   };
   /**
    * Proxy 返回的 webrtc 结构体
@@ -261,6 +261,9 @@ export interface ServerSideDescription {
     Msg: string;
     Sdp: string;
   };
+  input_seat?: number;
+  video_mime_type: string;
+  audio_mime_type: string;
 }
 
 /**
@@ -702,6 +705,75 @@ export type OnImageEventScreenshotResponse = {
 };
 
 /**
+ * TCGSDK 时间类型
+ */
+export type EventTypes =
+  | 'InitSuccess'
+  | 'ConnectSuccess'
+  | 'Disconnected'
+  | 'ConnectFailed'
+  | 'Event'
+  | 'OrientationChange'
+  | 'VisibilityChange'
+  | 'NetworkChange'
+  | 'WebrtcStatusChange'
+  | 'GameStartComplete'
+  | 'GameStop'
+  | 'LoadGameArchive'
+  | 'SaveGameArchive'
+  | 'InputStatusChange'
+  | 'TouchEvent'
+  | 'CursorShowStatChange'
+  | 'GamepadConnectChange'
+  | 'ConfigurationChange'
+  | 'RemoteScreenResolutionChange'
+  | 'VideoStreamConfigChange'
+  | 'DoubleTap'
+  | 'StreamPushStateChange'
+  | 'DeviceChange'
+  | 'GetUserMediaStatusChange'
+  | 'MultiPlayerChange'
+  // ------------   云手机回调  --------------
+  | 'AndroidInstanceEvent'
+  | 'ImageEvent';
+
+export interface EventTypesMap {
+  InitSuccess: OnInitSuccessResponse;
+  ConnectSuccess: OnConnectSuccessResponse;
+  Disconnected: OnDisconnectResponse;
+  ConnectFailed: OnConnectFailedResponse;
+  Event: OnEventResponse;
+  OrientationChange: { type: 'portrait' | 'landscape' };
+  VisibilityChange: { status: 'visible' | 'hidden' };
+  NetworkChange: OnNetworkChangeResponse;
+  WebrtcStatusChange: OnWebrtcStatusChangeResponse;
+  GameStartComplete: OnGameStartCompleteResponse;
+  GameStop: OnGameStopResponse;
+  LoadGameArchive: OnLoadGameArchiveResponse;
+  SaveGameArchive: OnSaveGameArchiveResponse;
+  InputStatusChange: OnInputStatusChangeResponse;
+  TouchEvent: OnTouchEventResponse[];
+  CursorShowStatChange: OnCursorShowStatChangeResponse;
+  GamepadConnectChange: OnGamepadConnectChangeResponse;
+  ConfigurationChange: OnConfigurationChangeResponse;
+  RemoteScreenResolutionChange: OnRemoteScreenResolutionChangeResponse;
+  VideoStreamConfigChange: { width: number; height: number };
+  DoubleTap: OnTouchEventResponse[];
+  StreamPushStateChange: OnStreamPushStateChangeResponse;
+  DeviceChange: any;
+  GetUserMediaStatusChange: {
+    code: number;
+    msg: 'NotFoundError' | 'NotAllowedError' | string;
+    type: 'mic' | 'camera';
+    userMedia: MediaStream;
+  };
+  MultiPlayerChange: OnMultiPlayerChangeResponse;
+  // ------------   云手机回调  --------------
+  AndroidInstanceEvent: OnAndroidInstanceEventResponse;
+  ImageEvent: OnImageEventResponse;
+}
+
+/**
  * TCGSDK InitConfig 相关配置，对应TCGSDK 中的 init 方法的。
  */
 export interface InitConfig {
@@ -713,14 +785,6 @@ export interface InitConfig {
    * 页面挂载点的 HTML 元素 ID
    */
   mount: string;
-  /**
-   * 控制节点
-   * @default null
-   *
-   */
-  controller?: {
-    type: 'master' | 'slave';
-  };
   /**
    * 串流设置
    *
@@ -740,6 +804,19 @@ export interface InitConfig {
    * Group Control 配置
    */
   groupControl?: {
+    /**
+     * 串流 clients
+     */
+    clients?: {
+      /**
+       * client label
+       */
+      label: string;
+      /**
+       * 页面挂载点的 HTML 元素 ID
+       */
+      mount: string;
+    }[];
     /**
      * 截图相关配置
      */
@@ -782,11 +859,17 @@ export interface InitConfig {
    */
   tabletMode?: boolean;
   /**
-   * true 为使用接入手游/云手机，false 为适用端游
+   * true 为使用接入手游/云手机
    *
    * @default false
    */
   mobileGame?: boolean;
+  /**
+   * true 为使用接入云手机
+   *
+   * @default false
+   */
+  androidInstance?: boolean;
   /**
    * 手游启用VPX 编码
    *
@@ -960,6 +1043,12 @@ export interface InitConfig {
     width: number;
     height: number;
   };
+  /**
+   * 启动移动端鼠标事件监听
+   *
+   * @default true
+   */
+  enableMouseEventOnMobile?: boolean;
   /**
    * 是否开启事件拦截
    *
@@ -1382,7 +1471,7 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onAndroidInstanceEvent 回调函数的 response
-   * @param {string} response.type - 事件名称  'trans_message' | 'system_usage' | 'clipboard_event
+   * @param {string} response.type - 事件名称  'trans_message' | 'system_usage' | 'clipboard_event' | 'notification_event'
    * @param {Object} response.data - 事件数据，不同 type可能 data 不同，参考下表
    *
    *
@@ -1392,6 +1481,7 @@ export interface InitConfig {
    * | trans_message   | Object<{msg: string; package_name: string;}> |
    * | system_usage    | Object<{cpu_usage: number; mem_usage: number; gpu_usage: number;}> |
    * | clipboard_event | Object<{text: string; writeText?: boolean}> <table><tr><th>text</th><th>string</th></tr><tr><th>writeText</th><th>boolean 是否已写入剪切板</th></tr></table> |
+   * | notification_event    | Object<{package_name: string; title: string; text: string;}> |
    *
    */
   onAndroidInstanceEvent?: (response: OnAndroidInstanceEventResponse) => void;
@@ -1514,6 +1604,15 @@ export class CloudGamingWebSDK {
    *
    */
   reconnect(): void;
+  // -------------- 事件接口 ------------
+  /**
+   * 监听事件回调，同 init 内的对应回调相同
+   *
+   * @param {EventTypes} type - 监听事件
+   * @param {Function} handler - 回调函数 response data
+   *
+   */
+  on<T extends EventTypes>(type: T, handler: (data: EventTypesMap[T]) => void): void;
   // -------------- 基础方法接口 ------------
   /**
    * 获取是否为手游方案
@@ -1579,7 +1678,7 @@ export class CloudGamingWebSDK {
    */
   gameResume(callback?: Function): void;
   /**
-   * **聚焦输入框时**快速发送内容
+   * **聚焦输入框时**快速发送内容，会同时粘贴到剪贴板
    *
    * @param {string} content 需要发送的内容
    * @param {Function} [callback] 回调 code: 0 success, 1 failed
@@ -1674,6 +1773,8 @@ export class CloudGamingWebSDK {
    *
    * @param {Object} param
    * @param {number} param.destPort - 目标端口，端口范围建议为 10000-20000
+   * @param {number} [param.maxPacketLifeTime] - 最大包体发送时间，单位毫秒。*注意：maxPacketLifeTime 和 maxRetransmits 不能同时存在。*
+   * @param {number} [param.maxRetransmits] - 最大重传次数。*注意：maxPacketLifeTime 和 maxRetransmits 不能同时存在。*
    * @param {string} [param.protocol='text'] - 'text' | 'binary'，指定云端回复(onMessage 方法内收到的)数据类型
    * @param {Function} param.onMessage - dataChannel收到消息的回调函数
    *
@@ -1716,10 +1817,14 @@ export class CloudGamingWebSDK {
   createCustomDataChannel({
     destPort,
     onMessage,
+    maxPacketLifeTime,
+    maxRetransmits,
     protocol,
   }: {
     destPort: number;
     onMessage: (res: any) => void;
+    maxRetransmits?: number;
+    maxPacketLifeTime?: number;
     protocol?: 'text' | 'binary';
   }): Promise<{
     code: number; // 0 success, 1 ack dataChannel 未创建成功，请重试, 2 该数据通道已经存在

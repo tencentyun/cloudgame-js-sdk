@@ -1,3 +1,22 @@
+### [2.1.1](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.1)@2025.07.10
+
+**新增**
+
+- 新增 Operator 接口
+- 新增云手机旋转角度
+- 新增自定义数据通道重传策略
+- 新增 mobile 端鼠标监听
+- 新增切换自定义输入法/云端输入法
+
+**变更**
+
+- 自动开关摄像头逻辑调整
+
+**优化**
+
+- 云手机重连
+
+
 ### [2.1.0](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.0)@2025.06.13
 
 **新增**
