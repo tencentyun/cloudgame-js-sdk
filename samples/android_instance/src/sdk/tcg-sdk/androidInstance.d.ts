@@ -4,20 +4,14 @@
  */
 export type BatchTaskResponse = {
   /**
-   * Task 结果
+   * 每个设备的 response
+   *
    * Code 为 0 表示成功，其他值表示失败
    *
    * Code: 10001, Msg: "invalid param"
    * Code: 10002, Msg: "invalid token"
    * Code: 10003, Msg: "invalid operate"
    *
-   */
-  Code: number;
-  Message: string;
-  /**
-   * 每个设备的 response
-   *
-   * Code 为 0 表示成功，其他值表示失败
    */
   [InstanceId: string]: {
     Code: number;
@@ -41,7 +35,7 @@ interface DescribeInstancePropertiesResponse extends BatchTaskResponse {
      * Code 为 0 表示成功
      */
     Code: number;
-    Message: string;
+    Msg: string;
     RequestId: string;
     DeviceInfo: InstanceProperties['DeviceInfo'];
     GPSInfo: InstanceProperties['GPSInfo'];
@@ -52,26 +46,30 @@ interface DescribeInstancePropertiesResponse extends BatchTaskResponse {
   };
 }
 
+interface App {
+  FirstInstallTimeMs: number;
+  Label: string;
+  LastUpdateTimeMs: number;
+  PackageName: string;
+  VersionName: string;
+}
+
 interface ListUserAppsResponse extends BatchTaskResponse {
   [InstanceId: string]: {
     /**
      * Code 为 0 表示成功
      */
     Code: number;
-    Message: string;
+    Msg: string;
     RequestId: string;
-    AppList: {
-      FirstInstallTimeMs: number;
-      Label: string;
-      LastUpdateTimeMs: number;
-      PackageName: string;
-      VersionName: string;
-    }[];
+    AppList: App[];
   };
 }
 
 interface DescribeCameraMediaPlayStatusResponse extends BatchTaskResponse {
   [InstanceId: string]: {
+    Code: number;
+    Msg: string;
     FilePath: string;
     /**
      * 循环次数，负数表示无限循环
@@ -82,18 +80,42 @@ interface DescribeCameraMediaPlayStatusResponse extends BatchTaskResponse {
 
 interface DescribeKeepAliveListResponse extends BatchTaskResponse {
   [InstanceId: string]: {
+    Code: number;
+    Msg: string;
     AppList: string[];
   };
 }
 
 interface MediaSearchResponse extends BatchTaskResponse {
   [InstanceId: string]: {
+    Code: number;
+    Msg: string;
     MediaList: {
       FileName: string; // 'abc123.mp4';
       FilePath: string; // '/sdcard/xxxx';
       FileBytes: number;
       FileModifiedTime: number;
     }[];
+  };
+}
+
+interface ListAllAppsResponse extends BatchTaskResponse {
+  [InstanceId: string]: {
+    /**
+     * Code 为 0 表示成功
+     */
+    Code: number;
+    Msg: string;
+    RequestId: string;
+    AppList: App[];
+  };
+}
+
+interface DescribeAppInstallBlackListResponse extends BatchTaskResponse {
+  [InstanceId: string]: {
+    Code: number;
+    Msg: string;
+    AppList: string[];
   };
 }
 
@@ -195,7 +217,7 @@ export interface AndroidInstance {
    * @example
    * AndroidInstance.joinGroupControl({instanceIds: ['cai-xxx1', 'cai-xxx2']});
    */
-  joinGroupControl({ instanceIds, clientSessions = [] }: { instanceIds: string[]; clientSessions?: string[] }): void;
+  joinGroupControl({ instanceIds, clientSessions }: { instanceIds: string[]; clientSessions?: string[] }): void;
   /**
    * 中途离开群控
    *
@@ -227,13 +249,77 @@ export interface AndroidInstance {
    * @param {Object} params
    * @param {string} params.instanceId - 实例 Id
    * @param {number} [params.quality] - 截图质量，取值范围 0-100，默认 20
+   * @param {number} [params.screenshot_width] - 截图宽度
+   * @param {number} [params.screenshot_height] - 截图高度
    *
    * @example
-   * AndroidInstance.getInstanceImage({instanceId: 'cai-xxx1'});
+   * const {url} = AndroidInstance.getInstanceImage({instanceId: 'cai-xxx1'});
    *
-   * @returns {{url: string}} response url - 截图地址
    */
-  getInstanceImage({ instanceId, quality }: { instanceId: string; quality?: number }): { url: string };
+  getInstanceImage({
+    instanceId,
+    quality,
+    screenshot_width,
+    screenshot_height,
+  }: {
+    instanceId: string;
+    quality?: number;
+    screenshot_width?: number;
+    screenshot_height?: number;
+  }): { url: string };
+  /**
+   * 上传文件到实例
+   *
+   * @function
+   * @param {Object} params
+   * @param {string} params.instanceId - 实例 Id
+   * @param {Object[]} params.files - Files
+   * @param {File} params.files.file - file
+   * @param {string} params.files.path - path
+   *
+   * @example
+   * AndroidInstance.upload({instanceId: 'cai-xxx1', files: [{file: file1, path: '/sdcard/xxx/'}, {file: file2, path: '/sdcard/xxx/']});
+   *
+   */
+  upload({ instanceId, files }: { instanceId: string; files: { file: File; path?: string }[] }): Promise<{
+    Code: number;
+    Message: string;
+    FileStatus: { CloudPath: string; FileName: string }[] | null;
+  }>;
+  /**
+   * 获取实例下载地址
+   *
+   * @function
+   * @param {Object} params
+   * @param {string} params.instanceId - 实例 Id
+   * @param {string} [params.path] - 下载路径
+   *
+   * @example
+   * const {address} = AndroidInstance.getInstanceDownloadAddress({instanceId: 'cai-xxx1', path: '/sdcard/xxx/'});
+   *
+   */
+  getInstanceDownloadAddress({ instanceId, path }: { instanceId: string; path: string }): { address: string };
+  /**
+   * **聚焦输入框时**快速发送内容，不粘贴到剪贴版
+   *
+   * @param {Object} params
+   * @param {string} param.content - content
+   * @param {string} param.mode - append: 追加模式，向输入框中当前光标后写入  override: 覆盖模式，覆盖输入框中的文字
+   *
+   * @example
+   * AndroidInstance.inputText({content: 'abc'});
+   */
+  inputText({ content, mode }: { content: string; mode: 'append' | 'override' }): void;
+  /**
+   * 切换输入法
+   *
+   * @param {Object} params
+   * @param {string} param.ime - cloud : 云端输入法，local： 本地输入法
+   *
+   * @example
+   * AndroidInstance.switchIME({ime: 'local'});
+   */
+  switchIME({ ime }: { ime: 'cloud' | 'local' }): void;
   /**
    * 发送 App binder 消息
    *
@@ -276,7 +362,7 @@ export interface AndroidInstance {
    * @param {number} params.value.DPI
    *
    * @example
-   * AndroidInstance.setResolution({'cai-xxx1': {Width: 720, Height: 1080}, {'cai-xxx2': {Width: 720, Height: 1080}})
+   * AndroidInstance.setResolution({'cai-xxx1': {Width: 720, Height: 1080}, {'cai-xxx2': {Width: 720, Height: 1080}});
    */
   setResolution(params: {
     [InstanceId: string]: { Width: number; Height: number; DPI?: number };
@@ -291,7 +377,7 @@ export interface AndroidInstance {
    * @param {string} params.value.Text - 要粘贴的文本
    *
    * @example
-   * AndroidInstance.paste({'cai-xxx1': {Text: 'abc'}, {'cai-xxx2': {Text: '123'}})
+   * AndroidInstance.paste({'cai-xxx1': {Text: 'abc'}, {'cai-xxx2': {Text: '123'}});
    */
   paste(params: { [InstanceId: string]: { Text: string } }): Promise<BatchTaskResponse>;
   /**
@@ -304,7 +390,7 @@ export interface AndroidInstance {
    * @param {string} params.value.Text - 要发送的内容
    *
    * @example
-   * AndroidInstance.sendClipboard({'cai-xxx1': {Text: 'abc'}, {'cai-xxx2': {Text: '123'}})
+   * AndroidInstance.sendClipboard({'cai-xxx1': {Text: 'abc'}, {'cai-xxx2': {Text: '123'}});
    */
   sendClipboard(params: { [InstanceId: string]: { Text: string } }): Promise<BatchTaskResponse>;
   /**
@@ -316,7 +402,7 @@ export interface AndroidInstance {
    * @param {Object} params.value - value 暂时传空对象 {}
    *
    * @example
-   * AndroidInstance.shake({'cai-xxx1': {}, {'cai-xxx2': {}})
+   * AndroidInstance.shake({'cai-xxx1': {}, {'cai-xxx2': {}});
    */
   shake(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
   /**
@@ -330,7 +416,7 @@ export interface AndroidInstance {
    * @param {string[]} params.value.Values - 传感器对应的值，数组长度为 3，分辨表示 x/y/z 轴的值
    *
    * @example
-   * AndroidInstance.setSensor({'cai-xxx1': {Type: 'accelerometer', Values: [10, 10, 10]},  {'cai-xxx2': {Type: 'gyroscope', Values: [10, 10, 10]}})
+   * AndroidInstance.setSensor({'cai-xxx1': {Type: 'accelerometer', Values: [10, 10, 10]},  {'cai-xxx2': {Type: 'gyroscope', Values: [10, 10, 10]}});
    */
   setSensor(params: {
     [InstanceId: string]: { Type: 'accelerometer' | 'gyroscope'; Values: number[] };
@@ -346,7 +432,7 @@ export interface AndroidInstance {
    * @param {string} params.value.Msg - 消息
    *
    * @example
-   * AndroidInstance.sendTransMessage({'cai-xxx1': {PackageName: 'com.example.myapplication', Msg: 'abc123'}})
+   * AndroidInstance.sendTransMessage({'cai-xxx1': {PackageName: 'com.example.myapplication', Msg: 'abc123'}});
    */
   sendTransMessage(params: { [InstanceId: string]: { PackageName: string; Msg: string } }): Promise<BatchTaskResponse>;
   /**
@@ -358,21 +444,9 @@ export interface AndroidInstance {
    * @param {Object} params.value - value 暂时传空对象 {}
    *
    * @example
-   * AndroidInstance.describeInstanceProperties({'cai-xxx1': {}, {'cai-xxx2': {}})
+   * AndroidInstance.describeInstanceProperties({'cai-xxx1': {}, {'cai-xxx2': {}});
    */
   describeInstanceProperties(params: { [InstanceId: string]: {} }): Promise<DescribeInstancePropertiesResponse>;
-  /**
-   * 已安装第三方应用功能
-   *
-   * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
-   * @param {Object} params.value - value 暂时传空对象 {}
-   *
-   * @example
-   * AndroidInstance.listUserApps({'cai-xxx1': {}, {'cai-xxx2': {}})
-   */
-  listUserApps(params: { [InstanceId: string]: {} }): Promise<ListUserAppsResponse>;
   /**
    * 修改实例属性
    *
@@ -452,6 +526,18 @@ export interface AndroidInstance {
    **/
   modifyInstanceProperties(params: { [InstanceId: string]: Partial<InstanceProperties> }): Promise<BatchTaskResponse>;
   /**
+   * 已安装第三方应用功能
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value 暂时传空对象 {}
+   *
+   * @example
+   * AndroidInstance.listUserApps({'cai-xxx1': {}, {'cai-xxx2': {}})
+   */
+  listUserApps(params: { [InstanceId: string]: {} }): Promise<ListUserAppsResponse>;
+  /**
    * 修改前台应用保活状态
    *
    * @function
@@ -486,7 +572,9 @@ export interface AndroidInstance {
    * @example
    * AndroidInstance.describeKeepFrontAppStatus({'cai-xxx1': {}});
    */
-  describeKeepFrontAppStatus(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
+  describeKeepFrontAppStatus(params: {
+    [InstanceId: string]: {};
+  }): Promise<{ PackageName: string; Enable: boolean; RestartInterValSeconds: number }>;
   /**
    * 卸载应用
    *
@@ -725,7 +813,7 @@ export interface AndroidInstance {
    */
   mediaSearch(params: { [InstanceId: string]: { Keyword: string } }): Promise<MediaSearchResponse>;
   /**
-   * 静音开关
+   * 重启实例
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -737,4 +825,100 @@ export interface AndroidInstance {
    * AndroidInstance.reboot({'cai-xxx1': {}});
    */
   reboot(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
+  /**
+   * 查询所有应用列表
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value
+   *
+   *
+   * @example
+   * AndroidInstance.listAllApps({'cai-xxx1': {}});
+   */
+  listAllApps(params: { [InstanceId: string]: {} }): Promise<ListAllAppsResponse>;
+  /**
+   * 关闭应用至后台
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value
+   *
+   *
+   * @example
+   * AndroidInstance.moveAppBackground({'cai-xxx1': {}});
+   */
+  moveAppBackground(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
+  /**
+   * 新增应用安装黑名单列表
+   *
+   * *新增时如果应用已安装，会进行卸载*
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value
+   * @param {string[]} params.value.AppList - AppList
+   *
+   *
+   * @example
+   * AndroidInstance.addAppInstallBlackList({'cai-xxx1': {"AppList": ["com.wechat", "com.alipay", "com.dingtalk"]}});
+   */
+  addAppInstallBlackList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
+  /**
+   * 移除应用安装黑名单列表
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value
+   * @param {string[]} params.value.AppList - AppList
+   *
+   *
+   * @example
+   * AndroidInstance.removeAppInstallBlackList({'cai-xxx1': {"AppList": ["com.wechat", "com.alipay", "com.dingtalk"]}});
+   */
+  removeAppInstallBlackList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
+  /**
+   * 覆盖应用安装黑名单列表
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value
+   * @param {string[]} params.value.AppList - AppList
+   *
+   *
+   * @example
+   * AndroidInstance.setAppInstallBlackList({'cai-xxx1': {"AppList": ["com.wechat", "com.alipay", "com.dingtalk"]}});
+   */
+  setAppInstallBlackList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
+  /**
+   * 查询应用安装黑名单列表
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value
+   *
+   *
+   * @example
+   * AndroidInstance.describeAppInstallBlackList({'cai-xxx1': {}});
+   */
+  describeAppInstallBlackList(params: { [InstanceId: string]: {} }): Promise<DescribeAppInstallBlackListResponse>;
+  /**
+   * 清空应用安装黑名单列表
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value
+   *
+   *
+   * @example
+   * AndroidInstance.clearAppInstallBlackList({'cai-xxx1': {}});
+   */
+  clearAppInstallBlackList(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
 }

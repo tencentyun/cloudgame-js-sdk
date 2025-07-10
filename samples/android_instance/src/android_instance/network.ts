@@ -8,6 +8,8 @@ export const CreateAndroidInstancesAccessToken = async ({
   AndroidInstanceIds = [],
   ExpirationDuration = '12h',
 }: CreateAndroidInstancesAccessTokenRequest) => {
+  // Gets more information from Tencent cloud API
+  // https://cloud.tencent.com/document/api/1162/119708
   const url = `${serverEnv}/CreateAndroidInstancesAccessToken`;
 
   try {

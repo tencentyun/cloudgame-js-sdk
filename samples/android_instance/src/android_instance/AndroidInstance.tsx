@@ -10,6 +10,7 @@ import {
   ChevronDownIcon,
   StarIcon,
   EllipsisIcon,
+  TextboxIcon,
 } from 'tdesign-icons-react';
 import { CloudGamingWebSDK } from '../sdk/tcg-sdk/index';
 import { CreateAndroidInstancesAccessToken } from './network';
@@ -28,7 +29,6 @@ const TCGSDK = new CloudGamingWebSDK();
 
 // AndroidInstance interface
 // https://ex-cloud-gaming.crtrcloud.com/cloud_gaming_web/docs/AndroidInstance.html
-
 const AndroidInstance = TCGSDK.getAndroidInstance();
 
 let slice_point = 3;
@@ -285,6 +285,28 @@ export function AndroidInstancePage() {
                 >
                   <div className="mt-[20px] cursor-pointer">
                     <VideoLibraryIcon size={20} />
+                  </div>
+                </Dropdown>
+                <Dropdown
+                  options={[
+                    {
+                      content: '云端输入法',
+                      value: 'cloud',
+                    },
+                    {
+                      content: '本地输入法',
+                      value: 'local',
+                    },
+                  ]}
+                  onClick={(data) => {
+                    console.log(data.value);
+                    const ime = data.value as 'cloud' | 'local';
+
+                    AndroidInstance.switchIME({ ime });
+                  }}
+                >
+                  <div className="mt-[20px]">
+                    <TextboxIcon size={20} />
                   </div>
                 </Dropdown>
               </div>

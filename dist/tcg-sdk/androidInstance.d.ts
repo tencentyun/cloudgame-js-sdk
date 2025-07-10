@@ -8,14 +8,14 @@ export type BatchTaskResponse = {
    *
    * Code 为 0 表示成功，其他值表示失败
    *
-   * Code: 10001, Message: "invalid param"
-   * Code: 10002, Message: "invalid token"
-   * Code: 10003, Message: "invalid operate"
+   * Code: 10001, Msg: "invalid param"
+   * Code: 10002, Msg: "invalid token"
+   * Code: 10003, Msg: "invalid operate"
    *
    */
   [InstanceId: string]: {
     Code: number;
-    Message: string;
+    Msg: string;
   };
 };
 
@@ -35,7 +35,7 @@ interface DescribeInstancePropertiesResponse extends BatchTaskResponse {
      * Code 为 0 表示成功
      */
     Code: number;
-    Message: string;
+    Msg: string;
     RequestId: string;
     DeviceInfo: InstanceProperties['DeviceInfo'];
     GPSInfo: InstanceProperties['GPSInfo'];
@@ -60,7 +60,7 @@ interface ListUserAppsResponse extends BatchTaskResponse {
      * Code 为 0 表示成功
      */
     Code: number;
-    Message: string;
+    Msg: string;
     RequestId: string;
     AppList: App[];
   };
@@ -69,7 +69,7 @@ interface ListUserAppsResponse extends BatchTaskResponse {
 interface DescribeCameraMediaPlayStatusResponse extends BatchTaskResponse {
   [InstanceId: string]: {
     Code: number;
-    Message: string;
+    Msg: string;
     FilePath: string;
     /**
      * 循环次数，负数表示无限循环
@@ -81,7 +81,7 @@ interface DescribeCameraMediaPlayStatusResponse extends BatchTaskResponse {
 interface DescribeKeepAliveListResponse extends BatchTaskResponse {
   [InstanceId: string]: {
     Code: number;
-    Message: string;
+    Msg: string;
     AppList: string[];
   };
 }
@@ -89,7 +89,7 @@ interface DescribeKeepAliveListResponse extends BatchTaskResponse {
 interface MediaSearchResponse extends BatchTaskResponse {
   [InstanceId: string]: {
     Code: number;
-    Message: string;
+    Msg: string;
     MediaList: {
       FileName: string; // 'abc123.mp4';
       FilePath: string; // '/sdcard/xxxx';
@@ -105,7 +105,7 @@ interface ListAllAppsResponse extends BatchTaskResponse {
      * Code 为 0 表示成功
      */
     Code: number;
-    Message: string;
+    Msg: string;
     RequestId: string;
     AppList: App[];
   };
@@ -114,7 +114,7 @@ interface ListAllAppsResponse extends BatchTaskResponse {
 interface DescribeAppInstallBlackListResponse extends BatchTaskResponse {
   [InstanceId: string]: {
     Code: number;
-    Message: string;
+    Msg: string;
     AppList: string[];
   };
 }
@@ -255,7 +255,6 @@ export interface AndroidInstance {
    * @example
    * const {url} = AndroidInstance.getInstanceImage({instanceId: 'cai-xxx1'});
    *
-   * @returns {{url: string}} response url - 截图地址
    */
   getInstanceImage({
     instanceId,
@@ -281,7 +280,6 @@ export interface AndroidInstance {
    * @example
    * AndroidInstance.upload({instanceId: 'cai-xxx1', files: [{file: file1, path: '/sdcard/xxx/'}, {file: file2, path: '/sdcard/xxx/']});
    *
-   * @returns {{Code: number; Message: string; FileStatus: { CloudPath: string; FileName: string }[] | null}} response
    */
   upload({ instanceId, files }: { instanceId: string; files: { file: File; path?: string }[] }): Promise<{
     Code: number;
@@ -299,7 +297,6 @@ export interface AndroidInstance {
    * @example
    * const {address} = AndroidInstance.getInstanceDownloadAddress({instanceId: 'cai-xxx1', path: '/sdcard/xxx/'});
    *
-   * @returns {{address: string}} response address - 下载地址
    */
   getInstanceDownloadAddress({ instanceId, path }: { instanceId: string; path: string }): { address: string };
   /**
