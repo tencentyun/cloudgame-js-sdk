@@ -19,7 +19,7 @@
         <p>目前游戏人数较多，请耐心等待</p>
         <p class="loading-queue-index"></p>
         <div class="loading-tips">
-          <p class="loading-tips-title">温馨提示</p> 
+          <p class="loading-tips-title">温馨提示</p>
           <p class="loading-tips-text">无需下载即可体验游戏</p>
           <p class="loading-tips-text">若长时间处于加载阶段，请刷新页面</p>
         </div>
@@ -27,9 +27,7 @@
     </div>
   </div>
   <script type="text/javascript" src="../../../dist/tcg-sdk/index.js"></script>
-  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/axios/0.26.1/axios.min.js"></script>
   <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-  <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script> -->
   <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script> -->
 
   <script>
@@ -83,7 +81,7 @@
 
       const data = await sendRequest({
         url: `${baseUrl}/Enqueue`,
-        data: { ProjectId: projectId},
+        data: { ProjectId: projectId },
       });
 
       console.log('%c checkEnqueue res', 'color: blue; font-size: 14px', data);
@@ -155,11 +153,26 @@
       };
 
       try {
-        const { data: resData, status } = await axios.post(url, reqData);
-        if (status === 200) {
-          return resData;
-        }
+        const resData = await fetch(url, {
+          body: JSON.stringify(reqData),
+          cache: 'no-cache',
+          method: 'POST',
+          mode: 'cors',
+        })
+          .then((response) => {
+            if (response.status !== 200) {
+              throw new Error(`status Code:${response.status}`);
+            }
+            return response.json();
+          })
+          .catch((error) => {
+            throw new Error(`${error.name}: ${error.message}`);
+          });
+
         console.log('resData', resData);
+
+        return resData;
+
       } catch (error) {
         console.log('sendRequest error', error);
         return { Code: -1 };

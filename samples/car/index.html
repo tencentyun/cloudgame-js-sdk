@@ -42,27 +42,40 @@
   </div>
   <script type="text/javascript" src="../../dist/tcg-sdk/index.js"></script>
   <script type="text/javascript" src="../../plugin/joystick/joystick.js"></script>
-  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/axios/0.26.1/axios.min.js"></script>
-  <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script> -->
   <script>
     // For CAR, the backend service API `StartProject` is actually a serial call of `ApplyConcurrent` and `CreateSession` APIs on the backend.
     // Apply for a concurrency (`ApplyConcurrent`). https://www.tencentcloud.com/zh/document/product/1158/49969, 中文 https://cloud.tencent.com/document/api/1547/72827
     // Create a session (`CreateSession`). https://www.tencentcloud.com/zh/document/product/1158/49968, 中文 https://cloud.tencent.com/document/api/1547/72826
     const StartProject = async () => {
       const url = 'http://xxxx/StartProject'; // For backend implementation, see the backend demo solution.
-
       // For more information on other optional parameters, see the document of the `ApplyConcurrent` API.
       // applicationId and projectId are the IDs of the application and project you created in the console, respectively
-      const { data } = await axios.post(url, {
+      const body = {
         ProjectId: 'project-id',
         // ApplicationId: 'app-123', // If the project is multi-application type, it is necessary to also specify the ApplicationId (app-xxxxx) to launch the required application in the cloud.
         UserId: 'user-id', // Random UserId
         ClientSession: TCGSDK.getClientSession(),
-      });
+      }
 
-      console.log('%c StartProject res', 'color: blue; font-size: 14px', data);
+      const res = await fetch(url, {
+        body: JSON.stringify(body),
+        cache: 'no-cache',
+        method: 'POST',
+        mode: 'cors',
+      })
+        .then((response) => {
+          if (response.status !== 200) {
+            throw new Error(`status Code:${response.status}`);
+          }
+          return response.json();
+        })
+        .catch((error) => {
+          throw new Error(`${error.name}: ${error.message}`);
+        });
 
-      const { Code, SessionDescribe: { ServerSession } } = data;
+      console.log('%c StartProject res', 'color: blue; font-size: 14px', res);
+
+      const { Code, SessionDescribe: { ServerSession } } = res;
 
       if (Code === 0) {
         TCGSDK.start(ServerSession);

@@ -33,8 +33,6 @@
   </div>
   <script type="text/javascript" src="../../../dist/tcg-sdk/index.js"></script>
   <script type="text/javascript" src="../../../plugin/joystick/joystick.js"></script>
-  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/axios/0.26.1/axios.min.js"></script>
-  <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script> -->
   <script>
 
     // For GS, the backend service API `StartGame` is actually a serial call of `TrylockWorker` and `CreateSession` APIs on the backend.
@@ -44,15 +42,31 @@
       const url = 'http://xxxx/StartGame'; // For the backend service, see the backend demo solution.
 
       // For more information on other optional parameters, see the document of the `TrylockWorker` API.
-      const { data } = await axios.post(url, {
+      const body = {
         GameId: 'game-id',
         UserId: 'user-id',
         ClientSession: TCGSDK.getClientSession(),
-      });
+      }
 
-      console.log('%c StartGame res', 'color: blue; font-size: 14px', data);
+      const res = await fetch(url, {
+        body: JSON.stringify(body),
+        cache: 'no-cache',
+        method: 'POST',
+        mode: 'cors',
+      })
+        .then((response) => {
+          if (response.status !== 200) {
+            throw new Error(`status Code:${response.status}`);
+          }
+          return response.json();
+        })
+        .catch((error) => {
+          throw new Error(`${error.name}: ${error.message}`);
+        });
 
-      const { Code, SessionDescribe: { ServerSession } } = data;
+      console.log('%c StartGame res', 'color: blue; font-size: 14px', res);
+
+      const { Code, SessionDescribe: { ServerSession } } = res;
 
       if (Code === 0) {
         TCGSDK.start(ServerSession);
