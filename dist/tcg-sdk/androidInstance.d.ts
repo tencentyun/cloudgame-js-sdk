@@ -25,7 +25,12 @@ export interface InstanceProperties {
   LanguageInfo: { Language: string; Country: string };
   LocaleInfo: { Timezone: string };
   ProxyInfo: { Enabled: boolean; Protocol: string; Host: string; Port: number; User: string; Password: string };
-  SIMInfo: { State: number; PhoneNumber: string; IMSI: string; ICCID: string };
+  SIMInfo: {
+    State: number; // sim 状态。 1：未插入 sim 卡 5：sim 卡已就绪
+    PhoneNumber: string; // 暂不可用
+    IMSI: string; // 暂不可用
+    ICCID: string; // 暂不可用
+  };
   ExtraProperties: { Key: string; Value: string }[];
 }
 
@@ -116,6 +121,22 @@ interface DescribeAppInstallBlackListResponse extends BatchTaskResponse {
     Code: number;
     Msg: string;
     AppList: string[];
+  };
+}
+
+interface GetNavVisibleStatusResponse extends BatchTaskResponse {
+  [InstanceId: string]: {
+    Code: number;
+    Msg: string;
+    Visible: boolean;
+  };
+}
+
+interface GetSystemMusicVolumeResponse extends BatchTaskResponse {
+  [InstanceId: string]: {
+    Code: number;
+    Msg: string;
+    Volume: number;
   };
 }
 
@@ -270,6 +291,8 @@ export interface AndroidInstance {
   /**
    * 上传文件到实例
    *
+   * *默认上传到 /sdcard/Download 目录下，可使用 path 指定上传目录（仅支持/sdcard/ 下目录）*
+   *
    * @function
    * @param {Object} params
    * @param {string} params.instanceId - 实例 Id
@@ -278,13 +301,32 @@ export interface AndroidInstance {
    * @param {string} params.files.path - path
    *
    * @example
-   * AndroidInstance.upload({instanceId: 'cai-xxx1', files: [{file: file1, path: '/sdcard/xxx/'}, {file: file2, path: '/sdcard/xxx/']});
+   * AndroidInstance.upload({instanceId: 'cai-xxx1', files: [{file: file1, path: '/sdcard/xxx/'}, {file: file2, path: '/sdcard/xxx/'}]});
    *
    */
   upload({ instanceId, files }: { instanceId: string; files: { file: File; path?: string }[] }): Promise<{
     Code: number;
     Message: string;
     FileStatus: { CloudPath: string; FileName: string }[] | null;
+  }>;
+  /**
+   * 上传文件到实例
+   *
+   * *默认上传到 /data/media/0/DCIM 目录下*
+   *
+   * @function
+   * @param {Object} params
+   * @param {string} params.instanceId - 实例 Id
+   * @param {Object[]} params.files - Files
+   * @param {File} params.files.file - file
+   *
+   * @example
+   * AndroidInstance.uploadMedia({instanceId: 'cai-xxx1', files: [{file: file1}, {file: file2}]});
+   *
+   */
+  uploadMedia({ instanceId, files }: { instanceId: string; files: { file: File }[] }): Promise<{
+    Code: number;
+    Message: string;
   }>;
   /**
    * 获取实例下载地址
@@ -299,6 +341,21 @@ export interface AndroidInstance {
    *
    */
   getInstanceDownloadAddress({ instanceId, path }: { instanceId: string; path: string }): { address: string };
+  /**
+   * 获取实例 Logcat 下载地址
+   *
+   * @function
+   * @param {Object} params
+   * @param {string} params.instanceId - 实例 Id
+   * @param {string} [params.recentDays] - 最近多少天 0 表示所有日志
+   *
+   * @example
+   * const {address} = AndroidInstance.getInstanceDownloadLogcatAddress({instanceId: 'cai-xxx1', recentDays: 3});
+   *
+   */
+  getInstanceDownloadLogcatAddress({ instanceId, recentDays }: { instanceId: string; recentDays: number }): {
+    address: string;
+  };
   /**
    * **聚焦输入框时**快速发送内容，不粘贴到剪贴版
    *
@@ -368,7 +425,7 @@ export interface AndroidInstance {
     [InstanceId: string]: { Width: number; Height: number; DPI?: number };
   }): Promise<BatchTaskResponse>;
   /**
-   * 往设备粘贴文本
+   * 粘贴文本
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -436,7 +493,7 @@ export interface AndroidInstance {
    */
   sendTransMessage(params: { [InstanceId: string]: { PackageName: string; Msg: string } }): Promise<BatchTaskResponse>;
   /**
-   * 批量查询实例属性接口
+   * 查询实例属性
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -526,7 +583,7 @@ export interface AndroidInstance {
    **/
   modifyInstanceProperties(params: { [InstanceId: string]: Partial<InstanceProperties> }): Promise<BatchTaskResponse>;
   /**
-   * 已安装第三方应用功能
+   * 查询已安装第三方应用
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -717,7 +774,7 @@ export interface AndroidInstance {
    */
   displayCameraImage(params: { [InstanceId: string]: { FilePath: string } }): Promise<BatchTaskResponse>;
   /**
-   * 增加后台应用保活应用
+   * 增加后台保活应用
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -731,7 +788,7 @@ export interface AndroidInstance {
    */
   addKeepAliveList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 移除后台应用保活应用
+   * 移除后台保活应用
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -745,7 +802,7 @@ export interface AndroidInstance {
    */
   removeKeepAliveList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 覆盖设置后台应用保活应用
+   * 覆盖设置后台保活应用
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -759,7 +816,7 @@ export interface AndroidInstance {
    */
   setKeepAliveList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 查询当前后台应用保活列表
+   * 查询后台保活应用
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -772,7 +829,7 @@ export interface AndroidInstance {
    */
   describeKeepAliveList(params: { [InstanceId: string]: {} }): Promise<DescribeKeepAliveListResponse>;
   /**
-   * 清空后台应用保活列表
+   * 清空后台保活应用
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -852,7 +909,7 @@ export interface AndroidInstance {
    */
   moveAppBackground(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
   /**
-   * 新增应用安装黑名单列表
+   * 新增应用安装黑名单
    *
    * *新增时如果应用已安装，会进行卸载*
    *
@@ -868,7 +925,7 @@ export interface AndroidInstance {
    */
   addAppInstallBlackList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 移除应用安装黑名单列表
+   * 移除应用安装黑名单
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -882,7 +939,7 @@ export interface AndroidInstance {
    */
   removeAppInstallBlackList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 覆盖应用安装黑名单列表
+   * 覆盖应用安装黑名单
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -896,7 +953,7 @@ export interface AndroidInstance {
    */
   setAppInstallBlackList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 查询应用安装黑名单列表
+   * 查询应用安装黑名单
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -909,7 +966,7 @@ export interface AndroidInstance {
    */
   describeAppInstallBlackList(params: { [InstanceId: string]: {} }): Promise<DescribeAppInstallBlackListResponse>;
   /**
-   * 清空应用安装黑名单列表
+   * 清空应用安装黑名单
    *
    * @function
    * @param {Object} params - key 为 instanceId
@@ -921,4 +978,30 @@ export interface AndroidInstance {
    * AndroidInstance.clearAppInstallBlackList({'cai-xxx1': {}});
    */
   clearAppInstallBlackList(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
+  /**
+   * 获取系统导航栏显示状态
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value
+   *
+   *
+   * @example
+   * AndroidInstance.getNavVisibleStatus({'cai-xxx1': {}});
+   */
+  getNavVisibleStatus(params: { [InstanceId: string]: {} }): Promise<GetNavVisibleStatusResponse>;
+  /**
+   * 获取系统媒体音量大小
+   *
+   * @function
+   * @param {Object} params - key 为 instanceId
+   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params.value - value
+   *
+   *
+   * @example
+   * AndroidInstance.getSystemMusicVolume({'cai-xxx1': {}});
+   */
+  getSystemMusicVolume(params: { [InstanceId: string]: {} }): Promise<GetSystemMusicVolumeResponse>;
 }

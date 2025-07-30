@@ -1,3 +1,15 @@
+### [2.1.2](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.2)@2025.07.30
+
+**新增**
+
+- 新增 Operator 接口
+
+**变更**
+
+- idleThreshold 逻辑调整
+- 云手机本地输入法调整
+
+
 ### [2.1.1](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.1)@2025.07.10
 
 **新增**

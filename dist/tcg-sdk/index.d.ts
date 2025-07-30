@@ -501,7 +501,8 @@ export type OnAndroidInstanceEventResponse =
   | OnAndroidInstanceTransMessageResponse
   | OnAndroidInstanceSystemUSageResponse
   | OnAndroidInstanceClipboardEventResponse
-  | OnAndroidInstanceNotificationEventResponse;
+  | OnAndroidInstanceNotificationEventResponse
+  | OnAndroidInstanceSystemStatusResponse;
 
 export type OnAndroidInstanceTransMessageResponse = {
   type: 'trans_message';
@@ -534,6 +535,20 @@ export type OnAndroidInstanceNotificationEventResponse = {
     package_name: string;
     title: string;
     text: string;
+  };
+};
+
+export type OnAndroidInstanceSystemStatusResponse = {
+  type: 'system_status';
+  data: {
+    /**
+     * 导航栏状态
+     */
+    nav_visible: boolean;
+    /**
+     * 音量 [0 - 100]
+     */
+    music_volume: number;
   };
 };
 
@@ -1482,6 +1497,7 @@ export interface InitConfig {
    * | system_usage    | Object<{cpu_usage: number; mem_usage: number; gpu_usage: number;}> |
    * | clipboard_event | Object<{text: string; writeText?: boolean}> <table><tr><th>text</th><th>string</th></tr><tr><th>writeText</th><th>boolean 是否已写入剪切板</th></tr></table> |
    * | notification_event    | Object<{package_name: string; title: string; text: string;}> |
+   * | system_status    | Object<{ nav_visible: boolean; music_volume: number;}> |
    *
    */
   onAndroidInstanceEvent?: (response: OnAndroidInstanceEventResponse) => void;
