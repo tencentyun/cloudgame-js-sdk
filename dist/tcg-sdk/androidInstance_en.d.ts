@@ -1,12 +1,12 @@
 /**
- * 批量任务的 response
+ * Responses of batch task
  *
  */
 export type BatchTaskResponse = {
   /**
-   * 每个设备的 response
+   * Response for each device
    *
-   * Code 为 0 表示成功，其他值表示失败
+   * Code 0 for success, other values indicate failure
    *
    * Code: 10001, Msg: "invalid param"
    * Code: 10002, Msg: "invalid token"
@@ -18,7 +18,6 @@ export type BatchTaskResponse = {
     Msg: string;
   };
 };
-
 export interface InstanceProperties {
   DeviceInfo: { Brand: string; Model: string };
   GPSInfo: { Longitude: number; Latitude: number };
@@ -26,18 +25,17 @@ export interface InstanceProperties {
   LocaleInfo: { Timezone: string };
   ProxyInfo: { Enabled: boolean; Protocol: string; Host: string; Port: number; User: string; Password: string };
   SIMInfo: {
-    State: number; // sim 状态。 1：未插入 sim 卡 5：sim 卡已就绪
-    PhoneNumber: string; // 暂不可用
-    IMSI: string; // 暂不可用
-    ICCID: string; // 暂不可用
+    State: number; // SIM card status. 1: No SIM card inserted 5: SIM card ready
+    PhoneNumber: string; // Unavailable
+    IMSI: string; // Unavailable
+    ICCID: string; // Unavailable
   };
   ExtraProperties: { Key: string; Value: string }[];
 }
-
 interface DescribeInstancePropertiesResponse extends BatchTaskResponse {
   [InstanceId: string]: {
     /**
-     * Code 为 0 表示成功
+     * Code 0 for success
      */
     Code: number;
     Msg: string;
@@ -50,7 +48,6 @@ interface DescribeInstancePropertiesResponse extends BatchTaskResponse {
     SIMInfo: InstanceProperties['SIMInfo'];
   };
 }
-
 interface App {
   FirstInstallTimeMs: number;
   Label: string;
@@ -62,7 +59,7 @@ interface App {
 interface ListUserAppsResponse extends BatchTaskResponse {
   [InstanceId: string]: {
     /**
-     * Code 为 0 表示成功
+     * Code 0 for success
      */
     Code: number;
     Msg: string;
@@ -77,7 +74,7 @@ interface DescribeCameraMediaPlayStatusResponse extends BatchTaskResponse {
     Msg: string;
     FilePath: string;
     /**
-     * 循环次数，负数表示无限循环
+     * Number of loops, negative values for infinite loops
      */
     Loops: number;
   };
@@ -107,7 +104,7 @@ interface MediaSearchResponse extends BatchTaskResponse {
 interface ListAllAppsResponse extends BatchTaskResponse {
   [InstanceId: string]: {
     /**
-     * Code 为 0 表示成功
+     * Code 0 for success
      */
     Code: number;
     Msg: string;
@@ -141,14 +138,14 @@ interface GetSystemMusicVolumeResponse extends BatchTaskResponse {
 }
 
 /**
- * TCGSDK - AndroidInstance 子模块相关方法
+ * TCGSDK - AndroidInstance submodule related methods
  *
- * *需要正常 {@link CloudGamingWebSDK} TCGSDK.init 后，再调用 AndroidInstance 相关方法*
+ * *All AndroidInstance methods must be called after normal {@link CloudGamingWebSDK} TCGSDK.init*
  *
- * AndroidInstance 是 TCGSDK 的子模块，用于操作 Android 设备，包括的几类操作能力如下：
- * 1. 连接单个实例看到云手机画面，以及云手机各种操作
- * 2. 通过截图预览多个云手机的画面
- * 3. 其他各类功能操作
+ * AndroidInstance is a submodule of TCGSDK, used to operate Android devices, including the following capabilities:
+ * 1. Connect to a single instance to view the cloud phone screen and perform various operations.
+ * 2. Preview multiple cloud phone screens via screenshots.
+ * 3. Other functional operations.
  *
  * ![android_instance](https://ex-cloud-gaming.crtrcloud.com/assets/images/android_instance.png)
  *
@@ -160,11 +157,11 @@ interface GetSystemMusicVolumeResponse extends BatchTaskResponse {
  */
 export interface AndroidInstance {
   /**
-   * 设置 master
+   * Set master
    *
    * @function
    * @param {Object} params
-   * @param {string} params.instanceId - master的 instanceId
+   * @param {string} params.instanceId - Master's instanceId
    *
    * @example
    * AndroidInstance.setMaster({instanceId: 'cai-xxx1'});
@@ -172,13 +169,13 @@ export interface AndroidInstance {
    */
   setMaster({ instanceId }: { instanceId: string }): void;
   /**
-   * 开始同步，根据设置的 instanceIds 进行同步
+   * Start sync based on the accessed instanceIds
    *
-   * @default 全量同步
+   * @default Full synchronization
    *
    * @function
    * @param {Object} params
-   * @param {Array} params.instanceIds - string[] 需要同步的设备列表
+   * @param {Array} params.instanceIds - string[] List of devices to synchronize
    *
    * @example
    * AndroidInstance.startSync({instanceIds: ['cai-xxx1', 'cai-xxx2']});
@@ -186,7 +183,7 @@ export interface AndroidInstance {
    */
   startSync({ instanceIds }: { instanceIds?: string[] }): void;
   /**
-   * 停止同步（全量）
+   * Stop sync (All instance ids)
    *
    * @function
    *
@@ -195,12 +192,12 @@ export interface AndroidInstance {
    */
   stopSync(): void;
   /**
-   * 请求被控串流
+   * Request streaming by instance id
    *
    * @function
    * @param {Object} param
-   * @param {string} param.instanceId - 请求串流的 instanceId
-   * @param {('open'|'close')} param.status - 串流状态
+   * @param {string} param.instanceId - InstanceId for streaming request
+   * @param {('open'|'close')} param.status - Streaming status
    *
    * @example
    * TCGSDK.requestStream({instanceId: 'cai-xxxx-xxxx', status: 'open', level: 'normal'});
@@ -216,11 +213,11 @@ export interface AndroidInstance {
     level?: 'low' | 'normal' | 'high';
   }): void;
   /**
-   * 设置同步列表
+   * Set sync list
    *
    * @function
    * @param {Object} param
-   * @param {string[]} param.list - 需要同步的 instanceId 列表
+   * @param {string[]} param.list - List of instanceIds to synchronize
    *
    * @example
    * TCGSDK.setSyncList({list: ['cai-xxxx-xxx1', 'cai-xxxx-xxx2']});
@@ -228,11 +225,11 @@ export interface AndroidInstance {
    */
   setSyncList({ list }: { list: string[] }): void;
   /**
-   * 中途加入群控
+   * Join group control by instance id
    *
    * @function
    * @param {Object} params
-   * @param {string[]} params.instanceIds - 需要加入的实例列表
+   * @param {string[]} params.instanceIds - List of instances to join
    * @param {string[]} [params.clientSessions] - clientSession
    *
    * @example
@@ -240,7 +237,7 @@ export interface AndroidInstance {
    */
   joinGroupControl({ instanceIds, clientSessions }: { instanceIds: string[]; clientSessions?: string[] }): void;
   /**
-   * 中途离开群控
+   * Leave group control by instance id
    *
    * @function
    * @param {Object} params
@@ -251,12 +248,12 @@ export interface AndroidInstance {
    */
   leaveGroupControl({ instanceIds }: { instanceIds: string[] }): void;
   /**
-   * 设置截图事件
+   * Set screenshot event
    *
    * @function
    * @param {Object} params
-   * @param {number} params.interval - 截图事件的间隔，单位毫秒
-   * @param {number} [params.quality] - 截图质量，取值范围 0-100
+   * @param {number} params.interval - Screenshot event interval in milliseconds
+   * @param {number} [params.quality] - Screenshot quality, range 0-100
    *
    * @example
    * AndroidInstance.setImageEvent({interval: 10, quality: 50});
@@ -264,14 +261,14 @@ export interface AndroidInstance {
    */
   setImageEvent({ interval, quality }: { interval?: number; quality?: number }): void;
   /**
-   * 获取实例截图信息
+   * Get instance screenshot
    *
    * @function
    * @param {Object} params
-   * @param {string} params.instanceId - 实例 Id
-   * @param {number} [params.quality] - 截图质量，取值范围 0-100，默认 20
-   * @param {number} [params.screenshot_width] - 截图宽度
-   * @param {number} [params.screenshot_height] - 截图高度
+   * @param {string} params.instanceId - Instance Id
+   * @param {number} [params.quality] - Screenshot quality, range 0-100, default 20
+   * @param {number} [params.screenshot_width] - Screenshot width
+   * @param {number} [params.screenshot_height] - Screenshot height
    *
    * @example
    * const {url} = AndroidInstance.getInstanceImage({instanceId: 'cai-xxx1'});
@@ -289,13 +286,13 @@ export interface AndroidInstance {
     screenshot_height?: number;
   }): { url: string };
   /**
-   * 上传文件到实例
+   * Upload file to instance
    *
-   * *默认上传到 /sdcard/Download 目录下，可使用 path 指定上传目录（仅支持/sdcard/ 下目录）*
+   * *By default, files are uploaded to the /sdcard/Download directory. Use path to specify a different directory (only under /sdcard/)*
    *
    * @function
    * @param {Object} params
-   * @param {string} params.instanceId - 实例 Id
+   * @param {string} params.instanceId - Instance Id
    * @param {Object[]} params.files - Files
    * @param {File} params.files.file - file
    * @param {string} params.files.path - path
@@ -310,13 +307,13 @@ export interface AndroidInstance {
     FileStatus: { CloudPath: string; FileName: string }[] | null;
   }>;
   /**
-   * 上传文件到实例
+   * Upload file to instance
    *
-   * *默认上传到 /data/media/0/DCIM 目录下*
+   * *By default, files are uploaded to the /data/media/0/DCIM directory*
    *
    * @function
    * @param {Object} params
-   * @param {string} params.instanceId - 实例 Id
+   * @param {string} params.instanceId - Instance Id
    * @param {Object[]} params.files - Files
    * @param {File} params.files.file - file
    *
@@ -329,12 +326,12 @@ export interface AndroidInstance {
     Message: string;
   }>;
   /**
-   * 获取实例下载地址
+   * Get instance download address
    *
    * @function
    * @param {Object} params
-   * @param {string} params.instanceId - 实例 Id
-   * @param {string} [params.path] - 下载路径
+   * @param {string} params.instanceId - Instance Id
+   * @param {string} [params.path] - Download path
    *
    * @example
    * const {address} = AndroidInstance.getInstanceDownloadAddress({instanceId: 'cai-xxx1', path: '/sdcard/xxx/'});
@@ -342,12 +339,12 @@ export interface AndroidInstance {
    */
   getInstanceDownloadAddress({ instanceId, path }: { instanceId: string; path: string }): { address: string };
   /**
-   * 获取实例 Logcat 下载地址
+   * Get instance Logcat download address
    *
    * @function
    * @param {Object} params
-   * @param {string} params.instanceId - 实例 Id
-   * @param {string} [params.recentDays] - 最近多少天 0 表示所有日志
+   * @param {string} params.instanceId - Instance Id
+   * @param {string} [params.recentDays] - Recent days (0 for all logs)
    *
    * @example
    * const {address} = AndroidInstance.getInstanceDownloadLogcatAddress({instanceId: 'cai-xxx1', recentDays: 3});
@@ -358,35 +355,35 @@ export interface AndroidInstance {
   };
   //  ---------------  Data Channel Methods  ---------------
   /**
-   * **聚焦输入框时**快速发送内容，不粘贴到剪贴版
+   * **When input box is focused** quickly send content without copying to clipboard
    *
    * @param {Object} params
    * @param {string} param.content - content
-   * @param {string} param.mode - append: 追加模式，向输入框中当前光标后写入  override: 覆盖模式，覆盖输入框中的文字
+   * @param {string} param.mode - append: append mode, write after current cursor; override: override mode, replace input box text
    *
    * @example
    * AndroidInstance.inputText({content: 'abc'});
    */
   inputText({ content, mode }: { content: string; mode: 'append' | 'override' }): void;
   /**
-   * 切换输入法
+   * Switch IME
    *
    * @param {Object} params
-   * @param {string} param.ime - cloud : 云端输入法，local： 本地输入法
+   * @param {string} param.ime - cloud: cloud input method; local: local input method
    *
    * @example
    * AndroidInstance.switchIME({ime: 'local'});
    */
   switchIME({ ime }: { ime: 'cloud' | 'local' }): void;
   /**
-   * 发送 App binder 消息
+   * Send App binder message
    *
-   * **单连接适用**
+   * **For single connection only**
    *
    * @function
    * @param {Object} params
    * @param {string} param.packageName - PackageName
-   * @param {string} param.message - 消息
+   * @param {string} param.message - Message
    *
    * @example
    * AndroidInstance.transMessage({packageName: 'com.example.myapplication', message: 'abc123'});
@@ -394,7 +391,7 @@ export interface AndroidInstance {
    */
   transMessage({ packageName, message }: { packageName: string; message: string }): void;
   /**
-   * 触发快速分发应用
+   * Distribute App
    *
    * @function
    * @param {Object} params
@@ -406,7 +403,7 @@ export interface AndroidInstance {
    */
   distributeApp({ packageName }: { packageName: string }): void;
   /**
-   * 停止除指定应用外其他非系统应用
+   * Preserve Clean App
    *
    * @function
    * @param {Object} params
@@ -418,12 +415,12 @@ export interface AndroidInstance {
    */
   preserveCleanApp({ preservePackageNames }: { preservePackageNames: string[] }): void;
   /**
-   * 前台保活指定APP
+   * Keep app in front
    *
    * @function
    * @param {Object} params
    * @param {string} param.packageName - packageName
-   * @param {string} [param.enable] - enable 为 false 时可不指定包名
+   * @param {string} [param.enable] - enable
    *
    * @example
    * AndroidInstance.keepFrontApp({packageName: "tv.danmaku.bili"});
@@ -432,11 +429,11 @@ export interface AndroidInstance {
   keepFrontApp({ packageName, enable }: { packageName: string; enable: boolean }): void;
   //  ---------------  Operator Methods  ---------------
   /**
-   * 设置设备 GPS 信息
+   * Set device GPS information
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value
    * @param {number} params.value.Longitude
    * @param {number} params.value.Latitude
@@ -447,11 +444,11 @@ export interface AndroidInstance {
    */
   setLocation(params: { [InstanceId: string]: { Longitude: number; Latitude: number } }): Promise<BatchTaskResponse>;
   /**
-   * 设置设备 Resolution
+   * Set device Resolution
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value
    * @param {number} params.value.Width
    * @param {number} params.value.Height
@@ -464,52 +461,52 @@ export interface AndroidInstance {
     [InstanceId: string]: { Width: number; Height: number; DPI?: number };
   }): Promise<BatchTaskResponse>;
   /**
-   * 粘贴文本
+   * Paste text
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value
-   * @param {string} params.value.Text - 要粘贴的文本
+   * @param {string} params.value.Text - Text to paste
    *
    * @example
    * AndroidInstance.paste({'cai-xxx1': {Text: 'abc'}, {'cai-xxx2': {Text: '123'}});
    */
   paste(params: { [InstanceId: string]: { Text: string } }): Promise<BatchTaskResponse>;
   /**
-   * 发送文本到剪切板
+   * Send text to clipboard
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value
-   * @param {string} params.value.Text - 要发送的内容
+   * @param {string} params.value.Text - Content to send
    *
    * @example
    * AndroidInstance.sendClipboard({'cai-xxx1': {Text: 'abc'}, {'cai-xxx2': {Text: '123'}});
    */
   sendClipboard(params: { [InstanceId: string]: { Text: string } }): Promise<BatchTaskResponse>;
   /**
-   * 摇一摇
+   * Shake device
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
-   * @param {Object} params.value - value 暂时传空对象 {}
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
+   * @param {Object} params.value - value is an empty object {}
    *
    * @example
    * AndroidInstance.shake({'cai-xxx1': {}, {'cai-xxx2': {}});
    */
   shake(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
   /**
-   * 设置设备传感器信息
+   * Set device sensor information
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value
-   * @param {'accelerometer' | 'gyroscope'} params.value.Type - 传感器leasing accelerometer（加速器），gyroscope（陀螺仪）
-   * @param {string[]} params.value.Values - 传感器对应的值，数组长度为 3，分辨表示 x/y/z 轴的值
+   * @param {'accelerometer' | 'gyroscope'} params.value.Type - Sensor type: accelerometer or gyroscope
+   * @param {string[]} params.value.Values - Sensor values, array length 3, representing x/y/z axis values
    *
    * @example
    * AndroidInstance.setSensor({'cai-xxx1': {Type: 'accelerometer', Values: [10, 10, 10]},  {'cai-xxx2': {Type: 'gyroscope', Values: [10, 10, 10]}});
@@ -518,37 +515,37 @@ export interface AndroidInstance {
     [InstanceId: string]: { Type: 'accelerometer' | 'gyroscope'; Values: number[] };
   }): Promise<BatchTaskResponse>;
   /**
-   * 发送 App binder 消息
+   * Send App binder message
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
-   * @param {Object} params.value - value 暂时传空对象 {}
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
+   * @param {Object} params.value - value is an empty object {}
    * @param {string} params.value.PackageName - PackageName
-   * @param {string} params.value.Msg - 消息
+   * @param {string} params.value.Msg - Message
    *
    * @example
    * AndroidInstance.sendTransMessage({'cai-xxx1': {PackageName: 'com.example.myapplication', Msg: 'abc123'}});
    */
   sendTransMessage(params: { [InstanceId: string]: { PackageName: string; Msg: string } }): Promise<BatchTaskResponse>;
   /**
-   * 查询实例属性
+   * Describe instance properties
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
-   * @param {Object} params.value - value 暂时传空对象 {}
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
+   * @param {Object} params.value - value is an empty object {}
    *
    * @example
    * AndroidInstance.describeInstanceProperties({'cai-xxx1': {}, {'cai-xxx2': {}});
    */
   describeInstanceProperties(params: { [InstanceId: string]: {} }): Promise<DescribeInstancePropertiesResponse>;
   /**
-   * 修改实例属性
+   * Modify instance properties
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {Object} [params.value.DeviceInfo] - DeviceInfo
    * @param {string} [params.value.DeviceInfo.Brand] - DeviceInfo - Brand
@@ -622,27 +619,27 @@ export interface AndroidInstance {
    **/
   modifyInstanceProperties(params: { [InstanceId: string]: Partial<InstanceProperties> }): Promise<BatchTaskResponse>;
   /**
-   * 查询已安装第三方应用
+   * Query user installed apps
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
-   * @param {Object} params.value - value 暂时传空对象 {}
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
+   * @param {Object} params.value - value is an empty object {}
    *
    * @example
    * AndroidInstance.listUserApps({'cai-xxx1': {}, {'cai-xxx2': {}})
    */
   listUserApps(params: { [InstanceId: string]: {} }): Promise<ListUserAppsResponse>;
   /**
-   * 修改前台应用保活状态
+   * Modify foreground app keep-alive status
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string} params.value.PackageName - PackageName
    * @param {boolean} params.value.Enable - Enable
-   * @param {number} params.value.RestartInterValSeconds - 重新拉起最长间隔
+   * @param {number} params.value.RestartInterValSeconds - Maximum interval for restarting
    *
    * @example
    * AndroidInstance.modifyKeepFrontAppStatus({'cai-xxx1': {"PackageName": "com.example.app", "Enable": true, "RestartInterValSeconds": 5}});
@@ -652,17 +649,17 @@ export interface AndroidInstance {
       PackageName: string;
       Enable: boolean;
       /**
-       * 重新拉起最长间隔
+       * Maximum interval for restarting
        */
       RestartInterValSeconds: number;
     };
   }): Promise<BatchTaskResponse>;
   /**
-   * 查询前台应用保活状态
+   * Query foreground app keep-alive status
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    * @example
@@ -672,11 +669,11 @@ export interface AndroidInstance {
     [InstanceId: string]: {};
   }): Promise<{ PackageName: string; Enable: boolean; RestartInterValSeconds: number }>;
   /**
-   * 卸载应用
+   * Uninstall app
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string} params.value.PackageName - PackageName
    *
@@ -685,11 +682,11 @@ export interface AndroidInstance {
    */
   unInstallByPackageName(params: { [InstanceId: string]: { PackageName: string } }): Promise<BatchTaskResponse>;
   /**
-   * 启动应用
+   * Start app
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string} params.value.PackageName - PackageName
    * @param {string} params.value.ActivityName - ActivityName
@@ -700,11 +697,11 @@ export interface AndroidInstance {
    */
   startApp(params: { [InstanceId: string]: { PackageName: string; ActivityName: string } }): Promise<BatchTaskResponse>;
   /**
-   * 停止应用
+   * Stop app
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string} params.value.PackageName - PackageName
    *
@@ -714,11 +711,11 @@ export interface AndroidInstance {
    */
   stopApp(params: { [InstanceId: string]: { PackageName: string } }): Promise<BatchTaskResponse>;
   /**
-   * 清除应用数据
+   * Clear app data
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string} params.value.PackageName - PackageName
    *
@@ -728,11 +725,11 @@ export interface AndroidInstance {
    */
   clearAppData(params: { [InstanceId: string]: { PackageName: string } }): Promise<BatchTaskResponse>;
   /**
-   * 启用应用
+   * Enable app
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string} params.value.PackageName - PackageName
    *
@@ -742,11 +739,11 @@ export interface AndroidInstance {
    */
   enableApp(params: { [InstanceId: string]: { PackageName: string } }): Promise<BatchTaskResponse>;
   /**
-   * 禁用应用
+   * Disable app
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string} params.value.PackageName - PackageName
    *
@@ -756,14 +753,14 @@ export interface AndroidInstance {
    */
   disableApp(params: { [InstanceId: string]: { PackageName: string } }): Promise<BatchTaskResponse>;
   /**
-   * 摄像头播放媒体文件
+   * Play media file on camera
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string} params.value.FilePath - FilePath
-   * @param {string} params.value.Loops - 循环次数，负数表示无限循环
+   * @param {string} params.value.Loops - Number of loops, negative values indicate infinite loops
    *
    *
    * @example
@@ -773,11 +770,11 @@ export interface AndroidInstance {
     [InstanceId: string]: { FilePath: string; Loops: number };
   }): Promise<BatchTaskResponse>;
   /**
-   * 摄像头停止播放媒体文件
+   * Stop playing media file on camera
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -786,11 +783,11 @@ export interface AndroidInstance {
    */
   stopCameraMediaPlay(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
   /**
-   * 查询当前摄像头媒体播放状态
+   * Query current camera media play status
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -799,11 +796,11 @@ export interface AndroidInstance {
    */
   describeCameraMediaPlayStatus(params: { [InstanceId: string]: {} }): Promise<DescribeCameraMediaPlayStatusResponse>;
   /**
-   * 摄像头显示图片
+   * Display image on camera
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string} params.value.FilePath - FilePath
    *
@@ -813,11 +810,11 @@ export interface AndroidInstance {
    */
   displayCameraImage(params: { [InstanceId: string]: { FilePath: string } }): Promise<BatchTaskResponse>;
   /**
-   * 增加后台保活应用
+   * Add background keep-alive apps
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string[]} params.value.AppList - AppList
    *
@@ -827,11 +824,11 @@ export interface AndroidInstance {
    */
   addKeepAliveList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 移除后台保活应用
+   * Remove background keep-alive apps
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string[]} params.value.AppList - AppList
    *
@@ -841,11 +838,11 @@ export interface AndroidInstance {
    */
   removeKeepAliveList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 覆盖设置后台保活应用
+   * Override background keep-alive apps
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string[]} params.value.AppList - AppList
    *
@@ -855,11 +852,11 @@ export interface AndroidInstance {
    */
   setKeepAliveList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 查询后台保活应用
+   * Query background keep-alive apps
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -868,11 +865,11 @@ export interface AndroidInstance {
    */
   describeKeepAliveList(params: { [InstanceId: string]: {} }): Promise<DescribeKeepAliveListResponse>;
   /**
-   * 清空后台保活应用
+   * Clear background keep-alive apps
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -881,11 +878,11 @@ export interface AndroidInstance {
    */
   clearKeepAliveList(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
   /**
-   * 静音开关
+   * Mute switch
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {boolean} params.value.Mute - Mute
    *
@@ -895,11 +892,11 @@ export interface AndroidInstance {
    */
   mute(params: { [InstanceId: string]: { Mute: boolean } }): Promise<BatchTaskResponse>;
   /**
-   * 媒体库文件搜索
+   * Media library file search
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {boolean} params.value.Keyword - Keyword
    *
@@ -909,11 +906,11 @@ export interface AndroidInstance {
    */
   mediaSearch(params: { [InstanceId: string]: { Keyword: string } }): Promise<MediaSearchResponse>;
   /**
-   * 重启实例
+   * Reboot instance
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -922,11 +919,11 @@ export interface AndroidInstance {
    */
   reboot(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
   /**
-   * 查询所有应用列表
+   * Query all apps list
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -935,11 +932,11 @@ export interface AndroidInstance {
    */
   listAllApps(params: { [InstanceId: string]: {} }): Promise<ListAllAppsResponse>;
   /**
-   * 关闭应用至后台
+   * Move app to background
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -948,13 +945,13 @@ export interface AndroidInstance {
    */
   moveAppBackground(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
   /**
-   * 新增应用安装黑名单
+   * Add app install blacklist
    *
-   * *新增时如果应用已安装，会进行卸载*
+   * *If the app is already installed, it will be uninstalled when added*
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string[]} params.value.AppList - AppList
    *
@@ -964,11 +961,11 @@ export interface AndroidInstance {
    */
   addAppInstallBlackList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 移除应用安装黑名单
+   * Remove app install blacklist
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string[]} params.value.AppList - AppList
    *
@@ -978,11 +975,11 @@ export interface AndroidInstance {
    */
   removeAppInstallBlackList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 覆盖应用安装黑名单
+   * Override app install blacklist
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    * @param {string[]} params.value.AppList - AppList
    *
@@ -992,11 +989,11 @@ export interface AndroidInstance {
    */
   setAppInstallBlackList(params: { [InstanceId: string]: { AppList: string[] } }): Promise<BatchTaskResponse>;
   /**
-   * 查询应用安装黑名单
+   * Query app install blacklist
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -1005,11 +1002,11 @@ export interface AndroidInstance {
    */
   describeAppInstallBlackList(params: { [InstanceId: string]: {} }): Promise<DescribeAppInstallBlackListResponse>;
   /**
-   * 清空应用安装黑名单
+   * Clear app install blacklist
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -1018,11 +1015,11 @@ export interface AndroidInstance {
    */
   clearAppInstallBlackList(params: { [InstanceId: string]: {} }): Promise<BatchTaskResponse>;
   /**
-   * 获取系统导航栏显示状态
+   * Get system navigation bar visibility status
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string} params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *
@@ -1031,11 +1028,11 @@ export interface AndroidInstance {
    */
   getNavVisibleStatus(params: { [InstanceId: string]: {} }): Promise<GetNavVisibleStatusResponse>;
   /**
-   * 获取系统媒体音量大小
+   * Get system media volume level
    *
    * @function
-   * @param {Object} params - key 为 instanceId
-   * @param {string} params.key - 设备 instanceId
+   * @param {Object} params - key is instanceId
+   * @param {string] params.key - Device instanceId
    * @param {Object} params.value - value
    *
    *

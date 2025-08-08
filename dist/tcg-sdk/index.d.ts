@@ -502,7 +502,8 @@ export type OnAndroidInstanceEventResponse =
   | OnAndroidInstanceSystemUSageResponse
   | OnAndroidInstanceClipboardEventResponse
   | OnAndroidInstanceNotificationEventResponse
-  | OnAndroidInstanceSystemStatusResponse;
+  | OnAndroidInstanceSystemStatusResponse
+  | OnAndroidInstanceDistributeProgressEventResponse;
 
 export type OnAndroidInstanceTransMessageResponse = {
   type: 'trans_message';
@@ -549,6 +550,18 @@ export type OnAndroidInstanceSystemStatusResponse = {
      * 音量 [0 - 100]
      */
     music_volume: number;
+  };
+};
+
+export type OnAndroidInstanceDistributeProgressEventResponse = {
+  type: 'distribute_progress_event';
+  data: {
+    /**
+     * UNSUPPORTED 镜像不支持
+     * BUSY 在分发其他应用
+     */
+    state: 'SUCCESS' | 'UNSUPPORTED' | 'BUSY' | 'FAIL';
+    package_name: string;
   };
 };
 
@@ -880,11 +893,17 @@ export interface InitConfig {
    */
   mobileGame?: boolean;
   /**
-   * true 为使用接入云手机
    *
-   * @default false
+   * 安卓实例配置
    */
-  androidInstance?: boolean;
+  androidInstance?: {
+    /**
+     * 在 PC 端自动旋转
+     *
+     * @default false
+     */
+    autoRotateOnPC?: boolean;
+  };
   /**
    * 手游启用VPX 编码
    *
@@ -960,11 +979,15 @@ export interface InitConfig {
   /**
    * 当横竖屏切换时，是否自动旋转html节点适配，**该参数会旋转整个html**
    *
+   * *移动端适用*
+   *
    * @default false
    */
   autoRotateContainer?: boolean;
   /**
    * 当横竖屏切换时，是否自动旋转挂载节点（mount）适配，**该参数会旋转挂载节点（mount）**
+   *
+   * *移动端适用*
    *
    * @default false
    */
@@ -1479,7 +1502,6 @@ export interface InitConfig {
    */
   onMultiPlayerChange?: (response: OnMultiPlayerChangeResponse) => void;
   // -------------- 云手机消息 ------------
-
   /**
    *
    * 云手机事件回调
@@ -1498,6 +1520,7 @@ export interface InitConfig {
    * | clipboard_event | Object<{text: string; writeText?: boolean}> <table><tr><th>text</th><th>string</th></tr><tr><th>writeText</th><th>boolean 是否已写入剪切板</th></tr></table> |
    * | notification_event    | Object<{package_name: string; title: string; text: string;}> |
    * | system_status    | Object<{ nav_visible: boolean; music_volume: number;}> |
+   * | distribute_progress_event    | Object<{ state: 'SUCCESS' | 'UNSUPPORTED'(镜像不支持) | 'BUSY'(在分发其他应用) | 'FAIL'; package_name: string;}> |
    *
    */
   onAndroidInstanceEvent?: (response: OnAndroidInstanceEventResponse) => void;
@@ -2374,11 +2397,13 @@ export class CloudGamingWebSDK {
     showSendKmData,
     showSendAckData,
     showSendHbData,
+    showSendCloudDeviceData,
     showOnHbMessage,
     showOnKmMessage,
     showOnAckMessage,
     showOnCdMessage,
     showOnSvMessage,
+    showOnCloudDeviceMessage,
     showLog,
   }: DebugSettingParams): void;
   /**

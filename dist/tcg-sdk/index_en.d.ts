@@ -1,3 +1,5 @@
+import { AndroidInstance } from './androidInstance_en';
+
 interface BaseResponse {
   readonly code: number;
   readonly msg?: string;
@@ -231,7 +233,6 @@ export interface ServerSideDescription {
   readonly request_id: string;
   readonly user_id: string;
   readonly user_ip: string;
-  readonly input_seat: number;
   readonly game_config?: ServerSideDescriptionGameConfig;
   readonly feature_switch?: ServerSideDescriptionFeatureSwitch;
   readonly role: string;
@@ -248,6 +249,7 @@ export interface ServerSideDescription {
     width: number;
     height: number;
     orientation: 'landscape' | 'portrait';
+    degree: '0_degree' | '90_degree' | '180_degree' | '270_degree';
   };
   /**
    * The webrtc structure returned by Proxy
@@ -257,6 +259,9 @@ export interface ServerSideDescription {
     Msg: string;
     Sdp: string;
   };
+  input_seat?: number;
+  video_mime_type: string;
+  audio_mime_type: string;
 }
 
 /**
@@ -461,6 +466,13 @@ export type OnEventPointerLockErrorResponse = {
   data?: {};
 };
 
+export type OnEventTokenNotFoundResponse = {
+  type: 'token_not_found';
+  data?: {
+    instance_ids: string[];
+  };
+};
+
 export type OnEventIceConnectionStateChangeResponse = {
   type: 'ice_state';
   data?: {
@@ -479,7 +491,76 @@ export type OnEventResponse =
   | OnEventLatencyResponse
   | OnEventReadClipboardErrorResponse
   | OnEventPointerLockErrorResponse
-  | OnEventIceConnectionStateChangeResponse;
+  | OnEventIceConnectionStateChangeResponse
+  | OnEventTokenNotFoundResponse;
+
+export type OnAndroidInstanceEventResponse =
+  | OnAndroidInstanceTransMessageResponse
+  | OnAndroidInstanceSystemUSageResponse
+  | OnAndroidInstanceClipboardEventResponse
+  | OnAndroidInstanceNotificationEventResponse
+  | OnAndroidInstanceSystemStatusResponse
+  | OnAndroidInstanceDistributeProgressEventResponse;
+
+export type OnAndroidInstanceTransMessageResponse = {
+  type: 'trans_message';
+  data: {
+    package_name: string;
+    msg: string;
+  };
+};
+
+export type OnAndroidInstanceSystemUSageResponse = {
+  type: 'system_usage';
+  data: {
+    cpu_usage: number;
+    mem_usage: number;
+    gpu_usage: number;
+  };
+};
+
+export type OnAndroidInstanceClipboardEventResponse = {
+  type: 'clipboard_event';
+  data: {
+    text: string;
+    writeText?: boolean;
+  };
+};
+
+export type OnAndroidInstanceNotificationEventResponse = {
+  type: 'notification_event';
+  data: {
+    package_name: string;
+    title: string;
+    text: string;
+  };
+};
+
+export type OnAndroidInstanceSystemStatusResponse = {
+  type: 'system_status';
+  data: {
+    /**
+     * navigator visibility
+     */
+    nav_visible: boolean;
+    /**
+     * volume [0 - 100]
+     */
+    music_volume: number;
+  };
+};
+
+export type OnAndroidInstanceDistributeProgressEventResponse = {
+  type: 'distribute_progress_event';
+  data: {
+    /**
+     * UNSUPPORTED image is not supported
+     * BUSY distributing other applications
+     */
+    state: 'SUCCESS' | 'UNSUPPORTED' | 'BUSY' | 'FAIL';
+    package_name: string;
+  };
+};
 
 /**
  * Push stream
@@ -507,6 +588,10 @@ export type DebugSettingParams = {
    */
   showSendHbData?: boolean;
   /**
+   *  Whether to print the sent cloud device message
+   */
+  showSendCloudDeviceData?: boolean;
+  /**
    * Whether to print the heartbeat response packet messages.
    */
   showOnHbMessage?: boolean;
@@ -526,6 +611,14 @@ export type DebugSettingParams = {
    * Whether to print the server response packet messages.
    */
   showOnSvMessage?: boolean;
+  /**
+   *  Whether to print the cloud device response packet messages.
+   */
+  showOnCloudDeviceMessage?: boolean;
+  /**
+   * Whether to print the muxer messages.
+   */
+  showMuxer?: boolean;
   /**
    * Whether to print all logs of the SDK.
    */
@@ -626,6 +719,85 @@ export interface CameraProfileConstraints {
  */
 export type CameraProfileType = '120p' | '180p' | '240p' | '360p' | '480p' | '720p' | '1080p';
 
+export type OnImageEventResponse = OnImageEventScreenshotResponse;
+
+export type OnImageEventScreenshotResponse = {
+  type: 'screenshot';
+  data: {
+    instanceId: string;
+    url: string;
+  }[];
+};
+
+/**
+ * TCGSDK event types
+ */
+export type EventTypes =
+  | 'InitSuccess'
+  | 'ConnectSuccess'
+  | 'Disconnected'
+  | 'ConnectFailed'
+  | 'Event'
+  | 'OrientationChange'
+  | 'VisibilityChange'
+  | 'NetworkChange'
+  | 'WebrtcStatusChange'
+  | 'GameStartComplete'
+  | 'GameStop'
+  | 'LoadGameArchive'
+  | 'SaveGameArchive'
+  | 'InputStatusChange'
+  | 'TouchEvent'
+  | 'CursorShowStatChange'
+  | 'GamepadConnectChange'
+  | 'ConfigurationChange'
+  | 'RemoteScreenResolutionChange'
+  | 'VideoStreamConfigChange'
+  | 'DoubleTap'
+  | 'StreamPushStateChange'
+  | 'DeviceChange'
+  | 'GetUserMediaStatusChange'
+  | 'MultiPlayerChange'
+  // ------------   cloud phone callbacks   --------------
+  | 'AndroidInstanceEvent'
+  | 'ImageEvent';
+
+export interface EventTypesMap {
+  InitSuccess: OnInitSuccessResponse;
+  ConnectSuccess: OnConnectSuccessResponse;
+  Disconnected: OnDisconnectResponse;
+  ConnectFailed: OnConnectFailedResponse;
+  Event: OnEventResponse;
+  OrientationChange: { type: 'portrait' | 'landscape' };
+  VisibilityChange: { status: 'visible' | 'hidden' };
+  NetworkChange: OnNetworkChangeResponse;
+  WebrtcStatusChange: OnWebrtcStatusChangeResponse;
+  GameStartComplete: OnGameStartCompleteResponse;
+  GameStop: OnGameStopResponse;
+  LoadGameArchive: OnLoadGameArchiveResponse;
+  SaveGameArchive: OnSaveGameArchiveResponse;
+  InputStatusChange: OnInputStatusChangeResponse;
+  TouchEvent: OnTouchEventResponse[];
+  CursorShowStatChange: OnCursorShowStatChangeResponse;
+  GamepadConnectChange: OnGamepadConnectChangeResponse;
+  ConfigurationChange: OnConfigurationChangeResponse;
+  RemoteScreenResolutionChange: OnRemoteScreenResolutionChangeResponse;
+  VideoStreamConfigChange: { width: number; height: number };
+  DoubleTap: OnTouchEventResponse[];
+  StreamPushStateChange: OnStreamPushStateChangeResponse;
+  DeviceChange: any;
+  GetUserMediaStatusChange: {
+    code: number;
+    msg: 'NotFoundError' | 'NotAllowedError' | string;
+    type: 'mic' | 'camera';
+    userMedia: MediaStream;
+  };
+  MultiPlayerChange: OnMultiPlayerChangeResponse;
+  // ------------   cloud phone callbacks  --------------
+  AndroidInstanceEvent: OnAndroidInstanceEventResponse;
+  ImageEvent: OnImageEventResponse;
+}
+
 /**
  * TCGSDK InitConfig related configuration.
  */
@@ -638,6 +810,61 @@ export interface InitConfig {
    * Cloud rendering mount point(HTML element ID).
    */
   mount: string;
+  /**
+   * Streaming config
+   *
+   * @default 'webrtc'
+   */
+  streaming?: {
+    /**
+     *
+     */
+    mode: 'webrtc' | 'websocket';
+    /**
+     * @default H264
+     */
+    videoCodecList?: string[];
+  };
+  /**
+   * Group Control config
+   */
+  groupControl?: {
+    /**
+     *  clients
+     */
+    clients?: {
+      /**
+       * client label
+       */
+      label: string;
+      /**
+       * client mount HTML ID
+       */
+      mount: string;
+    }[];
+    /**
+     * Screenshot related configuration
+     */
+    image?: {
+      /**
+       * Screenshot interval in seconds, default 1
+       * @default 1
+       */
+      interval?: number;
+      /**
+       * quality 0-100, default 20
+       * @default 20
+       */
+      quality?: number;
+    };
+  };
+  /**
+   * Instance access token, gets from cloud API
+   */
+  accessToken?: {
+    token: string;
+    accessInfo: string;
+  };
   /**
    * Whether to enable mic
    *
@@ -664,6 +891,12 @@ export interface InitConfig {
    * @default false
    */
   mobileGame?: boolean;
+  /**
+   * cloud phone / androidInstance
+   *
+   * @default false
+   */
+  androidInstance?: boolean;
   /**
    * Whether to enable VPX encoding
    *
@@ -1235,6 +1468,40 @@ export interface InitConfig {
    *
    */
   onMultiPlayerChange?: (response: OnMultiPlayerChangeResponse) => void;
+  // -------------- Cloud Phone callbacks ------------
+  /**
+   *
+   * Cloud Phone Events
+   *
+   * @function
+   * @param {Object} response - onAndroidInstanceEvent response
+   * @param {string} response.type - Event types: 'trans_message' | 'system_usage' | 'clipboard_event' | 'notification_event'
+   * @param {Object} response.data - Event data, different types may have different data, refer to the table below
+   *
+   *
+   * Table
+   * | type    | data                                                     |
+   * | ------- | --------------------------------------------------------------- |
+   * | trans_message   | Object<{msg: string; package_name: string;}> |
+   * | system_usage    | Object<{cpu_usage: number; mem_usage: number; gpu_usage: number;}> |
+   * | clipboard_event | Object<{text: string; writeText?: boolean}> <table><tr><th>text</th><th>string</th></tr><tr><th>writeText</th><th>boolean 是否已写入剪切板</th></tr></table> |
+   * | notification_event    | Object<{package_name: string; title: string; text: string;}> |
+   * | system_status    | Object<{ nav_visible: boolean; music_volume: number;}> |
+   * | distribute_progress_event    | Object<{ state: 'SUCCESS' | 'UNSUPPORTED' | 'BUSY' | 'FAIL'; package_name: string;}> |
+   *
+   */
+  onAndroidInstanceEvent?: (response: OnAndroidInstanceEventResponse) => void;
+  /**
+   *
+   * After connecting success, the screenshot will be taken every `image.interval` milliseconds, and the screenshot will be returned through `onImageEvent`.
+   *
+   * @function
+   * @param {Object} response - onImageEvent response
+   * @param {'screenshot'} response.type  - Event types: 'screenshot'
+   * @param {Object} response.data - screenshot type: [{instanceId: string, url: string}]
+   *
+   */
+  onImageEvent?: (response: OnImageEventResponse) => void;
   /**
    * Log callback, same as `setLogHandler`
    *
@@ -1245,10 +1512,12 @@ export interface InitConfig {
 }
 
 /**
- * The TCG(Tencent Cloud Gaming) JavaScript SDK (TCGSDK) is used to develop PaaS cloud rendering applications. It is exported as a singleton, adopts configuration and callback registration methods, and provides mouse/keyboard, audio/video, and game process control APIs as detailed below.
- * @hideconstructor
+ * The TCG(Tencent Cloud Gaming) JavaScript SDK (TCGSDK) is used to develop PaaS cloud rendering applications. It adopts configuration and callback registration methods, and provides mouse/keyboard, audio/video, and game process control APIs as detailed below.
+ *
+ * @class
  */
 export class CloudGamingWebSDK {
+  constructor();
   // -------------- 云渲染生命周期相关接口 ------------
   /**
    * @param {InitConfig} config
@@ -1260,6 +1529,10 @@ export class CloudGamingWebSDK {
    * {@link InitConfig}
    */
   getInitOptions(): InitConfig;
+  /**
+   * Cloud Phone / Cloud Phone android instance
+   */
+  getAndroidInstance(): AndroidInstance;
   /**
    * **Gets the client session information.**
    *
@@ -1279,6 +1552,39 @@ export class CloudGamingWebSDK {
    *
    */
   start(serverSession: string): void;
+  /**
+   * accessToken
+   *
+   * @param {Object} params
+   * @param {string} params.accessInfo
+   * @param {string} params.token
+   *
+   * @example
+   * TCGSDK.setAccessToken({accessInfo: 'xxx', token: 'xxx'});
+   *
+   */
+  setAccessToken({ accessInfo, token }: { accessInfo: string; token: string }): void;
+  /**
+   * Access Cloud Rendering/Cloud Phone, you need to pass in accessToken in init or call setAccessToken
+   *
+   * @param {Object} params
+   * @param {string} [params.instanceId] - Instance Id, single control
+   * @param {string} [params.instanceIds] - Instance Ids, group control
+   * @param {boolean} [params.groupControl] - groupControl flag, default id false
+   *
+   * @example
+   * TCGSDK.access({instanceId: 'cai-xxxx-xxxx'});
+   *
+   */
+  access({
+    instanceId,
+    instanceIds,
+    groupControl,
+  }: {
+    instanceId?: string;
+    instanceIds?: string[];
+    groupControl?: boolean;
+  }): void;
   /**
    * Stops cloud rendering immediately.
    *
@@ -1305,6 +1611,16 @@ export class CloudGamingWebSDK {
    *
    */
   reconnect(): void;
+  // -------------- Events ------------
+  /**
+   *
+   * Listening to event callbacks is the same as the callbacks in init.
+   *
+   * @param {EventTypes} type - event type
+   * @param {Function} handler - callback function response data
+   *
+   */
+  on<T extends EventTypes>(type: T, handler: (data: EventTypesMap[T]) => void): void;
   // -------------- base interfaces ------------
   /**
    * Queries whether the current solution is a mobile game solution.
@@ -1458,6 +1774,8 @@ export class CloudGamingWebSDK {
    *
    * @param {Object} param
    * @param {number} param.destPort - The target port, the recommended port range is 10000-20000.
+   * @param {number} [param.maxPacketLifeTime] - maxPacketLifeTime unit millisecond * maxPacketLifeTime and maxRetransmits can not exist at the same time. *
+   * @param {number} [param.maxRetransmits] - * maxPacketLifeTime and maxRetransmits can not exist at the same time. *
    * @param {string} [param.protocol='text'] - 'text' | 'binary', for data type from server (response from onMessage)
    * @param {Function} param.onMessage - The callback function for message receipt by `dataChannel`.
    *
@@ -1496,7 +1814,19 @@ export class CloudGamingWebSDK {
    * }
    *
    */
-  createCustomDataChannel({ destPort, onMessage }: { destPort: number; onMessage: (res: any) => void }): Promise<{
+  createCustomDataChannel({
+    destPort,
+    onMessage,
+    maxPacketLifeTime,
+    maxRetransmits,
+    protocol,
+  }: {
+    destPort: number;
+    onMessage: (res: any) => void;
+    maxRetransmits?: number;
+    maxPacketLifeTime?: number;
+    protocol?: 'text' | 'binary';
+  }): Promise<{
     code: number; // `0`: Success; `1`: Failed to create the `ack` data channel. Try again.
     msg: string;
     // The method for sending messages, which will pass through data to the data channel of `peerConnection`. The `message` parameter supports all data types of `RTCDataChannel`.
@@ -1683,11 +2013,6 @@ export class CloudGamingWebSDK {
    * @param {number} value The zooming factor, which is 1.0 by default and is the same as that in the cloud. Value range: [0.1,10].
    */
   setMobileCursorScale(value: number): void;
-  /**
-   * Sets the style string. Valid values:
-   * @param {('standard'|'default_huge')} style `standard`: System default cursor style, which is smaller. `default_huge`: System large cursor style, which is larger.
-   */
-  setRemoteCursorStyle(style: 'standard' | 'default_huge'): void;
   /**
    * Resets the status of all cloud keys, which is used in scenarios where cloud keys become stuck.
    */
@@ -1994,11 +2319,13 @@ export class CloudGamingWebSDK {
     showSendKmData,
     showSendAckData,
     showSendHbData,
+    showSendCloudDeviceData,
     showOnHbMessage,
     showOnKmMessage,
     showOnAckMessage,
     showOnCdMessage,
     showOnSvMessage,
+    showOnCloudDeviceMessage,
     showLog,
   }: DebugSettingParams): void;
   /**
@@ -2113,8 +2440,7 @@ export class CloudGamingWebSDK {
   changeMicStatus(param: { status: number; user_id: string }): Promise<ChangeMicStatusResponse>;
 }
 
-export { CloudGamingWebSDK };
-
-declare const TCGSDK = new CloudGamingWebSDK();
+// TCGSDK is the instance of CloudGamingWebSDK, which has been mounted on window and can be used directly
+declare const TCGSDK: CloudGamingWebSDK;
 
 export default TCGSDK;

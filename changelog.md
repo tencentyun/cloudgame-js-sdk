@@ -1,3 +1,16 @@
+### [2.1.3](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.3)@2025.08.08
+
+**新增**
+
+- 新增 Operator 接口
+- init 参数 androidInstance 新增 PC 端自动旋转配置
+
+**变更**
+
+- 默认禁用 mobile 鼠标监听
+
+
+
 ### [2.1.2](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.2)@2025.07.30
 
 **新增**
