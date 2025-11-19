@@ -68,6 +68,35 @@ export interface WebrtcStats {
   readonly timestamp?: number;
 }
 
+export interface MediaStats {
+  videoStats: {
+    readonly fps: number;
+    readonly rtt: number;
+    readonly bit_rate: number;
+    readonly packet_lost: number;
+    readonly packet_received: number;
+    readonly packet_loss_rate: number;
+    readonly nack: number;
+    readonly jitter_buffer: number;
+    readonly width: number;
+    readonly height: number;
+    readonly codec: string;
+  };
+  audioStats: {
+    readonly sample_rate: number;
+    readonly channels: number;
+    readonly bit_rate: number;
+    readonly packet_lost: number;
+    readonly packet_received: number;
+    readonly packet_loss_rate: number;
+    readonly nack: number;
+    readonly jitter_buffer: number;
+    readonly concealed_samples: number;
+    readonly concealment_events: number;
+    readonly codec: string;
+  };
+}
+
 /**
  * latency values
  * value=0 NETWORK_NORMAL
@@ -300,7 +329,9 @@ export interface OnConfigurationChangeResponse {
   readonly screen_config: {
     width: number;
     height: number;
+    degree: '0_degree' | '90_degree' | '180_degree' | '270_degree';
     orientation: 'landscape' | 'portrait';
+    deg?: 0 | 90 | 180 | 270;
   };
 }
 
@@ -395,11 +426,20 @@ export type OnEventAutoplayResponse = {
   data: {
     code: number; // 0 success -1 failed
     message: string;
+    mediaType?: 'video' | 'audio';
   };
 };
 
 export type OnEventVideoPlayStateResponse = {
   type: 'video_state';
+  data: {
+    code: number; // 0 playing 1 pause 2 ended
+    message: string;
+  };
+};
+
+export type OnEventAudioPlayStateResponse = {
+  type: 'audio_state';
   data: {
     code: number; // 0 playing 1 pause 2 ended
     message: string;
@@ -423,6 +463,11 @@ export type OnEventOpenUrlResponse = {
 export type OnEventWebrtcStatsResponse = {
   type: 'webrtc_stats';
   data: WebrtcStats;
+};
+
+export type OnEventMediaStatsResponse = {
+  type: 'media_stats';
+  data: MediaStats;
 };
 
 export type OnEventNoflowResponse = {
@@ -480,19 +525,38 @@ export type OnEventIceConnectionStateChangeResponse = {
   };
 };
 
+export type OnEventCameraStatusResponse = {
+  type: 'camera_status';
+  data?: {
+    status: 'open_back' | 'open_front' | 'close';
+    width?: number;
+    height?: number;
+  };
+};
+
+export type OnEventMicStatusResponse = {
+  type: 'mic_status';
+  data?: {
+    status: 'open' | 'close';
+  };
+};
+
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventVideoPlayStateResponse
   | OnEventIdleResponse
   | OnEventOpenUrlResponse
   | OnEventWebrtcStatsResponse
+  | OnEventMediaStatsResponse
   | OnEventNoflowResponse
   | OnEventNoflowcenterResponse
   | OnEventLatencyResponse
   | OnEventReadClipboardErrorResponse
   | OnEventPointerLockErrorResponse
   | OnEventIceConnectionStateChangeResponse
-  | OnEventTokenNotFoundResponse;
+  | OnEventTokenNotFoundResponse
+  | OnEventMicStatusResponse
+  | OnEventCameraStatusResponse;
 
 export type OnAndroidInstanceEventResponse =
   | OnAndroidInstanceTransMessageResponse
@@ -500,7 +564,9 @@ export type OnAndroidInstanceEventResponse =
   | OnAndroidInstanceClipboardEventResponse
   | OnAndroidInstanceNotificationEventResponse
   | OnAndroidInstanceSystemStatusResponse
-  | OnAndroidInstanceDistributeProgressEventResponse;
+  | OnAndroidInstanceGroupJoinEventResponse
+  | OnAndroidInstanceSetSyncListEventResponse
+  | OnAndroidInstanceTouchEventResponse;
 
 export type OnAndroidInstanceTransMessageResponse = {
   type: 'trans_message';
@@ -559,6 +625,59 @@ export type OnAndroidInstanceDistributeProgressEventResponse = {
      */
     state: 'SUCCESS' | 'UNSUPPORTED' | 'BUSY' | 'FAIL';
     package_name: string;
+  };
+};
+
+export type OnAndroidInstanceGroupJoinEventResponse = {
+  type: 'join';
+  data: {
+    /**
+     * 0 success, others failed
+     */
+    code: number;
+    message: string;
+  };
+};
+
+export type OnAndroidInstanceSetSyncListEventResponse = {
+  type: 'set_sync_list';
+  data: {
+    /**
+     * 0 success, others failed
+     */
+    code: number;
+    message: string;
+  };
+};
+
+export type OnAndroidInstanceTouchEventResponse = {
+  type: 'touch_event';
+  data: {
+    finger_id: number;
+    /**
+     * 0 "touchstart"
+     * 1 "touchmove"
+     * 2 "touchend"
+     * 3 "touchcancel"
+     */
+    event_type: number;
+    /**
+     * x
+     */
+    x: number;
+    /**
+     * y
+     */
+    y: number;
+    /**
+     * width
+     */
+    width: number;
+    /**
+     * height
+     */
+    height: number;
+    timestamp: number;
   };
 };
 
@@ -866,6 +985,17 @@ export interface InitConfig {
     accessInfo: string;
   };
   /**
+   * Pull streaming profile
+   */
+  streamProfile?: {
+    video_width?: number;
+    video_height?: number;
+    fps?: number;
+    max_bitrate?: number;
+    min_bitrate?: number;
+    unit?: 'Kbps' | 'Mbps';
+  };
+  /**
    * Whether to enable mic
    *
    * @default false
@@ -877,6 +1007,26 @@ export interface InitConfig {
    * @default false
    */
   camera?: boolean | CameraProfileConstraints | CameraProfileType;
+  /**
+   * Auto switch local mic
+   *
+   * true: SDK takeover to handle local mic
+   *
+   * false: The client chooses whether to switch the microphone on or off, and the SDK callback the microphone status from the android instance.
+   *
+   * @default true
+   */
+  autoSwitchMic?: boolean;
+  /**
+   * Auto switch local camera
+   *
+   * true: SDK takeover to handle local camera
+   *
+   * false: The client chooses whether to switch the camera on or off, and the SDK callback the microphone status from the android instance.
+   *
+   * @default true
+   */
+  autoSwitchCamera?: boolean;
   /**
    * Enables/Disables the cursor sliding mode. This API is generally used in scenarios where there is an offset between the displayed cursor and the actual touch point.
    *
@@ -892,11 +1042,17 @@ export interface InitConfig {
    */
   mobileGame?: boolean;
   /**
-   * cloud phone / androidInstance
    *
-   * @default false
+   * Android instance config
    */
-  androidInstance?: boolean;
+  androidInstance?: {
+    /**
+     * Automatically rotates on the PC to ensure that the pushstream screen is always positively oriented.
+     *
+     * @default true
+     */
+    autoRotateOnPC?: boolean;
+  };
   /**
    * Whether to enable VPX encoding
    *
@@ -1363,6 +1519,8 @@ export interface InitConfig {
    * @param {number} response.width
    * @param {number} response.height
    * @param {('landscape'|'portrait')} response.orientation - orientation
+   * @param {('0_degree' | '90_degree' | '180_degree' | '270_degree')} response.degree - remote instance degree
+   * @param {(0 | 90 | 180 | 270)} response.deg - web page degree(need to rotate this degree to fit container)
    */
   onConfigurationChange?: (response: OnConfigurationChangeResponse) => void;
   /**
@@ -1427,6 +1585,7 @@ export interface InitConfig {
    * | ------- | --------------------------------------------------------------- |
    * | autoplay   | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | audio_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | idle      | Object<{times: number;}> <table><tr><th>times</th><th>number</th></tr></table> |
    * | noflow      | - |
    * | noflowcenter      | - |
@@ -1436,6 +1595,10 @@ export interface InitConfig {
    * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>Bit rate received by the client, unit: Mbps</th></tr><tr><th>cpu</th><th>number</th><th>Cloud CPU usage</th></tr><tr><th>gpu</th><th>string</th><th>Cloud GPU usage</th></tr><tr><th>delay</th><th>number</th><th></th></tr><tr><th>fps</th><th>number</th><th></th></tr><tr><th>load_cost_time</th><th>number</th><th>unit: ms</th></tr><tr><th>nack</th><th>number</th><th></th></tr><tr><th>packet_lost</th><th>number</th><th></th></tr><tr><th>packet_received</th><th>number</th><th></th></tr><tr><th>rtt</th><th>number</th><th>unit: ms</th></tr><tr><th>timestamp</th><th>number</th><th>unit: ms</th></tr></table> |
    * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | ice_state    | Object<{value: string;}> <table><tr><th>value</th><th>connected / disconnected</th></tr></table> |
+   * | token_not_found    | Object<{instance_ids: string[];}> <table><tr><th>instance_ids</th><th>string[]</th></tr></table> |
+   * | mic_status    | Object<{status: string;}> <table><tr><th>status</th><th>open / close</th></tr></table> |
+   * | camera_status    | Object<{status: 'open_back' | 'open_front' | 'close'; width？: number; height: number;}> <table><tr><th>status</th><th> 'open_back' | 'open_front' | 'close' </th></tr><tr><td>width</td><td>number</td></tr><tr><td>height</td><td>number</td></tr></table> |
+   *
    */
   onEvent?: (response: OnEventResponse) => void;
   /**
@@ -1488,6 +1651,7 @@ export interface InitConfig {
    * | notification_event    | Object<{package_name: string; title: string; text: string;}> |
    * | system_status    | Object<{ nav_visible: boolean; music_volume: number;}> |
    * | distribute_progress_event    | Object<{ state: 'SUCCESS' | 'UNSUPPORTED' | 'BUSY' | 'FAIL'; package_name: string;}> |
+   * | touch_event    | Object<{finger_id: number; event_type: number; x: number; y: number; width: number; height: number; timestamp: number;}> <table><tr><th>finger_id</th><th> - </th></tr><tr><th>event_type</th><th> 0 "touchstart", 1 "touchmove", 2 "touchend", 3 "touchcancel" </th></tr><tr><th>x</th><th>  x </th></tr><tr><th>y</th><th>  y </th></tr><tr><th>width</th><th>  width </th></tr><tr><th>height</th><th>  height </th></tr><tr><th>timestamp</th><th> - </th></tr></table>|
    *
    */
   onAndroidInstanceEvent?: (response: OnAndroidInstanceEventResponse) => void;
@@ -1676,11 +1840,27 @@ export class CloudGamingWebSDK {
    */
   gameRestart(callback?: Function): void;
   /**
-   * Pauses the currently running game process.
+   * Pauses the currently streaming.
+   *
+   * *Default audio/video pause at the same time, if media type is not passed*
+   *
+   * @param {Object} param
+   * @param {'audio' | 'video'} param.media - media type
+   *
+   * @example
+   * TCGSDK.gamePause({media: 'video'});
    */
   gamePause(callback?: Function): void;
   /**
-   * Resumes the currently running game process.
+   * Resumes the currently streaming.
+   *
+   * *Default audio/video resumes at the same time, if media type is not passed*
+   *
+   * @param {Object} param
+   * @param {'audio' | 'video'} param.media - media type
+   *
+   * @example
+   * TCGSDK.gamePause({media: 'video'});
    */
   gameResume(callback?: Function): void;
   /**
@@ -1777,6 +1957,7 @@ export class CloudGamingWebSDK {
    * @param {number} [param.maxPacketLifeTime] - maxPacketLifeTime unit millisecond * maxPacketLifeTime and maxRetransmits can not exist at the same time. *
    * @param {number} [param.maxRetransmits] - * maxPacketLifeTime and maxRetransmits can not exist at the same time. *
    * @param {string} [param.protocol='text'] - 'text' | 'binary', for data type from server (response from onMessage)
+   * @param {string} [param.type=''] - '' | 'android'，default type '' string will pass through the data in the sendMessage, type 'android'  will decorate the data in sendMessage, similar to the format {user_id: 'xxx', data: any}, type 'android_broadcast' will decorate the data in sendMessage and broadcast to other instances.
    * @param {Function} param.onMessage - The callback function for message receipt by `dataChannel`.
    *
    * @returns Promise object.
@@ -1820,12 +2001,14 @@ export class CloudGamingWebSDK {
     maxPacketLifeTime,
     maxRetransmits,
     protocol,
+    type,
   }: {
     destPort: number;
     onMessage: (res: any) => void;
     maxRetransmits?: number;
     maxPacketLifeTime?: number;
     protocol?: 'text' | 'binary';
+    type?: '' | 'android' | 'android_broadcast';
   }): Promise<{
     code: number; // `0`: Success; `1`: Failed to create the `ack` data channel. Try again.
     msg: string;
@@ -2038,6 +2221,19 @@ export class CloudGamingWebSDK {
    */
   setKMStatus({ keyboard, mouse }: { keyboard: boolean; mouse: boolean }): { code: number };
   /**
+   * Ban keyboard keys from the list
+   *
+   * Check the key code from [keycode](https://www.toptal.com/developers/keycode)
+   *
+   * @param {Object} param
+   * @param {boolean} param.keyList
+   *
+   * @example
+   * TCGSDK.setKeyboardBanList({ keyList: [18] });
+   *
+   */
+  setKeyboardBanList({ keyList }: { keyList: number[] }): void;
+  /**
    * Sets whether to hijack Ctrl/Cmd + V. When a user uses the paste feature, the content in the local clipboard will be sent to the cloud directly.
    *
    * **This method is usually used when the cloud input box is focused.**
@@ -2096,9 +2292,12 @@ export class CloudGamingWebSDK {
    * Sets bitrate and stream parameters. This API is used to set the recommended parameters, which may be dynamically adjusted in the cloud based on the game conditions.
    *
    * @param {Object} profile Currently available parameters include:
-   * @param {number} profile.fps - The frame rate in fps. Value range: [10,60].
-   * @param {number} profile.max_bitrate - The maximum bitrate in Mbps. Value range: [1,15].
-   * @param {number} profile.min_bitrate - The minimum bitrate in Mbps. Value range: [1,15].
+   * @param {number} [profile.fps] - The frame rate in fps. Value range: [10,60].
+   * @param {number} [profile.max_bitrate] - The maximum bitrate in Mbps. Value range: [1,15].
+   * @param {number} [profile.min_bitrate] - The minimum bitrate in Mbps. Value range: [1,15].
+   * @param {number} [profile.video_width] - Video width
+   * @param {number} [profile.video_height] - Video height
+   * @param {'kbps'|'mbps'} [profile.unit] - Bitrate unit, default 'mbps'
    * @param {Function} [callback] The settings result callback function, which can be `null`.
    *
    * @example
@@ -2128,9 +2327,22 @@ export class CloudGamingWebSDK {
    */
   setVideoVolume(value: number): void;
   /**
+   * Sets the audio volume level.
+   *
+   * @param {number} value number [0-1]
+   *
+   * @example
+   * TCGSDK.setAudioVolume(0);
+   */
+  setAudioVolume(value: number): void;
+  /**
    * Gets the video volume level.
    */
   getVideoVolume(): number;
+  /**
+   * Gets the audio volume level.
+   */
+  getAudioVolume(): number;
   /**
    * Plays back the video.
    * @param {('play'|'pause')} status
@@ -2139,6 +2351,17 @@ export class CloudGamingWebSDK {
    * TCGSDK.playVideo('play');
    */
   playVideo(status: 'play' | 'pause'): void;
+  /**
+   * Plays the audio.
+   *
+   * * 'play' calls the audio element play functions, return Promise*
+   *
+   * @param {('play'|'pause')} status
+   *
+   * @example
+   * TCGSDK.playAudio('play');
+   */
+  playAudio(status: 'play' | 'pause'): void | Promise<void>;
   /**
    * Gets the user media stream.
    */

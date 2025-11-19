@@ -70,6 +70,35 @@ export interface WebrtcStats {
   readonly timestamp?: number; //	此数据回调的时间戳，单位：ms
 }
 
+export interface MediaStats {
+  videoStats: {
+    readonly fps: number;
+    readonly rtt: number;
+    readonly bit_rate: number;
+    readonly packet_lost: number;
+    readonly packet_received: number;
+    readonly packet_loss_rate: number;
+    readonly nack: number;
+    readonly jitter_buffer: number;
+    readonly width: number;
+    readonly height: number;
+    readonly codec: string;
+  };
+  audioStats: {
+    readonly sample_rate: number;
+    readonly channels: number;
+    readonly bit_rate: number;
+    readonly packet_lost: number;
+    readonly packet_received: number;
+    readonly packet_loss_rate: number;
+    readonly nack: number;
+    readonly jitter_buffer: number;
+    readonly concealed_samples: number;
+    readonly concealment_events: number;
+    readonly codec: string;
+  };
+}
+
 /**
  * latency 对应value
  * value=0 NETWORK_NORMAL
@@ -302,7 +331,9 @@ export interface OnConfigurationChangeResponse {
   readonly screen_config: {
     width: number;
     height: number;
+    degree: '0_degree' | '90_degree' | '180_degree' | '270_degree';
     orientation: 'landscape' | 'portrait';
+    deg?: 0 | 90 | 180 | 270;
   };
 }
 
@@ -395,11 +426,20 @@ export type OnEventAutoplayResponse = {
   data: {
     code: number; // 0 success -1 failed
     message: string;
+    mediaType?: 'video' | 'audio';
   };
 };
 
 export type OnEventVideoPlayStateResponse = {
   type: 'video_state';
+  data: {
+    code: number; // 0 playing 1 pause 2 ended
+    message: string;
+  };
+};
+
+export type OnEventAudioPlayStateResponse = {
+  type: 'audio_state';
   data: {
     code: number; // 0 playing 1 pause 2 ended
     message: string;
@@ -423,6 +463,11 @@ export type OnEventOpenUrlResponse = {
 export type OnEventWebrtcStatsResponse = {
   type: 'webrtc_stats';
   data: WebrtcStats;
+};
+
+export type OnEventMediaStatsResponse = {
+  type: 'media_stats';
+  data: MediaStats;
 };
 
 export type OnEventNoflowResponse = {
@@ -483,19 +528,39 @@ export type OnEventTokenNotFoundResponse = {
   };
 };
 
+export type OnEventCameraStatusResponse = {
+  type: 'camera_status';
+  data?: {
+    status: 'open_back' | 'open_front' | 'close';
+    width?: number;
+    height?: number;
+  };
+};
+
+export type OnEventMicStatusResponse = {
+  type: 'mic_status';
+  data?: {
+    status: 'open' | 'close';
+  };
+};
+
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventVideoPlayStateResponse
+  | OnEventAudioPlayStateResponse
   | OnEventIdleResponse
   | OnEventOpenUrlResponse
   | OnEventWebrtcStatsResponse
+  | OnEventMediaStatsResponse
   | OnEventNoflowResponse
   | OnEventNoflowcenterResponse
   | OnEventLatencyResponse
   | OnEventPointerLockErrorResponse
   | OnEventReadClipboardErrorResponse
   | OnEventIceConnectionStateChangeResponse
-  | OnEventTokenNotFoundResponse;
+  | OnEventTokenNotFoundResponse
+  | OnEventMicStatusResponse
+  | OnEventCameraStatusResponse;
 
 export type OnAndroidInstanceEventResponse =
   | OnAndroidInstanceTransMessageResponse
@@ -503,7 +568,10 @@ export type OnAndroidInstanceEventResponse =
   | OnAndroidInstanceClipboardEventResponse
   | OnAndroidInstanceNotificationEventResponse
   | OnAndroidInstanceSystemStatusResponse
-  | OnAndroidInstanceDistributeProgressEventResponse;
+  | OnAndroidInstanceDistributeProgressEventResponse
+  | OnAndroidInstanceGroupJoinEventResponse
+  | OnAndroidInstanceSetSyncListEventResponse
+  | OnAndroidInstanceTouchEventResponse;
 
 export type OnAndroidInstanceTransMessageResponse = {
   type: 'trans_message';
@@ -562,6 +630,59 @@ export type OnAndroidInstanceDistributeProgressEventResponse = {
      */
     state: 'SUCCESS' | 'UNSUPPORTED' | 'BUSY' | 'FAIL';
     package_name: string;
+  };
+};
+
+export type OnAndroidInstanceGroupJoinEventResponse = {
+  type: 'join';
+  data: {
+    /**
+     * 0 success, others failed
+     */
+    code: number;
+    message: string;
+  };
+};
+
+export type OnAndroidInstanceSetSyncListEventResponse = {
+  type: 'set_sync_list';
+  data: {
+    /**
+     * 0 success, others failed
+     */
+    code: number;
+    message: string;
+  };
+};
+
+export type OnAndroidInstanceTouchEventResponse = {
+  type: 'touch_event';
+  data: {
+    finger_id: number;
+    /**
+     * 0 "touchstart"
+     * 1 "touchmove"
+     * 2 "touchend"
+     * 3 "touchcancel"
+     */
+    event_type: number;
+    /**
+     * 云机 x
+     */
+    x: number;
+    /**
+     * 云机 y
+     */
+    y: number;
+    /**
+     * 云机 width
+     */
+    width: number;
+    /**
+     * 云机 height
+     */
+    height: number;
+    timestamp: number;
   };
 };
 
@@ -869,6 +990,21 @@ export interface InitConfig {
     accessInfo: string;
   };
   /**
+   * 设置拉流信息
+   */
+  streamProfile?: {
+    video_width?: number;
+    video_height?: number;
+    fps?: number;
+    max_bitrate?: number;
+    min_bitrate?: number;
+    unit?: 'Kbps' | 'Mbps';
+  };
+  /**
+   * 用户 ID
+   */
+  userId?: string;
+  /**
    * 是否开启本地麦克风
    *
    * @default false
@@ -880,6 +1016,26 @@ export interface InitConfig {
    * @default false
    */
   camera?: boolean | CameraProfileConstraints | CameraProfileType;
+  /**
+   * 自动开关本地麦克风
+   *
+   * true: SDK 闭环自动开关本地麦克风
+   *
+   * false: 客户端选择是否开关麦克风，SDK 会回调云端的麦克风状态
+   *
+   * @default true
+   */
+  autoSwitchMic?: boolean;
+  /**
+   * 自动开关本地摄像头
+   *
+   * true: SDK 闭环自动开关本地摄像头
+   *
+   * false: 客户端选择是否开关摄像头，SDK 会回调云端的摄像头状态
+   *
+   * @default true
+   */
+  autoSwitchCamera?: boolean;
   /**
    * true 为使用平板滑动鼠标模式，false 为绝对映射模式。该参数只针对移动端，PC 端忽略该参数。该 mode 下鼠标产生相对位移。
    *
@@ -898,9 +1054,9 @@ export interface InitConfig {
    */
   androidInstance?: {
     /**
-     * 在 PC 端自动旋转
+     * 在 PC 端自动旋转，保证推流画面始终是正向显示
      *
-     * @default false
+     * @default true
      */
     autoRotateOnPC?: boolean;
   };
@@ -1394,6 +1550,8 @@ export interface InitConfig {
    * @param {number} response.width - 宽
    * @param {number} response.height - 高
    * @param {('landscape'|'portrait')} response.orientation - 屏幕方向
+   * @param {('0_degree' | '90_degree' | '180_degree' | '270_degree')} response.degree - 云机旋转角度
+   * @param {(0 | 90 | 180 | 270)} response.deg - 前端需要旋转的角度（需要旋转该角度才能正向显示画面）
    */
   onConfigurationChange?: (response: OnConfigurationChangeResponse) => void;
   /**
@@ -1458,6 +1616,7 @@ export interface InitConfig {
    * | ------- | --------------------------------------------------------------- |
    * | autoplay   | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | audio_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | idle      | Object<{times: number;}> <table><tr><th>times</th><th>number</th></tr></table> |
    * | noflow      | - |
    * | noflowcenter      | - |
@@ -1465,8 +1624,13 @@ export interface InitConfig {
    * | pointerlockerror      | - |
    * | readclipboarderror      | Object<{message?: string;}> <table><tr><th>message</th><th>string</th></tr></table> |
    * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>客户端接收的码率，单位：Mbps</th></tr><tr><th>cpu</th><th>number</th><th>云端CPU占用率，单位：百分比</th></tr><tr><th>gpu</th><th>string</th><th>云端GPU占用率，单位：百分比</th></tr><tr><th>delay</th><th>number</th><th>客户端收到图像帧到解码显示的延时，单位：ms，iOS可能收不到</th></tr><tr><th>fps</th><th>number</th><th>客户端显示帧率</th></tr><tr><th>load_cost_time</th><th>number</th><th>云端加载时长，单位：ms</th></tr><tr><th>nack</th><th>number</th><th>客户端重传次数</th></tr><tr><th>packet_lost</th><th>number</th><th>客户端丢包次数</th></tr><tr><th>packet_received</th><th>number</th><th>客户端收到的包总数</th></tr><tr><th>rtt</th><th>number</th><th>客户端到云端，网络端数据包往返耗时</th></tr><tr><th>timestamp</th><th>number</th><th>此数据回调的时间戳，单位：ms</th></tr></table> |
+   * | media_stats      | Object<{video: Object<>; audio: Object<>}> <table><tr><td>videoStats</td><td></td><td></td></tr><tr><td>fps</td><td>number</td><td>帧率</td></tr><tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>width</td><td>number</td><td>宽度</td></tr><tr><td>height</td><td>number</td><td>高度</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr><tr><td>audioStats</td><td></td><td></td></tr><tr><td>sample_rate</td><td>number</td><td>采样率</td></tr><tr><td>channels</td><td>number</td><td>声道数</td></tr><tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>concealed_samples</td><td>number</td><td>丢包补偿（PLC）的样点总个数</td></tr><tr><td>concealment_events</td><td>number</td><td>丢包补偿（PLC）的累计次数</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr></table> ｜
    * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | ice_state    | Object<{value: string;}> <table><tr><th>value</th><th>connected / disconnected</th></tr></table> |
+   * | token_not_found    | Object<{instance_ids: string[];}> <table><tr><th>instance_ids</th><th>string[]</th></tr></table> |
+   * | mic_status    | Object<{status: string;}> <table><tr><th>status</th><th>open / close</th></tr></table> |
+   * | camera_status    | Object<{status: 'open_back' | 'open_front' | 'close'; width？: number; height: number;}> <table><tr><th>status</th><th> 'open_back' | 'open_front' | 'close' </th></tr><tr><td>width</td><td>number</td></tr><tr><td>height</td><td>number</td></tr></table> |
+   *
    *
    */
   onEvent?: (response: OnEventResponse) => void;
@@ -1521,6 +1685,7 @@ export interface InitConfig {
    * | notification_event    | Object<{package_name: string; title: string; text: string;}> |
    * | system_status    | Object<{ nav_visible: boolean; music_volume: number;}> |
    * | distribute_progress_event    | Object<{ state: 'SUCCESS' | 'UNSUPPORTED'(镜像不支持) | 'BUSY'(在分发其他应用) | 'FAIL'; package_name: string;}> |
+   * | touch_event    | Object<{finger_id: number; event_type: number; x: number; y: number; width: number; height: number; timestamp: number;}> <table><tr><th>finger_id</th><th> - </th></tr><tr><th>event_type</th><th> 0 "touchstart", 1 "touchmove", 2 "touchend", 3 "touchcancel" </th></tr><tr><th>x</th><th> 云机 x </th></tr><tr><th>y</th><th> 云机 y </th></tr><tr><th>width</th><th> 云机 width </th></tr><tr><th>height</th><th> 云机 height </th></tr><tr><th>timestamp</th><th> - </th></tr></table>|
    *
    */
   onAndroidInstanceEvent?: (response: OnAndroidInstanceEventResponse) => void;
@@ -1707,15 +1872,31 @@ export class CloudGamingWebSDK {
   /**
    * 重启当前运行的游戏进程
    */
-  gameRestart(callback?: Function): void;
+  gameRestart(): void;
   /**
-   * 暂停当前运行的游戏进程
+   * 暂停推流
+   *
+   * *media 不传默认 audio/video 同时暂停*
+   *
+   * @param {Object} param
+   * @param {'audio' | 'video'} param.media - 媒体类型
+   *
+   * @example
+   * TCGSDK.gamePause({media: 'video'});
    */
-  gamePause(callback?: Function): void;
+  gamePause({ media }?: { media: 'audio' | 'video' }): void;
   /**
-   * 恢复运行当前运行的游戏进程
+   * 恢复推流
+   *
+   * *media 不传默认 audio/video 同时恢复*
+   *
+   * @param {Object} param
+   * @param {'audio' | 'video'} param.media - 媒体类型
+   *
+   * @example
+   * TCGSDK.gameResume({media: 'video'});
    */
-  gameResume(callback?: Function): void;
+  gameResume({ media }?: { media: 'audio' | 'video' }): void;
   /**
    * **聚焦输入框时**快速发送内容，会同时粘贴到剪贴板
    *
@@ -1815,6 +1996,7 @@ export class CloudGamingWebSDK {
    * @param {number} [param.maxPacketLifeTime] - 最大包体发送时间，单位毫秒。*注意：maxPacketLifeTime 和 maxRetransmits 不能同时存在。*
    * @param {number} [param.maxRetransmits] - 最大重传次数。*注意：maxPacketLifeTime 和 maxRetransmits 不能同时存在。*
    * @param {string} [param.protocol='text'] - 'text' | 'binary'，指定云端回复(onMessage 方法内收到的)数据类型
+   * @param {string} [param.type=''] - '' | 'android' | 'android_broadcast'，默认值 '' 字符串会透传 sendMessage 的数据，传 'android' 会基于sendMessage 内的数据包一层 user_id， 类似于 {user_id: 'xxx', data: any} 的格式，'android_broadcast' 会包一层 user_id 并广播消息到所有实例。
    * @param {Function} param.onMessage - dataChannel收到消息的回调函数
    *
    * @returns 返回 Promise 对象。
@@ -1859,12 +2041,14 @@ export class CloudGamingWebSDK {
     maxPacketLifeTime,
     maxRetransmits,
     protocol,
+    type,
   }: {
     destPort: number;
     onMessage: (res: any) => void;
     maxRetransmits?: number;
     maxPacketLifeTime?: number;
     protocol?: 'text' | 'binary';
+    type?: '' | 'android' | 'android_broadcast';
   }): Promise<{
     code: number; // 0 success, 1 ack dataChannel 未创建成功，请重试, 2 该数据通道已经存在
     msg: string;
@@ -2096,6 +2280,19 @@ export class CloudGamingWebSDK {
    */
   setKMStatus({ keyboard, mouse }: { keyboard: boolean; mouse: boolean }): { code: number };
   /**
+   * 设置键盘禁用列表，默认所有键位可用
+   *
+   * 键盘的键位码，可通过 [keycode](https://www.toptal.com/developers/keycode) 查询
+   *
+   * @param {Object} param
+   * @param {boolean} param.keyList 按键列表
+   *
+   * @example
+   * TCGSDK.setKeyboardBanList({ keyList: [18] });
+   *
+   */
+  setKeyboardBanList({ keyList }: { keyList: number[] }): void;
+  /**
    * 设置是否劫持 Ctrl+v/Cmd+v，当用户使用粘贴功能时候，直接将本地剪切板内容发送给云端
    *
    * **该方法PC 端适用，通常在云端 input 框 focus 时候使用**
@@ -2148,7 +2345,6 @@ export class CloudGamingWebSDK {
   }): void;
   // -------------- 音视频控制相关接口 ------------
   /**
-   * @deprecated
    *
    * @description
    * 设置码流参数，该接口为设置建议码流参数，云端可能会根据游戏动态调整
@@ -2156,15 +2352,29 @@ export class CloudGamingWebSDK {
    * **如果CreateSession 参数中设置了 MinBitrate/MaxBitrate，参数 min_bitrate/max_bitrate 必须在前者设置范围内**
    *
    * @param {Object} profile 目前可用参数如下：
-   * @param {number} profile.fps - 帧率，范围[10,60]
-   * @param {number} profile.max_bitrate - 最大码率，范围[1,15]，单位：Mbps
-   * @param {number} profile.min_bitrate - 最小码率，范围[1,15]，单位：Mbps
+   * @param {number} [profile.fps] - 帧率，范围[10,60]
+   * @param {number} [profile.max_bitrate] - 最大码率，范围[1,15]，单位：Mbps
+   * @param {number} [profile.min_bitrate] - 最小码率，范围[1,15]，单位：Mbps
+   * @param {number} [profile.video_width] - 视频宽度
+   * @param {number} [profile.video_height] - 视频高度
+   * @param {'kbps'|'mbps'} [profile.unit] - 码率单位，默认为'mbps'
    * @param {Function} [callback] 设置结果回调函数，可为 null
    *
    * @example
-   * TCGSDK.setStreamProfile({ fps: 60, max_bitrate: 8, min_bitrate: 5 });
+   * TCGSDK.setStreamProfile({ video_width: 720, video_height: 1080 });
+   * TCGSDK.setStreamProfile({ fps: 60, max_bitrate: 5, min_bitrate: 3 });
    */
-  setStreamProfile(profile: { fps: number; max_bitrate: number; min_bitrate: number }, callback?: Function): void;
+  setStreamProfile(
+    profile: {
+      fps?: number;
+      max_bitrate?: number;
+      min_bitrate?: number;
+      video_width?: number;
+      video_height?: number;
+      unit?: 'Kbps' | 'Mbps';
+    },
+    callback?: Function,
+  ): void;
   /**
    * 获取显示区域的参数，边距，宽高等，具体参数如下：
    *
@@ -2189,9 +2399,22 @@ export class CloudGamingWebSDK {
    */
   setVideoVolume(value: number): void;
   /**
+   * 设置audio 音量
+   *
+   * @param {number} value number [0-1]
+   *
+   * @example
+   * TCGSDK.setAudioVolume(0);
+   */
+  setAudioVolume(value: number): void;
+  /**
    * 获取video 音量
    */
   getVideoVolume(): number;
+  /**
+   * 获取audio 音量
+   */
+  getAudioVolume(): number;
   /**
    * 播放视频
    *
@@ -2203,6 +2426,17 @@ export class CloudGamingWebSDK {
    * TCGSDK.playVideo('play');
    */
   playVideo(status: 'play' | 'pause'): void | Promise<void>;
+  /**
+   * 播放视频
+   *
+   * * 'play' 其实是调用了 audio 的 play， 返回 Promise*
+   *
+   * @param {('play'|'pause')} status
+   *
+   * @example
+   * TCGSDK.playAudio('play');
+   */
+  playAudio(status: 'play' | 'pause'): void | Promise<void>;
   /**
    * 获取 video 对象
    *

@@ -1,3 +1,31 @@
+### [2.1.4](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.4)@2025.11.19
+
+**新增**
+
+- 新增 AccessInfo AcceleratorAddress
+- 新增 InitConfig 参数 autoSwitchMic/autoSwitchCamera/streamProfile
+- 新增 Camera Status/Mic Status 回调
+- 新增 media stats 回调
+- 新增 createCustomDataChannel type
+- 新增 groupJoin 回调
+- 新增 AndroidInstanceEvent touch_event 回调
+
+**修复**
+
+- 修复自动重连失败问题
+- 修复 switchCamera deviceId 不生效问题
+
+**变更**
+
+- 拆分 Audio 标签
+- AccessInfo 结构调整
+- 调整 setStreamProfile 接口
+
+**优化**
+
+- 针对拉流区域禁用鼠标右键
+
+
 ### [2.1.3](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.3)@2025.08.08
 
 **新增**
