@@ -1093,6 +1093,12 @@ export interface InitConfig {
    */
   idleThreshold?: number;
   /**
+   * WebRTC stats / Media stats interval, default 1s
+   *
+   * @default 1
+   */
+  statsInterval?: number;
+  /**
    * Keep last frame image when destroy. Mac safari/ios webview does not work.
    *
    * @default false
@@ -1146,6 +1152,12 @@ export interface InitConfig {
    * @default true
    */
   fullVideoToScreen?: boolean;
+  /**
+   * Auto focus to video element
+   *
+   * @default false
+   */
+  autoFocusVideo?: boolean;
   /**
    * Enables/Disables the debugging mode. If it is enabled, logs will be printed in the console.
    */

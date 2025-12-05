@@ -1,3 +1,26 @@
+### [2.1.5](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.5)@2025.12.05
+
+**新增**
+
+- 新增首帧检测逻辑
+- 新增 init 参数 autoFocusVideo
+- 新增移动端自动适配 mount 节点 size
+- 新增 init 参数 statsInterval
+
+**修复**
+
+- 重连音频播放失败
+
+**变更**
+
+- 取消自动 focus video element
+
+**优化**
+
+- instanceId 去重
+
+
+
 ### [2.1.4](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.4)@2025.11.19
 
 **新增**

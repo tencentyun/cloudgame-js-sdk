@@ -15,6 +15,7 @@ export interface OnInitSuccessResponse {
  * 通常重连时间超过两分钟（例如连接断开/移动端切后台，两分钟后触发重连）
  * 系统会自动回收实例，表现为返回 code > 0，建议该情况下 重新init + createSession
  *
+ * code=-6 模式禁用
  * code=-3 超出重试次数，需重新init + createSession
  * code=-2 自动重连中
  * code=-1 连接失败，触发了限频操作 5s，可稍后再连接
@@ -954,19 +955,6 @@ export interface InitConfig {
    */
   groupControl?: {
     /**
-     * 串流 clients
-     */
-    clients?: {
-      /**
-       * client label
-       */
-      label: string;
-      /**
-       * 页面挂载点的 HTML 元素 ID
-       */
-      mount: string;
-    }[];
-    /**
      * 截图相关配置
      */
     image?: {
@@ -1099,6 +1087,12 @@ export interface InitConfig {
    */
   idleThreshold?: number;
   /**
+   * WebRTC stats / Media stats 统计间隔，默认 1s 一次回调
+   *
+   * @default 1
+   */
+  statsInterval?: number;
+  /**
    * 断开的时候是否保留最后一帧画面。
    *
    * mac safari/ios webview 无法生效
@@ -1158,6 +1152,12 @@ export interface InitConfig {
    * @default true
    */
   fullVideoToScreen?: boolean;
+  /**
+   * Auto focus to video element
+   *
+   * @default false
+   */
+  autoFocusVideo?: boolean;
   /**
    * debugSetting 会在控制台打印出对应的日志 有如下配置
    */
