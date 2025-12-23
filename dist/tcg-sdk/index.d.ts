@@ -15,6 +15,7 @@ export interface OnInitSuccessResponse {
  * 通常重连时间超过两分钟（例如连接断开/移动端切后台，两分钟后触发重连）
  * 系统会自动回收实例，表现为返回 code > 0，建议该情况下 重新init + createSession
  *
+ * code=-7 setRemoteDescription 失败
  * code=-6 模式禁用
  * code=-3 超出重试次数，需重新init + createSession
  * code=-2 自动重连中
@@ -68,6 +69,8 @@ export interface WebrtcStats {
   readonly packet_lost?: number; // 	客户端丢包次数
   readonly packet_received?: number; // 	客户端收到的包总数
   readonly rtt?: number; //	客户端到云端，网络端数据包往返耗时
+  readonly raw_rtt?: number;
+  readonly edge_rtt?: number;
   readonly timestamp?: number; //	此数据回调的时间戳，单位：ms
 }
 
@@ -75,6 +78,8 @@ export interface MediaStats {
   videoStats: {
     readonly fps: number;
     readonly rtt: number;
+    readonly raw_rtt: number;
+    readonly edge_rtt: number;
     readonly bit_rate: number;
     readonly packet_lost: number;
     readonly packet_received: number;
@@ -218,7 +223,7 @@ export interface ServerSideDescriptionGameConfig {
     default_cursor_url?: string;
     lock_by_mouseright?: boolean;
     keep_lastframe?: boolean;
-    tablet_mode?: boolean;
+    // tablet_mode?: boolean;
     mobile_show_cursor?: boolean;
     enable_event_intercept?: boolean;
   };
@@ -294,6 +299,11 @@ export interface ServerSideDescription {
   input_seat?: number;
   video_mime_type: string;
   audio_mime_type: string;
+  readonly proxy?: {
+    edge: string;
+    uploader: string;
+    proxy_delay: number;
+  };
 }
 
 /**
@@ -431,6 +441,24 @@ export type OnEventAutoplayResponse = {
   };
 };
 
+export type OnEventFirstFrameResponse = {
+  type: 'first_frame';
+  data: {
+    /**
+     * 首帧耗时，从调用 access 方法开始计算
+     */
+    duration: number;
+    /**
+     * 视频宽度
+     */
+    width: number;
+    /**
+     * 视频高度
+     */
+    height: number;
+  };
+};
+
 export type OnEventVideoPlayStateResponse = {
   type: 'video_state';
   data: {
@@ -547,6 +575,7 @@ export type OnEventMicStatusResponse = {
 
 export type OnEventResponse =
   | OnEventAutoplayResponse
+  | OnEventFirstFrameResponse
   | OnEventVideoPlayStateResponse
   | OnEventAudioPlayStateResponse
   | OnEventIdleResponse
@@ -944,11 +973,15 @@ export interface InitConfig {
     /**
      * 串流模式，默认采用 webrtc 串流
      */
-    mode: 'webrtc' | 'websocket';
+    mode?: 'webrtc' | 'websocket';
     /**
      * 推流格式，默认采用 H264
      */
     videoCodecList?: string[];
+    /**
+     * 需要请求的流名称，目前支持 'low' | 'mid' | 'high'
+     */
+    streamName?: 'low' | 'mid' | 'high';
   };
   /**
    * Group Control 配置
@@ -1049,6 +1082,8 @@ export interface InitConfig {
     autoRotateOnPC?: boolean;
   };
   /**
+   * @deprecated
+   *
    * 手游启用VPX 编码
    *
    * @default false
@@ -1608,13 +1643,14 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onEvent 回调函数的 response
-   * @param {string} response.type - 对应类型 'autoplay'| 'video_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'latency'
+   * @param {string} response.type - 对应类型 'autoplay' | 'first_frame' | 'video_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'latency'
    * @param {Object} [response.data] - 不同 type可能 data 不同，参考下表
    *
    * 对照表
    * | type    | data                                                     |
    * | ------- | --------------------------------------------------------------- |
-   * | autoplay   | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | autoplay   | Object<{code: number; message: string; mediaType: 'video' | 'audio'}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr><tr><td>mediaType</td><td>'video' | 'audio'</td></tr></table> |
+   * | first_frame   | Object<{duration: number}> <table><tr><th>duration</th><th>首帧回调时间，从 access 开始计算</th></tr><tr><th>width</th><th>视频宽度</th></tr><tr><th>height</th><th>视频高度</th></tr></table> |
    * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | audio_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | idle      | Object<{times: number;}> <table><tr><th>times</th><th>number</th></tr></table> |
@@ -1623,8 +1659,8 @@ export interface InitConfig {
    * | openurl      | Object<{value: string;}> <table><tr><th>value</th><th>string</th></tr></table> |
    * | pointerlockerror      | - |
    * | readclipboarderror      | Object<{message?: string;}> <table><tr><th>message</th><th>string</th></tr></table> |
-   * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>客户端接收的码率，单位：Mbps</th></tr><tr><th>cpu</th><th>number</th><th>云端CPU占用率，单位：百分比</th></tr><tr><th>gpu</th><th>string</th><th>云端GPU占用率，单位：百分比</th></tr><tr><th>delay</th><th>number</th><th>客户端收到图像帧到解码显示的延时，单位：ms，iOS可能收不到</th></tr><tr><th>fps</th><th>number</th><th>客户端显示帧率</th></tr><tr><th>load_cost_time</th><th>number</th><th>云端加载时长，单位：ms</th></tr><tr><th>nack</th><th>number</th><th>客户端重传次数</th></tr><tr><th>packet_lost</th><th>number</th><th>客户端丢包次数</th></tr><tr><th>packet_received</th><th>number</th><th>客户端收到的包总数</th></tr><tr><th>rtt</th><th>number</th><th>客户端到云端，网络端数据包往返耗时</th></tr><tr><th>timestamp</th><th>number</th><th>此数据回调的时间戳，单位：ms</th></tr></table> |
-   * | media_stats      | Object<{video: Object<>; audio: Object<>}> <table><tr><td>videoStats</td><td></td><td></td></tr><tr><td>fps</td><td>number</td><td>帧率</td></tr><tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>width</td><td>number</td><td>宽度</td></tr><tr><td>height</td><td>number</td><td>高度</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr><tr><td>audioStats</td><td></td><td></td></tr><tr><td>sample_rate</td><td>number</td><td>采样率</td></tr><tr><td>channels</td><td>number</td><td>声道数</td></tr><tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>concealed_samples</td><td>number</td><td>丢包补偿（PLC）的样点总个数</td></tr><tr><td>concealment_events</td><td>number</td><td>丢包补偿（PLC）的累计次数</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr></table> ｜
+   * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>客户端接收的码率，单位：Mbps</th></tr><tr><th>cpu</th><th>number</th><th>云端CPU占用率，单位：百分比</th></tr><tr><th>gpu</th><th>string</th><th>云端GPU占用率，单位：百分比</th></tr><tr><th>delay</th><th>number</th><th>客户端收到图像帧到解码显示的延时，单位：ms，iOS可能收不到</th></tr><tr><th>fps</th><th>number</th><th>客户端显示帧率</th></tr><tr><th>load_cost_time</th><th>number</th><th>云端加载时长，单位：ms</th></tr><tr><th>nack</th><th>number</th><th>客户端重传次数</th></tr><tr><th>packet_lost</th><th>number</th><th>客户端丢包次数</th></tr><tr><th>packet_received</th><th>number</th><th>客户端收到的包总数</th></tr><tr><th>rtt</th><th>number</th><th>客户端到云端，网络端数据包往返耗时</th></tr><tr><th>timestamp</th><th>number</th><th>此数据回调的时间戳，单位：ms</th></tr> <tr><th>first_frame_cost_time</th><th>number</th><th>首帧耗时</th></tr> <tr><th>api_cost_time</th><th>number</th><th>API 耗时</th></tr> </table> |
+   * | media_stats      | Object<{video: Object<>; audio: Object<>}> <table><tr><td>videoStats</td><td></td><td></td></tr><tr><td>fps</td><td>number</td><td>帧率</td></tr><tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>width</td><td>number</td><td>宽度</td></tr><tr><td>height</td><td>number</td><td>高度</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr><tr><td>audioStats</td><td></td><td></td></tr><tr><td>sample_rate</td><td>number</td><td>采样率</td></tr><tr><td>channels</td><td>number</td><td>声道数</td></tr><tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>concealed_samples</td><td>number</td><td>丢包补偿（PLC）的样点总个数</td></tr><tr><td>concealment_events</td><td>number</td><td>丢包补偿（PLC）的累计次数</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr></table> |
    * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | ice_state    | Object<{value: string;}> <table><tr><th>value</th><th>connected / disconnected</th></tr></table> |
    * | token_not_found    | Object<{instance_ids: string[];}> <table><tr><th>instance_ids</th><th>string[]</th></tr></table> |
@@ -2107,7 +2143,7 @@ export class CloudGamingWebSDK {
    * 
 • 方向键事件值：向上键值为0x01，向下键值为0x02，向左键值为0x04，向右键值为0x08
 
-• 按键事件值：X 键值为0x4000，Y 键值为0x8000，A 键值为0x1000, B键值为0x2000
+• 按键事件值：X 键值为0x4000，Y 键值为0x8000，A 键值为0x1000, B 键值为0x2000，LB 键值为0x100，RB 键值为0x200
 
 •select 事件值：键值为0x20
 
@@ -2185,6 +2221,8 @@ export class CloudGamingWebSDK {
    */
   mouseMove(identifier: number, type: string, x: number, y: number): void;
   /**
+   * @deprecated
+   *
    * 开启或关闭滑屏鼠标移动模式，通常对于鼠标相对位移方式
    *
    * **该方法只针对移动端适用。该 mode 下鼠标产生相对位移。**

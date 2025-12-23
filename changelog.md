@@ -1,3 +1,23 @@
+### [2.1.6](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.6)@2025.12.23
+
+**新增**
+
+- 新增首帧耗时回调
+- 新增数据上报
+- 新增切流功能
+
+**修复**
+
+- 码率上报异常问题
+
+**变更**
+
+- WebRTC init 逻辑调整
+- 删除 mouseTabletMode
+- 降低连接限频时长
+
+
+
 ### [2.1.5](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.5)@2025.12.05
 
 **新增**

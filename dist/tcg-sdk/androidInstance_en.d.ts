@@ -192,26 +192,17 @@ export interface AndroidInstance {
    */
   stopSync(): void;
   /**
-   * Request streaming by instance id
+   * Request streaming by streamName
    *
    * @function
    * @param {Object} param
-   * @param {string} param.instanceId - InstanceId for streaming request
-   * @param {('open'|'close')} param.status - Streaming status
+   * @param {('low'|'mid'|'high')} [param.streamName='high'] - 流名称默认 'high'
    *
    * @example
-   * TCGSDK.requestStream({instanceId: 'cai-xxxx-xxxx', status: 'open', level: 'normal'});
+   * TCGSDK.requestStream({streamName: 'high'});
    *
    */
-  requestStream({
-    instanceId,
-    status,
-    level,
-  }: {
-    instanceId: string;
-    status: 'open' | 'close';
-    level?: 'low' | 'normal' | 'high';
-  }): void;
+  requestStream({ streamName }: { streamName?: 'low' | 'mid' | 'high' }): void;
   /**
    * Set sync list
    *

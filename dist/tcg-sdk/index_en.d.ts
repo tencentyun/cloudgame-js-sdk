@@ -15,6 +15,8 @@ export interface OnInitSuccessResponse {
  * Usually the reconnection time exceeds two minutes (for example, disconnected or the in mobile switches to the background, and the reconnection is triggered after two minutes)
  * The system will automatically recycle the instance, and it will return code > 0, needs to init and createSession
  *
+ * code=-7 setRemoteDescription failed
+ * code=-6 Mode forbidden
  * code=-3 Retries exceeded, needs to init and createSession
  * code=-2 Auto reconnecting
  * code=-1 Connect failed, try again alter
@@ -64,7 +66,9 @@ export interface WebrtcStats {
   readonly nack?: number;
   readonly packet_lost?: number;
   readonly packet_received?: number;
-  readonly rtt?: number;
+  readonly rtt?: number; // DataChannel rtt, unit: ms
+  readonly raw_rtt?: number; // Webrtc Stun rtt, unit: ms
+  readonly edge_rtt?: number; // Edge rtt, unit: ms
   readonly timestamp?: number;
 }
 
@@ -72,6 +76,8 @@ export interface MediaStats {
   videoStats: {
     readonly fps: number;
     readonly rtt: number;
+    readonly raw_rtt: number;
+    readonly edge_rtt: number;
     readonly bit_rate: number;
     readonly packet_lost: number;
     readonly packet_received: number;
@@ -216,7 +222,6 @@ export interface ServerSideDescriptionGameConfig {
     default_cursor_url?: string;
     lock_by_mouseright?: boolean;
     keep_lastframe?: boolean;
-    tablet_mode?: boolean;
     mobile_show_cursor?: boolean;
     enable_event_intercept?: boolean;
   };
@@ -287,6 +292,11 @@ export interface ServerSideDescription {
     Code: number;
     Msg: string;
     Sdp: string;
+  };
+  readonly proxy?: {
+    edge: string;
+    uploader: string;
+    proxy_delay: number;
   };
   input_seat?: number;
   video_mime_type: string;
@@ -430,6 +440,24 @@ export type OnEventAutoplayResponse = {
   };
 };
 
+export type OnEventFirstFrameResponse = {
+  type: 'first_frame';
+  data: {
+    /**
+     * First frame cost, counted from access() called
+     */
+    duration: number;
+    /**
+     * video width
+     */
+    width: number;
+    /**
+     * video height
+     */
+    height: number;
+  };
+};
+
 export type OnEventVideoPlayStateResponse = {
   type: 'video_state';
   data: {
@@ -543,6 +571,7 @@ export type OnEventMicStatusResponse = {
 
 export type OnEventResponse =
   | OnEventAutoplayResponse
+  | OnEventFirstFrameResponse
   | OnEventVideoPlayStateResponse
   | OnEventIdleResponse
   | OnEventOpenUrlResponse
@@ -938,11 +967,15 @@ export interface InitConfig {
     /**
      *
      */
-    mode: 'webrtc' | 'websocket';
+    mode?: 'webrtc' | 'websocket';
     /**
      * @default H264
      */
     videoCodecList?: string[];
+    /**
+     * StreamName  'low' | 'mid' | 'high'
+     */
+    streamName?: 'low' | 'mid' | 'high';
   };
   /**
    * Group Control config
@@ -1054,6 +1087,8 @@ export interface InitConfig {
     autoRotateOnPC?: boolean;
   };
   /**
+   * @deprecated
+   *
    * Whether to enable VPX encoding
    *
    * @default false
@@ -1595,7 +1630,8 @@ export interface InitConfig {
    * @param {Object} [response.data] - The data may be different for different types, refer to the following table
    * | type    | data                                                     |
    * | ------- | --------------------------------------------------------------- |
-   * | autoplay   | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr></table> |
+   * | autoplay   | Object<{code: number; message: string; mediaType: 'video' | 'audio'}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr><tr><td>mediaType</td><td>'video' | 'audio'</td></tr></table> |
+   * | first_frame   | Object<{duration: number}> <table><tr><th>duration</th><th>首帧回调时间，从 access 开始计算</th></tr><tr><th>width</th><th>video width</th></tr><tr><th>height</th><th>video height</th></tr></table> |
    * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | audio_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | idle      | Object<{times: number;}> <table><tr><th>times</th><th>number</th></tr></table> |
@@ -1605,6 +1641,7 @@ export interface InitConfig {
    * | pointerlockerror      | - |
    * | readclipboarderror      | Object<{message?: string;}> <table><tr><th>message</th><th>string</th></tr></table> |
    * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>Bit rate received by the client, unit: Mbps</th></tr><tr><th>cpu</th><th>number</th><th>Cloud CPU usage</th></tr><tr><th>gpu</th><th>string</th><th>Cloud GPU usage</th></tr><tr><th>delay</th><th>number</th><th></th></tr><tr><th>fps</th><th>number</th><th></th></tr><tr><th>load_cost_time</th><th>number</th><th>unit: ms</th></tr><tr><th>nack</th><th>number</th><th></th></tr><tr><th>packet_lost</th><th>number</th><th></th></tr><tr><th>packet_received</th><th>number</th><th></th></tr><tr><th>rtt</th><th>number</th><th>unit: ms</th></tr><tr><th>timestamp</th><th>number</th><th>unit: ms</th></tr></table> |
+   * * | media_stats      | Object<{video: Object<>; audio: Object<>}> <table><tr><td>videoStats</td><td></td><td></td></tr><tr><td>fps</td><td>number</td><td>FPS</td></tr><tr><td>bit_rate</td><td>number</td><td>Bitrate，unit: Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>Packet lost</td></tr><tr><td>packet_received</td><td>number</td><td>Packet Received</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>Packet loss rate</td></tr><tr><td>nack</td><td>number</td><td>Nack</td></tr><tr><td>jitter_buffer</td><td>number</td><td>Jitter buffer</td></tr><tr><td>width</td><td>number</td><td>Width</td></tr><tr><td>height</td><td>number</td><td>Height</td></tr><tr><td>codec</td><td>string</td><td>Codec</td></tr><tr><td>audioStats</td><td></td><td></td></tr><tr><td>sample_rate</td><td>number</td><td>Sample rate</td></tr><tr><td>channels</td><td>number</td><td>Audio Channels</td></tr><tr><td>bit_rate</td><td>number</td><td>Bitrate，unit: Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>Packet lost</td></tr><tr><td>packet_received</td><td>number</td><td>Packet received</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>Packet loss rate</td></tr><tr><td>nack</td><td>number</td><td>Nack</td></tr><tr><td>jitter_buffer</td><td>number</td><td>Jitter Buffer</td></tr><tr><td>concealed_samples</td><td>number</td><td>Concealed samples</td></tr><tr><td>concealment_events</td><td>number</td><td>Concealment events</td></tr><tr><td>codec</td><td>string</td><td>Codec</td></tr></table> |
    * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | ice_state    | Object<{value: string;}> <table><tr><th>value</th><th>connected / disconnected</th></tr></table> |
    * | token_not_found    | Object<{instance_ids: string[];}> <table><tr><th>instance_ids</th><th>string[]</th></tr></table> |
@@ -2077,7 +2114,7 @@ export class CloudGamingWebSDK {
 
 • D-pad values: up: 0x01, down: 0x02 left: 0x04, right: 0x08
 
-• X: 0x4000, Y: 0x8000, A: 0x1000, B: 0x2000
+• X: 0x4000, Y: 0x8000, A: 0x1000, B: 0x2000, LB: 0x100, RB: 0x200
 
 • select: 0x20
 
@@ -2149,11 +2186,6 @@ export class CloudGamingWebSDK {
    *
    */
   mouseMove(identifier: number, type: string, x: number, y: number): void;
-  /**
-   * Enables/Disables the cursor sliding mode. This API is generally used in scenarios where there is an offset between the displayed cursor and the actual touch point.
-   * @param {boolean} param - Valid values; `true` (enable), `false` (disable).
-   */
-  mouseTabletMode(param: boolean): void;
   /**
    * @param {number} mode
    *
