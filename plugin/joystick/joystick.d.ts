@@ -1,5 +1,9 @@
 export interface JoystickConfig {
   /**
+   * 默认用 window.TCGSDK，如需自定义sdk 请传入自定义sdk 实例
+   */
+  sdk?: TCGSDK;
+  /**
    * 摇杆挂载节点，默认 document.body
    */
   zone?: HTMLElement;
@@ -103,7 +107,7 @@ export interface JoystickOutputData {
 
 /**
  *
- * 虚拟摇杆
+ * [虚拟摇杆](https://github.com/tencentyun/cloudgame-js-sdk/tree/master/plugin/joystick)
  *
  * 依赖 TCGSDK 使用，建议在 TCGSDK.init 内的回调函数 onConnectSuccess 中使用
  *
@@ -135,7 +139,7 @@ export interface JoystickOutputData {
  * const j = new Joystick({zone: document.querySelector('#plugin-point')})
  *
  */
-declare class Joystick {
+class Joystick {
   constructor(params: JoystickConfig);
   /**
    * 监听摇杆事件

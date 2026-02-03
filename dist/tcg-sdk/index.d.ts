@@ -459,6 +459,11 @@ export type OnEventFirstFrameResponse = {
   };
 };
 
+export type OnEventFirstFrameReceivedResponse = {
+  type: 'first_frame_received';
+  data: {};
+};
+
 export type OnEventVideoPlayStateResponse = {
   type: 'video_state';
   data: {
@@ -576,6 +581,7 @@ export type OnEventMicStatusResponse = {
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventFirstFrameResponse
+  | OnEventFirstFrameReceivedResponse
   | OnEventVideoPlayStateResponse
   | OnEventAudioPlayStateResponse
   | OnEventIdleResponse
@@ -982,6 +988,18 @@ export interface InitConfig {
      * 需要请求的流名称，目前支持 'low' | 'mid' | 'high'
      */
     streamName?: 'low' | 'mid' | 'high';
+    /**
+     * 是否开启多路流
+     *
+     * @default false
+     */
+    multiTrack?: boolean;
+    /**
+     * 是否开启 websocket 信令
+     *
+     * @default false
+     */
+    shadowSocket?: boolean;
   };
   /**
    * Group Control 配置
@@ -1660,7 +1678,7 @@ export interface InitConfig {
    * | pointerlockerror      | - |
    * | readclipboarderror      | Object<{message?: string;}> <table><tr><th>message</th><th>string</th></tr></table> |
    * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>客户端接收的码率，单位：Mbps</th></tr><tr><th>cpu</th><th>number</th><th>云端CPU占用率，单位：百分比</th></tr><tr><th>gpu</th><th>string</th><th>云端GPU占用率，单位：百分比</th></tr><tr><th>delay</th><th>number</th><th>客户端收到图像帧到解码显示的延时，单位：ms，iOS可能收不到</th></tr><tr><th>fps</th><th>number</th><th>客户端显示帧率</th></tr><tr><th>load_cost_time</th><th>number</th><th>云端加载时长，单位：ms</th></tr><tr><th>nack</th><th>number</th><th>客户端重传次数</th></tr><tr><th>packet_lost</th><th>number</th><th>客户端丢包次数</th></tr><tr><th>packet_received</th><th>number</th><th>客户端收到的包总数</th></tr><tr><th>rtt</th><th>number</th><th>客户端到云端，网络端数据包往返耗时</th></tr><tr><th>timestamp</th><th>number</th><th>此数据回调的时间戳，单位：ms</th></tr> <tr><th>first_frame_cost_time</th><th>number</th><th>首帧耗时</th></tr> <tr><th>api_cost_time</th><th>number</th><th>API 耗时</th></tr> </table> |
-   * | media_stats      | Object<{video: Object<>; audio: Object<>}> <table><tr><td>videoStats</td><td></td><td></td></tr><tr><td>fps</td><td>number</td><td>帧率</td></tr><tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>width</td><td>number</td><td>宽度</td></tr><tr><td>height</td><td>number</td><td>高度</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr><tr><td>audioStats</td><td></td><td></td></tr><tr><td>sample_rate</td><td>number</td><td>采样率</td></tr><tr><td>channels</td><td>number</td><td>声道数</td></tr><tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>concealed_samples</td><td>number</td><td>丢包补偿（PLC）的样点总个数</td></tr><tr><td>concealment_events</td><td>number</td><td>丢包补偿（PLC）的累计次数</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr></table> |
+   * | media_stats      | Object<{video: Object<>; audio: Object<>}> <table><tr><td>videoStats</td><td></td><td></td></tr> <tr><td>fps</td><td>number</td><td>帧率</td></tr> <tr><td>rtt</td><td>number</td><td>数据通道网络延迟</td></tr> <tr><td>raw_rtt</td><td>number</td><td>webrtc stun rtt</td></tr>  <tr><td>edge_rtt</td><td>number</td><td>SFU 边缘节点 rtt</td></tr> <tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>width</td><td>number</td><td>宽度</td></tr><tr><td>height</td><td>number</td><td>高度</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr><tr><td>audioStats</td><td></td><td></td></tr><tr><td>sample_rate</td><td>number</td><td>采样率</td></tr><tr><td>channels</td><td>number</td><td>声道数</td></tr><tr><td>bit_rate</td><td>number</td><td>码率，单位：Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>丢包次数</td></tr><tr><td>packet_received</td><td>number</td><td>收到的包总数</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>丢包率</td></tr><tr><td>nack</td><td>number</td><td>重传次数</td></tr><tr><td>jitter_buffer</td><td>number</td><td>缓冲区延迟</td></tr><tr><td>concealed_samples</td><td>number</td><td>丢包补偿（PLC）的样点总个数</td></tr><tr><td>concealment_events</td><td>number</td><td>丢包补偿（PLC）的累计次数</td></tr><tr><td>codec</td><td>string</td><td>编码格式</td></tr></table> |
    * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | ice_state    | Object<{value: string;}> <table><tr><th>value</th><th>connected / disconnected</th></tr></table> |
    * | token_not_found    | Object<{instance_ids: string[];}> <table><tr><th>instance_ids</th><th>string[]</th></tr></table> |
@@ -1804,6 +1822,7 @@ export class CloudGamingWebSDK {
    * @param {string} [params.instanceId] - 实例 Id，单连接
    * @param {string} [params.instanceIds] - 实例 Ids，group control
    * @param {boolean} [params.groupControl] - groupControl 标志位 default false
+   * @param {boolean} [params.multiTrack] - multiTrack 标志位 default false
    *
    * @example
    * TCGSDK.access({instanceId: 'cai-xxxx-xxxx'});
@@ -1813,10 +1832,12 @@ export class CloudGamingWebSDK {
     instanceId,
     instanceIds,
     groupControl,
+    multiTrack,
   }: {
     instanceId?: string;
     instanceIds?: string[];
     groupControl?: boolean;
+    multiTrack?: boolean;
   }): void;
   /**
    * 立即停止云渲染；
@@ -1844,6 +1865,20 @@ export class CloudGamingWebSDK {
    *
    */
   reconnect(): void;
+  /**
+   * 主动创建 Shadow Socket
+   *
+   * @param {Object} [params]
+   * @param {string} params.token - 访问令牌
+   * @param {string} [params.url] - Shadow Socket 服务地址
+   *
+   * @example
+   * TCGSDK.createShadowSocket({ token: 'xxx', url: 'wss://xxx' });
+   */
+  createShadowSocket({ token, url }: { token: string; url?: string }): Promise<{
+    code: number;
+    message: string;
+  }>;
   // -------------- 事件接口 ------------
   /**
    * 监听事件回调，同 init 内的对应回调相同

@@ -12,7 +12,7 @@ import {
   EllipsisIcon,
   TextboxIcon,
 } from 'tdesign-icons-react';
-import { CloudGamingWebSDK } from '../sdk/tcg-sdk/index';
+import { CloudGamingWebSDK } from '../../../../dist/tcg-sdk/index';
 import { CreateAndroidInstancesAccessToken } from './network';
 
 const enum CloudGameKeys {
@@ -94,16 +94,15 @@ export function AndroidInstancePage() {
         console.log('%c onInitSuccess', 'color: red');
 
         // group control
-        TCGSDK.access({
-          instanceIds: instanceIds.slice(0, slice_point),
-          groupControl: true,
-        });
+        // TCGSDK.access({
+        //   instanceIds: instanceIds.slice(0, slice_point),
+        //   groupControl: true,
+        // });
 
         // single control
-        // TCGSDK.access({
-        //   instanceId: instanceIds[0],
-        //   groupControl: false,
-        // });
+        TCGSDK.access({
+          instanceId: instanceIds[0],
+        });
       },
       onImageEvent: ({ data }) => {
         setImageList(data);

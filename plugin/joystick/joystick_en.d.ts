@@ -1,5 +1,9 @@
 export interface JoystickConfig {
   /**
+   * TCGSDK. Default value: window.TCGSDK, if you need to customize sdk, please pass in the custom sdk instance.
+   */
+  sdk?: TCGSDK;
+  /**
    * The joystick mount node. Default value: `document.body`.
    */
   zone?: HTMLElement;
@@ -100,7 +104,7 @@ export interface JoystickOutputData {
 
 /**
  *
- * Virtual joystick
+ * [Virtual joystick](https://github.com/tencentyun/cloudgame-js-sdk/tree/master/plugin/joystick)
  *
  * It relies on TCGSDK. We recommend you use it in the callback function `onConnectSuccess` in `TCGSDK.init`.
  *
@@ -133,7 +137,7 @@ export interface JoystickOutputData {
  * const j = new Joystick({zone: document.querySelector('#plugin-point')})
  *
  */
-declare class Joystick {
+class Joystick {
   constructor(params: JoystickConfig);
   /**
    * This API is used to listen on joystick events.

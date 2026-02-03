@@ -147,8 +147,6 @@ interface GetSystemMusicVolumeResponse extends BatchTaskResponse {
  * 2. Preview multiple cloud phone screens via screenshots.
  * 3. Other functional operations.
  *
- * ![android_instance](https://ex-cloud-gaming.crtrcloud.com/assets/images/android_instance.png)
- *
  * @module AndroidInstance
  *
  * @example
@@ -196,7 +194,7 @@ export interface AndroidInstance {
    *
    * @function
    * @param {Object} param
-   * @param {('low'|'mid'|'high')} [param.streamName='high'] - 流名称默认 'high'
+   * @param {('low'|'mid'|'high')} [param.streamName='high'] - Default stream name - 'high'
    *
    * @example
    * TCGSDK.requestStream({streamName: 'high'});

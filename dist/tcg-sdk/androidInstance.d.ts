@@ -199,13 +199,25 @@ export interface AndroidInstance {
    *
    * @function
    * @param {Object} param
-   * @param {('low'|'mid'|'high')} [param.streamName='high'] - 流名称默认 'high'
+   * @param {string} [param.instanceId] - 请求串流的 instanceId
+   * @param {('open'|'close')} [param.status] - 串流状态
+   * @param {('low'|'normal'|'high')} [param.level] - 串流级别
+   * @param {('low'|'mid'|'high')} [param.streamName] - 串流名称
    *
    * @example
-   * TCGSDK.requestStream({streamName: 'high'});
+   * TCGSDK.requestStream({instanceId: 'cai-xxxx-xxxx', status: 'open', level: 'normal', streamName: 'high'});
    *
    */
-  requestStream({ streamName }: { streamName?: 'low' | 'mid' | 'high' }): void;
+  requestStream({
+    instanceId,
+    status,
+    level,
+  }: {
+    instanceId?: string;
+    status?: 'open' | 'close';
+    level?: 'low' | 'normal' | 'high';
+    streamName?: 'low' | 'mid' | 'high';
+  }): void;
   /**
    * 设置同步列表
    *
@@ -241,6 +253,29 @@ export interface AndroidInstance {
    * AndroidInstance.leaveInstances({instanceIds: ['cai-xxx1', 'cai-xxx2']});
    */
   leaveGroupControl({ instanceIds }: { instanceIds: string[] }): void;
+  /**
+   * 获取多路媒体流
+   *
+   * @function
+   *
+   * @example
+   * const {mediaStream, instanceId} = AndroidInstance.getMultiTrackMediaStreams();
+   */
+  getMultiTrackMediaStreams(): {
+    trackId: number;
+    mediaStream: MediaStream;
+    instanceId: string;
+  }[];
+  /**
+   * 请求多路媒体流
+   * 
+   * @function
+   * @param {Object[]} params - 要请求的 trackId 和 instanceId 列表
+   * @param {string} params.trackId - trackId（同 getMultiTrackMediaStreams 的 trackId）
+   * @param {string} params.instanceIds - instanceId
+   
+   */
+  requestMultiStreaming(params: { trackId: number; instanceId: string }[]): void;
   /**
    * 设置截图事件
    *

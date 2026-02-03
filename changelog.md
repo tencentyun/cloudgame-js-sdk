@@ -1,3 +1,14 @@
+### [2.1.7](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.7)@2026.02.03
+
+**新增**
+
+- 新增 Shadow Socket 竞速连接
+- 新增 Multi track 支持
+- 新增 Metric socket
+- 新增自适应降级策略
+
+
+
 ### [2.1.6](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.6)@2025.12.23
 
 **新增**
