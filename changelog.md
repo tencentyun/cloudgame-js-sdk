@@ -1,3 +1,12 @@
+### [2.1.8](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.8)@2026.04.15
+
+**新增**
+
+- 新增 InitConfig sessionMode
+- shadowSocket 新增队列模式
+
+
+
 ### [2.1.7](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.7)@2026.02.03
 
 **新增**

@@ -190,17 +190,29 @@ export interface AndroidInstance {
    */
   stopSync(): void;
   /**
-   * Request streaming by streamName
+   * Request streaming
    *
    * @function
    * @param {Object} param
-   * @param {('low'|'mid'|'high')} [param.streamName='high'] - Default stream name - 'high'
+   * @param {string} [param.instanceId] - Instance ID for streaming
+   * @param {('open'|'close')} [param.status] - Streaming status
+   * @param {('low'|'normal'|'high')} [param.level] - Streaming level
+   * @param {('low'|'mid'|'high')} [param.streamName] - Stream name
    *
    * @example
-   * TCGSDK.requestStream({streamName: 'high'});
+   * TCGSDK.requestStream({instanceId: 'cai-xxxx-xxxx', status: 'open', level: 'normal', streamName: 'high'});
    *
    */
-  requestStream({ streamName }: { streamName?: 'low' | 'mid' | 'high' }): void;
+  requestStream({
+    instanceId,
+    status,
+    level,
+  }: {
+    instanceId?: string;
+    status?: 'open' | 'close';
+    level?: 'low' | 'normal' | 'high';
+    streamName?: 'low' | 'mid' | 'high';
+  }): void;
   /**
    * Set sync list
    *
@@ -236,6 +248,28 @@ export interface AndroidInstance {
    * AndroidInstance.leaveInstances({instanceIds: ['cai-xxx1', 'cai-xxx2']});
    */
   leaveGroupControl({ instanceIds }: { instanceIds: string[] }): void;
+  /**
+   * Get multi-track media streams
+   *
+   * @function
+   *
+   * @example
+   * const {mediaStream, instanceId} = AndroidInstance.getMultiTrackMediaStreams();
+   */
+  getMultiTrackMediaStreams(): {
+    trackId: number;
+    mediaStream: MediaStream;
+    instanceId: string;
+  }[];
+  /**
+   * Request multi-track streaming
+   *
+   * @function
+   * @param {Object[]} params - List of trackId and instanceId to request
+   * @param {string} params.trackId - trackId (same as getMultiTrackMediaStreams trackId)
+   * @param {string} params.instanceIds - instanceId
+   */
+  requestMultiStreaming(params: { trackId: number; instanceId: string }[]): void;
   /**
    * Set screenshot event
    *

@@ -1100,14 +1100,6 @@ export interface InitConfig {
     autoRotateOnPC?: boolean;
   };
   /**
-   * @deprecated
-   *
-   * 手游启用VPX 编码
-   *
-   * @default false
-   */
-  mobileVpx?: boolean;
-  /**
    * 鼠标模式
    *
    * mode=0: 页面渲染的固定鼠标图片，如为设置默认鼠标图片，会采用系统鼠标
@@ -1145,6 +1137,16 @@ export interface InitConfig {
    * @default 1
    */
   statsInterval?: number;
+  /**
+   * 连接模式
+   *
+   * SharedSession: 共享会话模式
+   *
+   * ExclusiveSession: 独占会话模式，会先踢掉其他用户
+   *
+   * @default 'SharedSession'
+   */
+  sessionMode?: 'SharedSession' | 'ExclusiveSession';
   /**
    * 断开的时候是否保留最后一帧画面。
    *
@@ -1661,13 +1663,14 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onEvent 回调函数的 response
-   * @param {string} response.type - 对应类型 'autoplay' | 'first_frame' | 'video_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'latency'
+   * @param {string} response.type - 对应类型 'autoplay' | 'first_frame_received' | 'first_frame' | 'video_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'latency'
    * @param {Object} [response.data] - 不同 type可能 data 不同，参考下表
    *
    * 对照表
    * | type    | data                                                     |
    * | ------- | --------------------------------------------------------------- |
    * | autoplay   | Object<{code: number; message: string; mediaType: 'video' | 'audio'}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr><tr><td>mediaType</td><td>'video' | 'audio'</td></tr></table> |
+   * | first_frame_received   | - |
    * | first_frame   | Object<{duration: number}> <table><tr><th>duration</th><th>首帧回调时间，从 access 开始计算</th></tr><tr><th>width</th><th>视频宽度</th></tr><tr><th>height</th><th>视频高度</th></tr></table> |
    * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | audio_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |

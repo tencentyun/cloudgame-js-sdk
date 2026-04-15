@@ -24,15 +24,17 @@ export interface OnInitSuccessResponse {
  * @ignore
  */
 export interface OnConnectFailedResponse extends BaseResponse {}
+
 export interface OnConnectSuccessResponse {
   readonly code: number;
-  readonly seat_index: number; // seats index，multi player scene
-  readonly role: string; // role，multi player scene
+  readonly seat_index?: number; // Seat index, multi-player cloud gaming scene
+  readonly role?: string; // Role, multi-player cloud gaming scene
 }
 
 /**
  * code=-2 Failed to get H264 encoding
  * code=-1 Failed to setRemoteDescription
+ * code=0 Success
  * code=1 System busy
  * code=2 Token illegal
  * code=3 Insufficient user bandwidth
@@ -240,45 +242,46 @@ export interface ServerSideDescriptionFeatureSwitch {
 }
 
 export interface ServerSideDescription {
-  readonly app_id: number;
-  readonly game_id: string;
-  readonly group_id: string;
+  readonly app_id?: number;
+  readonly game_id?: string;
+  readonly group_id?: string;
   /**
    * code=-2 Failed to get H264 encoding
    * code=-1 Failed to setRemoteDescription
    * code=0	Success
-   * code=1	System busy
+   * code=1	System busy (can retry)
    * code=2	Token illegal
    * code=6	SDP error
    * code=8	Waiting for host to connect
    * code=9	The role has reached the limit
    * code=100 Proxy error
    */
-  readonly code: number;
+  readonly code?: number;
   readonly msg?: string;
-  readonly message: string;
-  readonly type: string;
-  readonly sdp: string;
-  readonly server_ip: string;
-  readonly server_version: string;
+  readonly message?: string;
+  readonly type?: string;
+  readonly sdp?: string;
+  readonly server_ip?: string;
+  readonly server_version?: string;
   readonly server_port?: string;
-  readonly region: string;
+  readonly region?: string;
+  readonly instance_id?: string;
   readonly instance_type?: string; // L1 S1 M1
-  readonly request_id: string;
-  readonly user_id: string;
-  readonly user_ip: string;
+  readonly request_id?: string;
+  readonly user_id?: string;
+  readonly user_ip?: string;
   readonly game_config?: ServerSideDescriptionGameConfig;
   readonly feature_switch?: ServerSideDescriptionFeatureSwitch;
-  readonly role: string;
-  readonly metric_key: string;
-  readonly plat: 'android' | 'pc' | 'Android';
+  readonly role?: string;
+  readonly metric_key?: string;
+  readonly plat?: 'android' | 'pc' | 'Android';
   readonly sig_key?: string;
-  readonly host_name: string; // Only in mobile game
-  readonly video: {
+  readonly host_name?: string; // Only in mobile game
+  readonly video?: {
     height: number;
     width: number;
   };
-  readonly video_codec: string;
+  readonly video_codec?: string;
   readonly screen_config?: {
     width: number;
     height: number;
@@ -293,14 +296,14 @@ export interface ServerSideDescription {
     Msg: string;
     Sdp: string;
   };
+  input_seat?: number;
+  video_mime_type: string;
+  audio_mime_type: string;
   readonly proxy?: {
     edge: string;
     uploader: string;
     proxy_delay: number;
   };
-  input_seat?: number;
-  video_mime_type: string;
-  audio_mime_type: string;
 }
 
 /**
@@ -429,8 +432,6 @@ export type EventIdleResponse = {
   };
 };
 
-export type OnEventResponseType = 'autoplay' | 'idle';
-
 export type OnEventAutoplayResponse = {
   type: 'autoplay';
   data: {
@@ -456,6 +457,11 @@ export type OnEventFirstFrameResponse = {
      */
     height: number;
   };
+};
+
+export type OnEventFirstFrameReceivedResponse = {
+  type: 'first_frame_received';
+  data: {};
 };
 
 export type OnEventVideoPlayStateResponse = {
@@ -524,6 +530,11 @@ export type OnEventLatencyResponse = {
   };
 };
 
+export type OnEventPointerLockErrorResponse = {
+  type: 'pointerlockerror';
+  data?: {};
+};
+
 /**
  * Usually the http protocol will fail to read clipboard
  */
@@ -534,22 +545,20 @@ export type OnEventReadClipboardErrorResponse = {
   };
 };
 
-export type OnEventPointerLockErrorResponse = {
-  type: 'pointerlockerror';
-  data?: {};
+/**
+ * ICE connection state callback
+ */
+export type OnEventIceConnectionStateChangeResponse = {
+  type: 'ice_state';
+  data?: {
+    value?: 'connected' | 'disconnected';
+  };
 };
 
 export type OnEventTokenNotFoundResponse = {
   type: 'token_not_found';
   data?: {
     instance_ids: string[];
-  };
-};
-
-export type OnEventIceConnectionStateChangeResponse = {
-  type: 'ice_state';
-  data?: {
-    value?: 'connected' | 'disconnected';
   };
 };
 
@@ -572,7 +581,9 @@ export type OnEventMicStatusResponse = {
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventFirstFrameResponse
+  | OnEventFirstFrameReceivedResponse
   | OnEventVideoPlayStateResponse
+  | OnEventAudioPlayStateResponse
   | OnEventIdleResponse
   | OnEventOpenUrlResponse
   | OnEventWebrtcStatsResponse
@@ -580,8 +591,8 @@ export type OnEventResponse =
   | OnEventNoflowResponse
   | OnEventNoflowcenterResponse
   | OnEventLatencyResponse
-  | OnEventReadClipboardErrorResponse
   | OnEventPointerLockErrorResponse
+  | OnEventReadClipboardErrorResponse
   | OnEventIceConnectionStateChangeResponse
   | OnEventTokenNotFoundResponse
   | OnEventMicStatusResponse
@@ -593,6 +604,7 @@ export type OnAndroidInstanceEventResponse =
   | OnAndroidInstanceClipboardEventResponse
   | OnAndroidInstanceNotificationEventResponse
   | OnAndroidInstanceSystemStatusResponse
+  | OnAndroidInstanceDistributeProgressEventResponse
   | OnAndroidInstanceGroupJoinEventResponse
   | OnAndroidInstanceSetSyncListEventResponse
   | OnAndroidInstanceTouchEventResponse;
@@ -825,7 +837,7 @@ type RawEventData = {
 };
 
 /**
- * Microphone parameters, specific values ​​can be set according to requirements.
+ * Microphone parameters, specific values can be set according to requirements.
  * @ignore
  */
 export interface MicProfileConstraints extends MediaTrackConstraints {
@@ -837,7 +849,7 @@ export interface MicProfileConstraints extends MediaTrackConstraints {
 }
 
 /**
- * Camera parameters, specific values ​​can be set according to requirements.
+ * Camera parameters, specific values can be set according to requirements.
  * @ignore
  */
 export interface CameraProfileConstraints {
@@ -976,6 +988,18 @@ export interface InitConfig {
      * StreamName  'low' | 'mid' | 'high'
      */
     streamName?: 'low' | 'mid' | 'high';
+    /**
+     * Whether to enable multi-track streaming
+     *
+     * @default false
+     */
+    multiTrack?: boolean;
+    /**
+     * Whether to enable websocket signaling
+     *
+     * @default false
+     */
+    shadowSocket?: boolean;
   };
   /**
    * Group Control config
@@ -1028,6 +1052,10 @@ export interface InitConfig {
     min_bitrate?: number;
     unit?: 'Kbps' | 'Mbps';
   };
+  /**
+   * User ID
+   */
+  userId?: string;
   /**
    * Whether to enable mic
    *
@@ -1134,6 +1162,16 @@ export interface InitConfig {
    */
   statsInterval?: number;
   /**
+   * Connection mode
+   *
+   * SharedSession: Shared session mode
+   *
+   * ExclusiveSession: Exclusive session mode, will kick other users first
+   *
+   * @default 'SharedSession'
+   */
+  sessionMode?: 'SharedSession' | 'ExclusiveSession';
+  /**
    * Keep last frame image when destroy. Mac safari/ios webview does not work.
    *
    * @default false
@@ -1156,13 +1194,13 @@ export interface InitConfig {
   /**
    * Loading text
    *
-   * @default '正在启动云渲染'
+   * @default 'Starting cloud rendering'
    */
   loadingText?: string;
   /**
    * Restart button text
    *
-   * @default '重新连接'
+   * @default 'Reconnect'
    */
   restartText?: string;
   /**
@@ -1262,6 +1300,12 @@ export interface InitConfig {
     width: number;
     height: number;
   };
+  /**
+   * Whether to enable mouse event on mobile
+   *
+   * @default true
+   */
+  enableMouseEventOnMobile?: boolean;
   /**
    * Whether to enable event interception
    *
@@ -1495,7 +1539,7 @@ export interface InitConfig {
    */
   onLoadGameArchive?: (response: OnLoadGameArchiveResponse) => void;
   /**
-   * 游戏保存存档回调
+   * Game save archive callback
    *
    * @function
    * @param {Object} response - onLoadGameArchive response
@@ -1626,12 +1670,15 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onEvent response
-   * @param {string} response.type - Event types: 'autoplay'| 'video_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'latency'
+   * @param {string} response.type - Event types: 'autoplay' | 'first_frame_received' | 'first_frame' | 'video_state' | 'audio_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'media_stats' | 'latency'
    * @param {Object} [response.data] - The data may be different for different types, refer to the following table
+   *
+   * Reference table
    * | type    | data                                                     |
    * | ------- | --------------------------------------------------------------- |
    * | autoplay   | Object<{code: number; message: string; mediaType: 'video' | 'audio'}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr><tr><td>mediaType</td><td>'video' | 'audio'</td></tr></table> |
-   * | first_frame   | Object<{duration: number}> <table><tr><th>duration</th><th>首帧回调时间，从 access 开始计算</th></tr><tr><th>width</th><th>video width</th></tr><tr><th>height</th><th>video height</th></tr></table> |
+   * | first_frame_received   | - |
+   * | first_frame   | Object<{duration: number}> <table><tr><th>duration</th><th>First frame callback time, calculated from access</th></tr><tr><th>width</th><th>Video width</th></tr><tr><th>height</th><th>Video height</th></tr></table> |
    * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | audio_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | idle      | Object<{times: number;}> <table><tr><th>times</th><th>number</th></tr></table> |
@@ -1640,13 +1687,14 @@ export interface InitConfig {
    * | openurl      | Object<{value: string;}> <table><tr><th>value</th><th>string</th></tr></table> |
    * | pointerlockerror      | - |
    * | readclipboarderror      | Object<{message?: string;}> <table><tr><th>message</th><th>string</th></tr></table> |
-   * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>Bit rate received by the client, unit: Mbps</th></tr><tr><th>cpu</th><th>number</th><th>Cloud CPU usage</th></tr><tr><th>gpu</th><th>string</th><th>Cloud GPU usage</th></tr><tr><th>delay</th><th>number</th><th></th></tr><tr><th>fps</th><th>number</th><th></th></tr><tr><th>load_cost_time</th><th>number</th><th>unit: ms</th></tr><tr><th>nack</th><th>number</th><th></th></tr><tr><th>packet_lost</th><th>number</th><th></th></tr><tr><th>packet_received</th><th>number</th><th></th></tr><tr><th>rtt</th><th>number</th><th>unit: ms</th></tr><tr><th>timestamp</th><th>number</th><th>unit: ms</th></tr></table> |
-   * * | media_stats      | Object<{video: Object<>; audio: Object<>}> <table><tr><td>videoStats</td><td></td><td></td></tr><tr><td>fps</td><td>number</td><td>FPS</td></tr><tr><td>bit_rate</td><td>number</td><td>Bitrate，unit: Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>Packet lost</td></tr><tr><td>packet_received</td><td>number</td><td>Packet Received</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>Packet loss rate</td></tr><tr><td>nack</td><td>number</td><td>Nack</td></tr><tr><td>jitter_buffer</td><td>number</td><td>Jitter buffer</td></tr><tr><td>width</td><td>number</td><td>Width</td></tr><tr><td>height</td><td>number</td><td>Height</td></tr><tr><td>codec</td><td>string</td><td>Codec</td></tr><tr><td>audioStats</td><td></td><td></td></tr><tr><td>sample_rate</td><td>number</td><td>Sample rate</td></tr><tr><td>channels</td><td>number</td><td>Audio Channels</td></tr><tr><td>bit_rate</td><td>number</td><td>Bitrate，unit: Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>Packet lost</td></tr><tr><td>packet_received</td><td>number</td><td>Packet received</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>Packet loss rate</td></tr><tr><td>nack</td><td>number</td><td>Nack</td></tr><tr><td>jitter_buffer</td><td>number</td><td>Jitter Buffer</td></tr><tr><td>concealed_samples</td><td>number</td><td>Concealed samples</td></tr><tr><td>concealment_events</td><td>number</td><td>Concealment events</td></tr><tr><td>codec</td><td>string</td><td>Codec</td></tr></table> |
+   * | webrtc_stats      | Object<> <table><tr><th>bit_rate</th><th>number</th><th>Bit rate received by the client, unit: Mbps</th></tr><tr><th>cpu</th><th>number</th><th>Cloud CPU usage, unit: percentage</th></tr><tr><th>gpu</th><th>string</th><th>Cloud GPU usage, unit: percentage</th></tr><tr><th>delay</th><th>number</th><th>The delay from the client receiving the image frame to the decoding display, unit: ms, iOS may not receive</th></tr><tr><th>fps</th><th>number</th><th>Client display frame rate</th></tr><tr><th>load_cost_time</th><th>number</th><th>Cloud loading time, unit: ms</th></tr><tr><th>nack</th><th>number</th><th>Client retransmission count</th></tr><tr><th>packet_lost</th><th>number</th><th>Client packet loss count</th></tr><tr><th>packet_received</th><th>number</th><th>Total packets received by the client</th></tr><tr><th>rtt</th><th>number</th><th>Client to cloud, network packet round-trip time</th></tr><tr><th>timestamp</th><th>number</th><th>Timestamp of this data callback, unit: ms</th></tr> <tr><th>first_frame_cost_time</th><th>number</th><th>First frame time cost</th></tr> <tr><th>api_cost_time</th><th>number</th><th>API time cost</th></tr> </table> |
+   * | media_stats      | Object<{video: Object<>; audio: Object<>}> <table><tr><td>videoStats</td><td></td><td></td></tr> <tr><td>fps</td><td>number</td><td>FPS</td></tr> <tr><td>rtt</td><td>number</td><td>Data channel network latency</td></tr> <tr><td>raw_rtt</td><td>number</td><td>webrtc stun rtt</td></tr>  <tr><td>edge_rtt</td><td>number</td><td>SFU edge node rtt</td></tr> <tr><td>bit_rate</td><td>number</td><td>Bit rate, unit: Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>Packet loss count</td></tr><tr><td>packet_received</td><td>number</td><td>Total packets received</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>Packet loss rate</td></tr><tr><td>nack</td><td>number</td><td>Retransmission count</td></tr><tr><td>jitter_buffer</td><td>number</td><td>Jitter buffer delay</td></tr><tr><td>width</td><td>number</td><td>Width</td></tr><tr><td>height</td><td>number</td><td>Height</td></tr><tr><td>codec</td><td>string</td><td>Codec format</td></tr><tr><td>audioStats</td><td></td><td></td></tr><tr><td>sample_rate</td><td>number</td><td>Sample rate</td></tr><tr><td>channels</td><td>number</td><td>Audio channels</td></tr><tr><td>bit_rate</td><td>number</td><td>Bit rate, unit: Mbps</td></tr><tr><td>packet_lost</td><td>number</td><td>Packet loss count</td></tr><tr><td>packet_received</td><td>number</td><td>Total packets received</td></tr><tr><td>packet_loss_rate</td><td>number</td><td>Packet loss rate</td></tr><tr><td>nack</td><td>number</td><td>Retransmission count</td></tr><tr><td>jitter_buffer</td><td>number</td><td>Jitter buffer delay</td></tr><tr><td>concealed_samples</td><td>number</td><td>Total concealed samples (PLC)</td></tr><tr><td>concealment_events</td><td>number</td><td>Cumulative concealment events (PLC)</td></tr><tr><td>codec</td><td>string</td><td>Codec format</td></tr></table> |
    * | latency      | Object<{value: number; message: string;}> <table><tr><th>value</th><th>value=0 NETWORK_NORMAL <br />value=1 NETWORK_CONGESTION <br />value=2 NACK_RISING <br />value=3 HIGH_DELAY <br />value=4 NETWORK_JITTER </th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | ice_state    | Object<{value: string;}> <table><tr><th>value</th><th>connected / disconnected</th></tr></table> |
    * | token_not_found    | Object<{instance_ids: string[];}> <table><tr><th>instance_ids</th><th>string[]</th></tr></table> |
    * | mic_status    | Object<{status: string;}> <table><tr><th>status</th><th>open / close</th></tr></table> |
    * | camera_status    | Object<{status: 'open_back' | 'open_front' | 'close'; width？: number; height: number;}> <table><tr><th>status</th><th> 'open_back' | 'open_front' | 'close' </th></tr><tr><td>width</td><td>number</td></tr><tr><td>height</td><td>number</td></tr></table> |
+   *
    *
    */
   onEvent?: (response: OnEventResponse) => void;
@@ -1696,7 +1744,7 @@ export interface InitConfig {
    * | ------- | --------------------------------------------------------------- |
    * | trans_message   | Object<{msg: string; package_name: string;}> |
    * | system_usage    | Object<{cpu_usage: number; mem_usage: number; gpu_usage: number;}> |
-   * | clipboard_event | Object<{text: string; writeText?: boolean}> <table><tr><th>text</th><th>string</th></tr><tr><th>writeText</th><th>boolean 是否已写入剪切板</th></tr></table> |
+   * | clipboard_event | Object<{text: string; writeText?: boolean}> <table><tr><th>text</th><th>string</th></tr><tr><th>writeText</th><th>boolean Whether written to clipboard</th></tr></table> |
    * | notification_event    | Object<{package_name: string; title: string; text: string;}> |
    * | system_status    | Object<{ nav_visible: boolean; music_volume: number;}> |
    * | distribute_progress_event    | Object<{ state: 'SUCCESS' | 'UNSUPPORTED' | 'BUSY' | 'FAIL'; package_name: string;}> |
@@ -1731,7 +1779,7 @@ export interface InitConfig {
  */
 export class CloudGamingWebSDK {
   constructor();
-  // -------------- 云渲染生命周期相关接口 ------------
+  // -------------- Cloud Rendering Lifecycle APIs ------------
   /**
    * @param {InitConfig} config
    * The entry file of TCGSDK. We recommend you call other TCGSDK methods in the `onInitSuccess` or `onConnectSuccess` callback function in `init`.
@@ -1784,6 +1832,7 @@ export class CloudGamingWebSDK {
    * @param {string} [params.instanceId] - Instance Id, single control
    * @param {string} [params.instanceIds] - Instance Ids, group control
    * @param {boolean} [params.groupControl] - groupControl flag, default id false
+   * @param {boolean} [params.multiTrack] - multiTrack flag, default false
    *
    * @example
    * TCGSDK.access({instanceId: 'cai-xxxx-xxxx'});
@@ -1793,10 +1842,12 @@ export class CloudGamingWebSDK {
     instanceId,
     instanceIds,
     groupControl,
+    multiTrack,
   }: {
     instanceId?: string;
     instanceIds?: string[];
     groupControl?: boolean;
+    multiTrack?: boolean;
   }): void;
   /**
    * Stops cloud rendering immediately.
@@ -1824,6 +1875,20 @@ export class CloudGamingWebSDK {
    *
    */
   reconnect(): void;
+  /**
+   * Creates a Shadow Socket connection
+   *
+   * @param {Object} [params]
+   * @param {string} params.token - Access token
+   * @param {string} [params.url] - Shadow Socket service URL
+   *
+   * @example
+   * TCGSDK.createShadowSocket({ token: 'xxx', url: 'wss://xxx' });
+   */
+  createShadowSocket({ token, url }: { token: string; url?: string }): Promise<{
+    code: number;
+    message: string;
+  }>;
   // -------------- Events ------------
   /**
    *
@@ -1869,7 +1934,7 @@ export class CloudGamingWebSDK {
    * @example
    * TCGSDK.setFullscreen(true, html);
    */
-  setFullscreen(fullscreen: boolean, element?: HTMLElement): void;
+  setFullscreen(fullscreen: boolean, element?: HTMLElement): Promise<void>;
   /**
    * Queries whether the full screen mode is enabled.
    */
@@ -1883,11 +1948,11 @@ export class CloudGamingWebSDK {
    * ** Available after calling TCGSDK.start() **
    */
   getRequestId(): string;
-  // -------------- 游戏进程相关接口 ------------
+  // -------------- Game Process Related APIs ------------
   /**
    * Restarts the currently running game process.
    */
-  gameRestart(callback?: Function): void;
+  gameRestart(): void;
   /**
    * Pauses the currently streaming.
    *
@@ -1899,7 +1964,7 @@ export class CloudGamingWebSDK {
    * @example
    * TCGSDK.gamePause({media: 'video'});
    */
-  gamePause(callback?: Function): void;
+  gamePause({ media }?: { media: 'audio' | 'video' }): void;
   /**
    * Resumes the currently streaming.
    *
@@ -1909,9 +1974,9 @@ export class CloudGamingWebSDK {
    * @param {'audio' | 'video'} param.media - media type
    *
    * @example
-   * TCGSDK.gamePause({media: 'video'});
+   * TCGSDK.gameResume({media: 'video'});
    */
-  gameResume(callback?: Function): void;
+  gameResume({ media }?: { media: 'audio' | 'video' }): void;
   /**
    * Quickly sends content when the input box is focused.
    *
@@ -1919,7 +1984,7 @@ export class CloudGamingWebSDK {
    * @example
    * TCGSDK.sendText('abc');
    */
-  sendText(content: string): void;
+  sendText(content: string, callback?: Function): void;
   /**
    * Sets the interaction mode of the cloud application, which can also be set through _InitConfig clientInteractMode_.
    *
@@ -2086,7 +2151,7 @@ export class CloudGamingWebSDK {
    * TCGSDK.sendKeyboardEvent({key: 32, down:  false});
    *
    */
-  sendKeyboardEvent({ key, down }: { key: number; down: boolean }): void;
+  sendKeyboardEvent({ key, down, location }: { key: number; down: boolean; location?: number }): void;
   /**
    * Sends a mouse event.
    *
@@ -2142,7 +2207,7 @@ export class CloudGamingWebSDK {
     x,
     y,
   }: {
-    type: GamepadEvent;
+    type: GamePadEvent;
     down?: boolean;
     key?: number;
     x?: number;
@@ -2186,6 +2251,16 @@ export class CloudGamingWebSDK {
    *
    */
   mouseMove(identifier: number, type: string, x: number, y: number): void;
+  /**
+   * @deprecated
+   *
+   * Enables/Disables the cursor sliding mode, usually for mouse relative displacement.
+   *
+   * **This method is only applicable to mobile. In this mode, the mouse generates relative displacement.**
+   *
+   * @param {boolean} param - true: enable, false: disable
+   */
+  mouseTabletMode(param: boolean): void;
   /**
    * @param {number} mode
    *
@@ -2347,7 +2422,17 @@ export class CloudGamingWebSDK {
    * @example
    * TCGSDK.setStreamProfile({ fps: 60, max_bitrate: 8, min_bitrate: 5 });
    */
-  setStreamProfile(profile: { fps: number; max_bitrate: number; min_bitrate: number }, callback?: Function): void;
+  setStreamProfile(
+    profile: {
+      fps?: number;
+      max_bitrate?: number;
+      min_bitrate?: number;
+      video_width?: number;
+      video_height?: number;
+      unit?: 'Kbps' | 'Mbps';
+    },
+    callback?: Function,
+  ): void;
   /**
    * Gets the parameters of the display area, such as margin, width, and height. Its parameters include:
    *
@@ -2394,7 +2479,7 @@ export class CloudGamingWebSDK {
    * @example
    * TCGSDK.playVideo('play');
    */
-  playVideo(status: 'play' | 'pause'): void;
+  playVideo(status: 'play' | 'pause'): void | Promise<void>;
   /**
    * Plays the audio.
    *
@@ -2406,6 +2491,13 @@ export class CloudGamingWebSDK {
    * TCGSDK.playAudio('play');
    */
   playAudio(status: 'play' | 'pause'): void | Promise<void>;
+  /**
+   * Gets the video element.
+   *
+   * @example
+   * TCGSDK.getVideoElement();
+   */
+  getVideoElement(): HTMLVideoElement;
   /**
    * Gets the user media stream.
    */
@@ -2617,7 +2709,7 @@ export class CloudGamingWebSDK {
    *
    * Gets the volume level of the specified player.
    *
-   * @param {string} id 用户id
+   * @param {string} id User ID
    */
   getPlayerVolume(id: string): number;
   /**
@@ -2625,8 +2717,8 @@ export class CloudGamingWebSDK {
    *
    * Sets the volume level of the specified player.
    *
-   * @param {string} id 用户id
-   * @param {number} val 音量 [0-1]
+   * @param {string} id User ID
+   * @param {number} val Volume [0-1]
    */
   setPlayerVolume(id: string, val: number): number;
   /**
@@ -2634,7 +2726,7 @@ export class CloudGamingWebSDK {
    *
    * Gets all seats.
    *
-   * @returns {Promise<SeatsInfo>} 返回 Promise 对象。
+   * @returns {Promise<SeatsInfo>} Returns Promise object.
    */
   getSeats(): Promise<SeatsInfo>;
   /**
