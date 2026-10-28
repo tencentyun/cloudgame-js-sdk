@@ -464,6 +464,16 @@ export type OnEventFirstFrameReceivedResponse = {
   data: {};
 };
 
+export type OnEventControlReadyResponse = {
+  type: 'control_ready';
+  data: {
+    /**
+     * 控制通道（ack dataChannel）建立耗时，从调用 access 方法开始计算
+     */
+    duration: number;
+  };
+};
+
 export type OnEventVideoPlayStateResponse = {
   type: 'video_state';
   data: {
@@ -578,10 +588,40 @@ export type OnEventMicStatusResponse = {
   };
 };
 
+export type OnEventTokenExpiredResponse = {
+  type: 'token_expired';
+  data?: {
+    instance_id: string;
+    token: string;
+  };
+};
+
+export type OnEventStreamingDisconnectResponse = {
+  type: 'streaming_disconnect';
+  data: {
+    user_list: string[];
+  };
+};
+
+export type OnEventServerSessionInfoResponse = {
+  type: 'server_session_info';
+  data: {
+    request_id: string;
+    host_name: string;
+    user_ip: string;
+    server_ip: string;
+    proxy: {
+      edge: string;
+      uploader: string;
+    };
+  };
+};
+
 export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventFirstFrameResponse
   | OnEventFirstFrameReceivedResponse
+  | OnEventControlReadyResponse
   | OnEventVideoPlayStateResponse
   | OnEventAudioPlayStateResponse
   | OnEventIdleResponse
@@ -596,7 +636,10 @@ export type OnEventResponse =
   | OnEventIceConnectionStateChangeResponse
   | OnEventTokenNotFoundResponse
   | OnEventMicStatusResponse
-  | OnEventCameraStatusResponse;
+  | OnEventCameraStatusResponse
+  | OnEventTokenExpiredResponse
+  | OnEventStreamingDisconnectResponse
+  | OnEventServerSessionInfoResponse;
 
 export type OnAndroidInstanceEventResponse =
   | OnAndroidInstanceTransMessageResponse
@@ -1000,6 +1043,12 @@ export interface InitConfig {
      * @default false
      */
     shadowSocket?: boolean;
+    /**
+     * 是否裁剪 offer SDP，配置 videoCodecList 时仅保留指定 codec。
+     *
+     * @default false
+     */
+    pruneOffer?: boolean;
   };
   /**
    * Group Control 配置
@@ -1147,6 +1196,25 @@ export interface InitConfig {
    * @default 'SharedSession'
    */
   sessionMode?: 'SharedSession' | 'ExclusiveSession';
+  /**
+   * 手柄配置
+   */
+  gamepad?: {
+    /**
+     * 是否启用手柄，启用后 PC 端会自动监听手柄连接并转发手柄事件
+     *
+     * @default true
+     */
+    enable?: boolean;
+    /**
+     * 云端虚拟手柄类型，不传则由云端决定
+     *
+     * XBOX360: Xbox 360 手柄
+     *
+     * DS4: PlayStation DualShock 4 手柄
+     */
+    type?: 'XBOX360' | 'DS4';
+  };
   /**
    * 断开的时候是否保留最后一帧画面。
    *
@@ -1663,7 +1731,7 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onEvent 回调函数的 response
-   * @param {string} response.type - 对应类型 'autoplay' | 'first_frame_received' | 'first_frame' | 'video_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'latency'
+   * @param {string} response.type - 对应类型 'autoplay' | 'first_frame_received' | 'first_frame' | 'control_ready' | 'video_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'latency'
    * @param {Object} [response.data] - 不同 type可能 data 不同，参考下表
    *
    * 对照表
@@ -1671,6 +1739,7 @@ export interface InitConfig {
    * | ------- | --------------------------------------------------------------- |
    * | autoplay   | Object<{code: number; message: string; mediaType: 'video' | 'audio'}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr><tr><td>mediaType</td><td>'video' | 'audio'</td></tr></table> |
    * | first_frame_received   | - |
+   * | control_ready   | Object<{duration: number}> <table><tr><th>duration</th><th>控制通道（ack dataChannel）建立耗时，从 access 开始计算</th></tr></table> |
    * | first_frame   | Object<{duration: number}> <table><tr><th>duration</th><th>首帧回调时间，从 access 开始计算</th></tr><tr><th>width</th><th>视频宽度</th></tr><tr><th>height</th><th>视频高度</th></tr></table> |
    * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | audio_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
@@ -1687,6 +1756,7 @@ export interface InitConfig {
    * | token_not_found    | Object<{instance_ids: string[];}> <table><tr><th>instance_ids</th><th>string[]</th></tr></table> |
    * | mic_status    | Object<{status: string;}> <table><tr><th>status</th><th>open / close</th></tr></table> |
    * | camera_status    | Object<{status: 'open_back' | 'open_front' | 'close'; width？: number; height: number;}> <table><tr><th>status</th><th> 'open_back' | 'open_front' | 'close' </th></tr><tr><td>width</td><td>number</td></tr><tr><td>height</td><td>number</td></tr></table> |
+   * | token_expired    | Object<{instance_id: string; token: string;}> <table><tr><th>instance_id</th><th> string </th></tr><tr><td>token</td><td>string</td></tr></table> |
    *
    *
    */
@@ -2433,7 +2503,7 @@ export class CloudGamingWebSDK {
    * @param {number} [profile.min_bitrate] - 最小码率，范围[1,15]，单位：Mbps
    * @param {number} [profile.video_width] - 视频宽度
    * @param {number} [profile.video_height] - 视频高度
-   * @param {'kbps'|'mbps'} [profile.unit] - 码率单位，默认为'mbps'
+   * @param {'Kbps'|'Mbps'} [profile.unit] - 码率单位，默认为'Mbps'
    * @param {Function} [callback] 设置结果回调函数，可为 null
    *
    * @example
@@ -2671,6 +2741,22 @@ export class CloudGamingWebSDK {
     rotateContainer?: boolean;
     rotateMountPoint?: boolean;
   }): void;
+  /**
+   * 设置视图模式，仅改变前端视频显示方式，不修改云机分辨率或码流分辨率。
+   *
+   * contain: 短边撑满，长边留黑边，完整显示画面。
+   *
+   * cover: 长边撑满，短边超出容器并裁切，铺满容器。
+   *
+   * fill: 长短边都撑满容器，可能产生形变。
+   */
+  setViewPort({ mode }?: { mode?: 'contain' | 'cover' | 'fill' }): {
+    code: number;
+    message: string;
+    mode?: 'contain' | 'cover' | 'fill';
+    width?: number;
+    height?: number;
+  };
   /**
    * 获取页面尺寸
    *

@@ -464,6 +464,16 @@ export type OnEventFirstFrameReceivedResponse = {
   data: {};
 };
 
+export type OnEventControlReadyResponse = {
+  type: 'control_ready';
+  data: {
+    /**
+     * Time cost of the control channel (ack dataChannel) being ready, calculated from access
+     */
+    duration: number;
+  };
+};
+
 export type OnEventVideoPlayStateResponse = {
   type: 'video_state';
   data: {
@@ -582,6 +592,7 @@ export type OnEventResponse =
   | OnEventAutoplayResponse
   | OnEventFirstFrameResponse
   | OnEventFirstFrameReceivedResponse
+  | OnEventControlReadyResponse
   | OnEventVideoPlayStateResponse
   | OnEventAudioPlayStateResponse
   | OnEventIdleResponse
@@ -1000,6 +1011,12 @@ export interface InitConfig {
      * @default false
      */
     shadowSocket?: boolean;
+    /**
+     * Whether to prune offer SDP, only the specified codecs are preserved.
+     *
+     * @default false
+     */
+    pruneOffer?: boolean;
   };
   /**
    * Group Control config
@@ -1171,6 +1188,25 @@ export interface InitConfig {
    * @default 'SharedSession'
    */
   sessionMode?: 'SharedSession' | 'ExclusiveSession';
+  /**
+   * Gamepad config
+   */
+  gamepad?: {
+    /**
+     * Whether to enable gamepad. When enabled, the SDK listens for gamepad connections and forwards gamepad events on PC.
+     *
+     * @default true
+     */
+    enable?: boolean;
+    /**
+     * Cloud virtual gamepad type. If not set, it is decided by the cloud.
+     *
+     * XBOX360: Xbox 360 controller
+     *
+     * DS4: PlayStation DualShock 4 controller
+     */
+    type?: 'XBOX360' | 'DS4';
+  };
   /**
    * Keep last frame image when destroy. Mac safari/ios webview does not work.
    *
@@ -1670,7 +1706,7 @@ export interface InitConfig {
    *
    * @function
    * @param {Object} response - onEvent response
-   * @param {string} response.type - Event types: 'autoplay' | 'first_frame_received' | 'first_frame' | 'video_state' | 'audio_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'media_stats' | 'latency'
+   * @param {string} response.type - Event types: 'autoplay' | 'first_frame_received' | 'first_frame' | 'control_ready' | 'video_state' | 'audio_state' | 'idle' | 'noflow' | 'noflowcenter' |  'openurl' | 'pointerlockerror' | 'readclipboarderror' | 'webrtc_stats' | 'media_stats' | 'latency'
    * @param {Object} [response.data] - The data may be different for different types, refer to the following table
    *
    * Reference table
@@ -1678,6 +1714,7 @@ export interface InitConfig {
    * | ------- | --------------------------------------------------------------- |
    * | autoplay   | Object<{code: number; message: string; mediaType: 'video' | 'audio'}> <table><tr><th>code</th><th>0 success -1 failed</th></tr><tr><td>message</td><td>string</td></tr><tr><td>mediaType</td><td>'video' | 'audio'</td></tr></table> |
    * | first_frame_received   | - |
+   * | control_ready   | Object<{duration: number}> <table><tr><th>duration</th><th>Time cost of the control channel (ack dataChannel) being ready, calculated from access</th></tr></table> |
    * | first_frame   | Object<{duration: number}> <table><tr><th>duration</th><th>First frame callback time, calculated from access</th></tr><tr><th>width</th><th>Video width</th></tr><tr><th>height</th><th>Video height</th></tr></table> |
    * | video_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
    * | audio_state      | Object<{code: number; message: string;}> <table><tr><th>code</th><th>0 playing 1 pause 2 ended</th></tr><tr><td>message</td><td>string</td></tr></table> |
@@ -2644,6 +2681,22 @@ export class CloudGamingWebSDK {
     rotateContainer?: boolean;
     rotateMountPoint?: boolean;
   }): void;
+  /**
+   * Sets the viewport mode. This only changes the frontend video display mode and does not modify cloud device resolution or stream profile.
+   *
+   * contain: Fit inside the container with black bars when aspect ratios differ.
+   *
+   * cover: Fill the container and crop the overflowing area.
+   *
+   * fill: Stretch both width and height to fill the container, which may distort the image.
+   */
+  setViewPort({ mode }?: { mode?: 'contain' | 'cover' | 'fill' }): {
+    code: number;
+    message: string;
+    mode?: 'contain' | 'cover' | 'fill';
+    width?: number;
+    height?: number;
+  };
   /**
    * Gets the page size.
    *

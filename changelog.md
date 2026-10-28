@@ -1,3 +1,27 @@
+### [2.2.2](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.2.2)@2026.10.28
+
+**新增**
+
+- 新增 setViewPort 接口
+- 新增 OnEventServerSessionInfo
+- 新增 initConfig gamepad 参数
+
+**修复**
+
+- setCameraProfile 提示摄像头未开启
+
+**变更**
+
+- onTouch 改成监听 ClientX，ClientY 代替之前的 pageX，pageY
+- ACK 回调时机调整
+
+**优化**
+
+- SDK 结构调整
+- SDK 构建调整
+
+
+
 ### [2.1.8](https://github.com/tencentyun/cloudgame-js-sdk/releases/tag/v2.1.8)@2026.04.15
 
 **新增**
